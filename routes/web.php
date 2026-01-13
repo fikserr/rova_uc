@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Home');
+    return Inertia::render('User/Home');
 });
 Route::get('/uc-products', action: [UcProductController::class, 'index'])
     ->name('uc-products.index');
