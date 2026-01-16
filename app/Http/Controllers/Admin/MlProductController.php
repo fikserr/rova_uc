@@ -15,6 +15,12 @@ class MlProductController extends Controller
             'products' => MlProduct::orderByDesc('id')->get()
         ]);
     }
+    public function userIndex()
+    {
+        return Inertia::render('User/Mlegends', [
+            'products' => MlProduct::orderByDesc('id')->get()
+        ]);
+    }
 
     public function store(Request $request)
     {

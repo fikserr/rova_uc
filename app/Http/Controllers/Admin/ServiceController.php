@@ -15,7 +15,18 @@ class ServiceController extends Controller
             'services' => Service::orderBy('id', 'desc')->get()
         ]);
     }
-
+    public function userStars()
+    {
+        return Inertia::render('User/telegram-stars', [
+            'services' => Service::orderBy('id', 'desc')->get()
+        ]);
+    }
+    public function userPremium()
+    {
+        return Inertia::render('User/telegram-premium', [
+            'services' => Service::orderBy('id', 'desc')->get()
+        ]);
+    }
     public function store(Request $request)
     {
         $data = $request->validate([

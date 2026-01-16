@@ -16,7 +16,12 @@ class UcProductController extends Controller
             'products' => UcProduct::orderBy('id', 'desc')->get(),
         ]);
     }
-
+    public function userIndex()
+    {
+        return Inertia::render('User/UcShop', [
+            'products' => UcProduct::orderBy('id', 'desc')->get(),
+        ]);
+    }
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -44,7 +49,7 @@ class UcProductController extends Controller
             'sell_price' => 'required|numeric',
             'cost_price' => 'required|numeric',
             'cost_currency' => 'required|string',
-            'is_active'     => 'boolean',
+            'is_active' => 'boolean',
         ]);
 
         $product->update($data);

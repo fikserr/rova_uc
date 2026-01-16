@@ -13,7 +13,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Admin/Dashboard');
 });
-Route::get('/uc-products', action: [UcProductController::class, 'index'])
+// UC products uchun route lar shu yerda bo'ladi
+
+Route::get('/products-uc', action: [UcProductController::class, 'index'])
     ->name('uc-products.index');
 Route::post('/uc-products', [UcProductController::class, 'store'])
     ->name('uc-products.store');
@@ -35,7 +37,7 @@ Route::post('/currencies/rate', [CurrencyController::class, 'storeRate'])
     ->name('currencies.rate.store');
 
 
-Route::get('/services', [ServiceController::class, 'index'])
+Route::get('/proucts-services', [ServiceController::class, 'index'])
     ->name('services.index');
 
 Route::post('/services', [ServiceController::class, 'store'])
@@ -69,7 +71,7 @@ Route::put('/spin-rules/{rule}', [SpinRuleController::class, 'update'])
 
 Route::delete('/spin-rules/{rule}', [SpinRuleController::class, 'destroy'])
     ->name('spin-rules.destroy');
-Route::get('/ml-products', [MlProductController::class, 'index'])
+Route::get('/products-ml', [MlProductController::class, 'index'])
     ->name('ml-products.index');
 
 Route::post('/ml-products', [MlProductController::class, 'store'])
@@ -80,3 +82,17 @@ Route::put('/ml-products/{product}', [MlProductController::class, 'update'])
 
 Route::delete('/ml-products/{product}', [MlProductController::class, 'destroy'])
     ->name('ml-products.destroy');
+
+
+
+// userlar uchun route lar shu yerda bo'ladi
+
+
+Route::get('/user-procucts-uc', action: [UcProductController::class, 'userIndex'])
+    ->name('user-procucts-uc.index');
+Route::get('/user-telegram-stars', [ServiceController::class, 'userStars'])
+    ->name('user-telegram-stars.index');
+Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
+    ->name('user-telegram-premium.index');
+    Route::get('/user-ml-products', [MlProductController::class, 'userIndex'])
+    ->name('user-ml-products.index');
