@@ -1,6 +1,6 @@
 import { useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
-
+import AdminLayout from '@/Components/Layout/AdminLayout'
 export default function SpinRules() {
   const { rules, flash } = usePage().props;
   const [editing, setEditing] = useState(null);
@@ -138,3 +138,4 @@ export default function SpinRules() {
     </div>
   );
 }
+SpinRules.layout = page => <AdminLayout>{page}</AdminLayout>
