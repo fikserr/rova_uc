@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
 use App\Http\Controllers\Admin\SpinSectorController;
 use App\Http\Controllers\Admin\UcProductController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia;
@@ -82,7 +83,8 @@ Route::put('/ml-products/{product}', [MlProductController::class, 'update'])
 
 Route::delete('/ml-products/{product}', [MlProductController::class, 'destroy'])
     ->name('ml-products.destroy');
-
+Route::get('/users', [UserController::class, 'index'])
+    ->name('users.index');
 
 
 // userlar uchun route lar shu yerda bo'ladi
@@ -94,5 +96,5 @@ Route::get('/user-telegram-stars', [ServiceController::class, 'userStars'])
     ->name('user-telegram-stars.index');
 Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
     ->name('user-telegram-premium.index');
-    Route::get('/user-ml-products', [MlProductController::class, 'userIndex'])
+Route::get('/user-ml-products', [MlProductController::class, 'userIndex'])
     ->name('user-ml-products.index');
