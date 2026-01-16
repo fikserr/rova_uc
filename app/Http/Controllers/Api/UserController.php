@@ -7,9 +7,30 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserBalance;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
+    public function index()
+    {
+        $users = User::with('balance')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'phone_number' => $user->phone_number,
+                    'balance' => $user->balance?->balance ?? 0,
+                    'role' => $user->role,
+                     'created_at' => now()
+                ];
+            });
+
+        return Inertia::render('Admin/Users', [
+            'users' => $users
+        ]);
+    }
     // /start bosilganda
     public function start(Request $request)
     {
@@ -22,8 +43,8 @@ class UserController extends Controller
         $user = User::firstOrCreate(
             ['id' => $request->telegram_id],
             [
-                'username'   => $request->username,
-                'role'       => 'user',
+                'username' => $request->username,
+                'role' => 'user',
                 'created_at' => now()
             ]
         );
@@ -44,7 +65,7 @@ class UserController extends Controller
     public function savePhone(Request $request)
     {
         $request->validate([
-            'telegram_id'  => 'required|integer',
+            'telegram_id' => 'required|integer',
             'phone_number' => 'required|string'
         ]);
 

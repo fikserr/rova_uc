@@ -19,11 +19,11 @@ class User extends Model
         'username',
         'phone_number',
         'role',
-        'created_at'
+        'created_at' => 'datetime',
     ];
 
     public function balance()
     {
-        return $this->hasOne(UserBalance::class, 'user_id');
+        return $this->hasOne(UserBalance::class, 'user_id', 'id');
     }
 }
