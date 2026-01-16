@@ -37,7 +37,7 @@ Route::post('/currencies/rate', [CurrencyController::class, 'storeRate'])
     ->name('currencies.rate.store');
 
 
-Route::get('/proucts-services', [ServiceController::class, 'index'])
+Route::get('/products-services', [ServiceController::class, 'index'])
     ->name('services.index');
 
 Route::post('/services', [ServiceController::class, 'store'])
