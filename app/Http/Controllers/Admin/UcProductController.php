@@ -44,6 +44,7 @@ class UcProductController extends Controller
             'sell_price' => 'required|numeric',
             'cost_price' => 'required|numeric',
             'cost_currency' => 'required|string',
+            'is_active'     => 'boolean',
         ]);
 
         $product->update($data);
