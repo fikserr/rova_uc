@@ -1,8 +1,8 @@
 import AdminLayout from "@/Components/Layout/AdminLayout";
-import { useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
 import ProductCard from '../../Components/ui/productCard'
+import { Head, useForm, usePage } from "@inertiajs/react";
 export default function MlProducts() {
     const { products, flash } = usePage().props;
     const [editing, setEditing] = useState(null);
@@ -72,6 +72,10 @@ export default function MlProducts() {
 
     return (
         <div className="p-6 space-y-8">
+            <Head>
+                <title>MLBB Diamonds</title>
+                <meta name="description" content="Your page description" />
+            </Head>
             <TopBar
             setEditing={setEditing}
             setFormOpen={setFormOpen}

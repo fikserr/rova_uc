@@ -1,8 +1,8 @@
 import AdminLayout from "@/Components/Layout/AdminLayout";
-import { useForm, usePage } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
+import TopBar from "../../Components/TopBar";
 import ProductCard from "../../Components/ui/productCard";
-import TopBar from '../../Components/TopBar'
 export default function UcProducts() {
     const { products, flash } = usePage().props;
     const [editing, setEditing] = useState(null);
@@ -71,11 +71,15 @@ export default function UcProducts() {
 
     return (
         <div className="p-6 space-y-8">
+            <Head>
+                <title>Pubg Mobile UC</title>
+                <meta name="description" content="Your page description" />
+            </Head>
             <TopBar
-            pageFor={'uc'}
-            setEditing={setEditing}
-            setFormOpen={setFormOpen}
-            reset={reset}
+                pageFor={"uc"}
+                setEditing={setEditing}
+                setFormOpen={setFormOpen}
+                reset={reset}
             />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
@@ -90,7 +94,7 @@ export default function UcProducts() {
                     products.map((product) => {
                         return (
                             <ProductCard
-                                cardFor={'uc'}
+                                cardFor={"uc"}
                                 key={product.id}
                                 product={product}
                                 onEdit={editProduct}
@@ -191,7 +195,9 @@ export default function UcProducts() {
                                         setData("cost_currency", e.target.value)
                                     }
                                 >
-                                    <option value="none">Valyuta tanlang</option>
+                                    <option value="none">
+                                        Valyuta tanlang
+                                    </option>
                                     <option value="USD">USD</option>
                                     <option value="UZS">UZS</option>
                                     <option value="IQD">IQD</option>

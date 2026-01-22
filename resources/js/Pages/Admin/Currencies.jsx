@@ -20,21 +20,24 @@ export default function Currencies() {
     const submit = (e) => {
         e.preventDefault();
         post(route("currencies.store"), {
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setFormCurrencyOpen(false);
+            },
         });
     };
     const submitRate = (e) => {
         e.preventDefault();
 
         rateForm.post(route("currencies.rate.store"), {
-            onSuccess: () => rateForm.reset(),
+            onSuccess: () => {
+                rateForm.reset();
+                setFormRateOpen(false);
+            },
         });
     };
-
-    console.log(currencies);
-
     return (
-        <div className="p-6 space-y-8">
+        <div className="p-0 md:p-6 space-y-8">
             <Head>
                 <title>Currency Rates</title>
                 <meta name="description" content="Your page description" />
@@ -54,8 +57,13 @@ export default function Currencies() {
 
             <div className="w-full flex flex-col gap-4 p-6 bg-white rounded-xl border-2 border-[#E5E7EB]">
                 <div className="w-full flex items-center justify-between ">
-                    <h2 className="text-lg font-bold">Supported Currencies</h2>
-                    <button onClick={()=>setFormCurrencyOpen(true)} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <h2 className=" text-sm md:text-lg font-bold">
+                        Supported Currencies
+                    </h2>
+                    <button
+                        onClick={() => setFormCurrencyOpen(true)}
+                        className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs md:text-base"
+                    >
                         + Add Currency
                     </button>
                 </div>
@@ -97,35 +105,6 @@ export default function Currencies() {
                 </div>
             </div>
 
-            {/* LIST */}
-            {/* <table className="w-full bg-white rounded shadow text-sm">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th>Code</th>
-                        <th>Nomi</th>
-                        <th>Symbol</th>
-                        <th>Base</th>
-                        <th>Aktiv</th>
-                        <th>Oxirgi kurs (UZS)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currencies.map((c) => (
-                        <tr key={c.code} className="border-t">
-                            <td className="font-bold">{c.code}</td>
-                            <td>{c.name}</td>
-                            <td>{c.symbol}</td>
-                            <td>{c.is_base ? "✅" : "—"}</td>
-                            <td>{c.is_active ? "Aktiv" : "Noaktiv"}</td>
-                            <td>
-                                {c.is_base
-                                    ? "Base"
-                                    : c.rates[0]?.rate_to_base ?? "—"}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table> */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Exchange Rates (to{" "}
@@ -142,38 +121,58 @@ export default function Currencies() {
                         return (
                             <div
                                 key={currency.code}
-                                className="p-4 bg-gray-50 rounded-lg"
+                                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div>
-                                                <p className="text-lg font-semibold text-gray-900">
+                                                <p className="text-xs md:text-lg font-semibold text-gray-900 mb-2 md:mb-0">
                                                     1 {currency.code} ={" "}
                                                     <span className="text-blue-600">
                                                         {currency.rates[0]
-                                                            ?.rate_to_base ??
-                                                            "—"}
+                                                            ?.rate_to_base
+                                                            ? Number(
+                                                                  currency
+                                                                      .rates[0]
+                                                                      .rate_to_base,
+                                                              ).toLocaleString(
+                                                                  "en-US",
+                                                                  {
+                                                                      maximumFractionDigits: 4, // keeps up to 4 decimals if needed
+                                                                  },
+                                                              )
+                                                            : "—"}
                                                     </span>{" "}
                                                     UZS
                                                 </p>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-xs md:text-sm text-gray-500">
                                                     Last updated:{" "}
-                                                    {
-                                                        currency.rates[0]
-                                                            .created_at
-                                                    }
+                                                    {currency.rates[0]
+                                                        ?.created_at ?? "—"}
                                                 </p>
                                             </div>
                                         </div>
                                         <button
+                                            className="p-2 rounded-xl bg-[#155DFC] text-white flex items-center gap-1 text-xs md:text-base cursor-pointer  "
                                             onClick={() => {
+                                                // Pre-fill modal with existing rate
+                                                rateForm.setData({
+                                                    currency_code:
+                                                        currency.code,
+                                                    rate_to_base:
+                                                        currency.rates[0]
+                                                            ?.rate_to_base ||
+                                                        "", // old rate
+                                                });
                                                 setFormRateOpen(true);
                                             }}
-                                            className="p-2 rounded-xl bg-[#155DFC] text-white flex items-center gap-1 text-base cursor-pointer  "
                                         >
                                             <Edit2 className="w-3 h-3" />
-                                            Update Rate
+                                            <span className="hidden md:block">
+                                                {" "}
+                                                Update Rate
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
@@ -185,55 +184,81 @@ export default function Currencies() {
 
             {formRateOpen && (
                 <div
-                    onClick={() => setFormRateOpen(false)} // click outside closes modal
-                    className="w-full h-full fixed top-0 left-0 bg-black/40 flex items-center justify-center"
+                    onClick={() => setFormRateOpen(false)}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white p-6 rounded shadow w-full max-w-lg"
+                        className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 space-y-6 transform transition-transform duration-200"
                     >
-                        <h2 className="font-semibold mb-3">
-                            💱 Kurs yangilash
-                        </h2>
-                        <form onSubmit={submitRate} className="space-y-3">
-                            <select
-                                className="input"
-                                value={rateForm.data.currency_code}
-                                onChange={(e) =>
-                                    rateForm.setData(
-                                        "currency_code",
-                                        e.target.value
-                                    )
-                                }
-                            >
-                                <option value="">Valyutani tanlang</option>
-                                {currencies
-                                    .filter((c) => !c.is_base && c.is_active)
-                                    .map((c) => (
-                                        <option key={c.code} value={c.code}>
-                                            {c.code}
-                                        </option>
-                                    ))}
-                            </select>
-                            <input
-                                className="input"
-                                type="number"
-                                step="0.0001"
-                                placeholder="1 USD = ? UZS"
-                                value={rateForm.data.rate_to_base}
-                                onChange={(e) =>
-                                    rateForm.setData(
-                                        "rate_to_base",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                            <button
-                                disabled={rateForm.processing}
-                                className="w-full bg-green-600 text-white py-2 rounded"
-                            >
-                                Saqlash
-                            </button>
+                        {/* Header */}
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl shadow-md">
+                                💱
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Kurs yangilash
+                                </h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Valyuta kursini tez va oson yangilang
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Form */}
+                        <form onSubmit={submitRate} className="space-y-4">
+                            {/* Currency info (disabled) */}
+                            <div className="flex flex-col">
+                                <label className="text-sm font-medium text-gray-700 mb-1">
+                                    Valyuta
+                                </label>
+                                <input
+                                    type="text"
+                                    value={rateForm.data.currency_code}
+                                    disabled
+                                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 bg-gray-100 cursor-not-allowed"
+                                />
+                            </div>
+
+                            {/* Rate input */}
+                            <div className="flex flex-col">
+                                <label className="text-sm font-medium text-gray-700 mb-1">
+                                    Kurs (1 {rateForm.data.currency_code} = ?
+                                    UZS)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.0001"
+                                    placeholder="Masalan: 12500"
+                                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 shadow-sm transition"
+                                    value={rateForm.data.rate_to_base} // pre-filled value
+                                    onChange={(e) =>
+                                        rateForm.setData(
+                                            "rate_to_base",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormRateOpen(false)}
+                                    className="flex-1 rounded-2xl border border-gray-300 py-3 text-gray-700 hover:bg-gray-100 transition"
+                                >
+                                    Bekor qilish
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={rateForm.processing}
+                                    className="flex-1 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-3 text-white font-semibold hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition"
+                                >
+                                    Saqlash
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -242,30 +267,38 @@ export default function Currencies() {
             {/* ADD FORM */}
             {formCurrencyOpen && (
                 <div
-                    onClick={() => setFormCurrencyOpen(false)} // click outside closes modal
-                    className="w-full h-full fixed top-0 left-0 bg-black/40 flex items-center justify-center"
+                    onClick={() => setFormCurrencyOpen(false)}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white p-6 rounded shadow w-full max-w-lg"
+                        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-8 space-y-6 transform transition-transform duration-200"
                     >
-                        <h2 className="font-semibold mb-3">
-                            ➕ Valyuta qo‘shish
-                        </h2>
-                        <form onSubmit={submit} className="space-y-3">
+                        {/* Header */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl shadow-md">
+                                ➕
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Valyuta qo‘shish
+                            </h2>
+                        </div>
+
+                        {/* Form */}
+                        <form onSubmit={submit} className="space-y-4">
                             <input
-                                className="input"
+                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 shadow-sm transition"
                                 placeholder="Code (USD, EUR)"
                                 value={data.code}
                                 onChange={(e) =>
                                     setData(
                                         "code",
-                                        e.target.value.toUpperCase()
+                                        e.target.value.toUpperCase(),
                                     )
                                 }
                             />
                             <input
-                                className="input"
+                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 shadow-sm transition"
                                 placeholder="Nomi"
                                 value={data.name}
                                 onChange={(e) =>
@@ -273,26 +306,29 @@ export default function Currencies() {
                                 }
                             />
                             <input
-                                className="input"
+                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 shadow-sm transition"
                                 placeholder="Symbol"
                                 value={data.symbol}
                                 onChange={(e) =>
                                     setData("symbol", e.target.value)
                                 }
                             />
-                            <label className="flex gap-2 items-center">
+
+                            <label className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     checked={data.is_base}
                                     onChange={(e) =>
                                         setData("is_base", e.target.checked)
                                     }
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-400"
                                 />
                                 Base valyuta
                             </label>
+
                             <button
                                 disabled={processing}
-                                className="w-full bg-blue-600 text-white py-2 rounded"
+                                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 py-3 text-white font-semibold hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition"
                             >
                                 Saqlash
                             </button>
@@ -303,4 +339,5 @@ export default function Currencies() {
         </div>
     );
 }
+
 Currencies.layout = (page) => <AdminLayout>{page}</AdminLayout>;

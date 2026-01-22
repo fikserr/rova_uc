@@ -17,13 +17,13 @@ class ServiceController extends Controller
     }
     public function userStars()
     {
-        return Inertia::render('User/telegram-stars', [
+        return Inertia::render('User/UserTgStars', [
             'services' => Service::orderBy('id', 'desc')->get()
         ]);
     }
     public function userPremium()
     {
-        return Inertia::render('User/telegram-premium', [
+        return Inertia::render('User/UserTgPremium', [
             'services' => Service::orderBy('id', 'desc')->get()
         ]);
     }
