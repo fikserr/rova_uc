@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Event;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,11 +38,11 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return [
-            ...parent::share($request),
-            //
-        ];
+        return array_merge(parent::share($request), [
+            'user' => User::first(), // vaqtincha
+        ]);
     }
+
     public function show(Event $event)
     {
         return Inertia::render('Event/Show', [

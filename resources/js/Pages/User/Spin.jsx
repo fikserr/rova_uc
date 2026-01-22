@@ -1,6 +1,7 @@
 import { Gift, Lock, Sparkles, Trophy } from "lucide-react";
 import { useState } from "react";
 import UserLayout from "@/Components/Layout/UserLayout";
+import { usePage } from "@inertiajs/react";
 
 
 const prizes = [
@@ -24,7 +25,9 @@ const prizes = [
     const [rotation, setRotation] = useState(0);
     const [lastPrize, setLastPrize] = useState(null);
     const [showResult, setShowResult] = useState(false);
-
+    const { sectors, rules} = usePage().props;
+    console.log(rules);
+    
     const handleSpin = () => {
         if (spins <= 0 || isSpinning) return;
 

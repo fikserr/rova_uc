@@ -100,9 +100,6 @@ Route::get('/user-profile', function () {
 Route::get('/user-balance', function () {
     return Inertia::render('User/UserBalance');
 });
-Route::get('/user-spin', function () {
-    return Inertia::render('User/Spin');
-});
 Route::get('/user-purchases', function () {
     return Inertia::render('User/UserPurchases');
 });
@@ -114,3 +111,5 @@ Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
     ->name('user-telegram-premium.index');
 Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
     ->name('user-products-ml.index');
+    Route::get('/user-spin', [SpinSectorController::class, 'SpinSector'])
+    ->name('user-spin-sectors.index');

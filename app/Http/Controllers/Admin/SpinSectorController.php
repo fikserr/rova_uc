@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\SpinRule;
 use App\Models\SpinSector;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -13,6 +14,13 @@ class SpinSectorController extends Controller
     {
         return Inertia::render('Admin/SpinSectors', [
             'sectors' => SpinSector::orderBy('id')->get()
+        ]);
+    }
+    public function SpinSector()
+    {
+        return Inertia::render('User/Spin', [
+            'sectors' => SpinSector::orderBy('id')->get(),
+            'rules' => SpinRule::orderBy('min_total_deposit')->get()
         ]);
     }
 
