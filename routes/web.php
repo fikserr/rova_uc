@@ -15,7 +15,9 @@ Route::get('/', function () {
     return Inertia::render('Admin/Dashboard');
 });
 // UC products uchun route lar shu yerda bo'ladi
-
+Route::get('/tasks', function () {
+    return Inertia::render('Admin/Tasks');
+});
 Route::get('/products-uc', action: [UcProductController::class, 'index'])
     ->name('uc-products.index');
 Route::post('/uc-products', [UcProductController::class, 'store'])
@@ -89,13 +91,26 @@ Route::get('/users', [UserController::class, 'index'])
 
 // userlar uchun route lar shu yerda bo'ladi
 
-
-Route::get('/user-procucts-uc', action: [UcProductController::class, 'userIndex'])
-    ->name('user-procucts-uc.index');
+Route::get('/user-services', function () {
+    return Inertia::render('User/UserServices');
+});
+Route::get('/user-profile', function () {
+    return Inertia::render('User/UserProfile');
+});
+Route::get('/user-balance', function () {
+    return Inertia::render('User/UserBalance');
+});
+Route::get('/user-spin', function () {
+    return Inertia::render('User/Spin');
+});
+Route::get('/user-purchases', function () {
+    return Inertia::render('User/UserPurchases');
+});
+Route::get('/user-products-uc', action: [UcProductController::class, 'userIndex'])
+    ->name('user-products-uc.index');
 Route::get('/user-telegram-stars', [ServiceController::class, 'userStars'])
     ->name('user-telegram-stars.index');
 Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
     ->name('user-telegram-premium.index');
-
-Route::get('/user-ml-products', [MlProductController::class, 'userIndex'])
-    ->name('user-ml-products.index');
+Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
+    ->name('user-products-ml.index');

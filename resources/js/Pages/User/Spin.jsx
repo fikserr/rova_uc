@@ -1,222 +1,268 @@
-import { useState, useRef, useEffect } from 'react';
-import Header from '../../Components/shared/header';
+import { Gift, Lock, Sparkles, Trophy } from "lucide-react";
+import { useState } from "react";
+import UserLayout from "@/Components/Layout/UserLayout";
 
-export default function PrizeWheel() {
-  // Define the prizes on the wheel
-  const prizes = [
-    { value: '10 000', color: '#3b82f6' },
-    { value: 'ZERO', color: '#38bdf8' },
-    { value: '2000', color: '#7dd3fc' },
-    { value: '500', color: '#0ea5e9' },
-    { value: '1000', color: '#2563eb' },
-    { value: '5000', color: '#60a5fa' },
-    { value: '200', color: '#93c5fd' },
-    { value: 'JACKPOT', color: '#a855f7' },
-    { value: '50', color: '#d946ef' },
-    { value: '5000', color: '#ec4899' },
-    { value: '1500', color: '#f472b6' },
-    { value: '1000', color: '#f43f5e' },
-  ];
-  
-  const [rotation, setRotation] = useState(0);
-  const [spinning, setSpinning] = useState(false);
-  const [winner, setWinner] = useState(null);
-  const [spinButtonDisabled, setSpinButtonDisabled] = useState(false);
-  const [showWinnerAlert, setShowWinnerAlert] = useState(false);
-  const [paddingTop, setPaddingTop] = useState('25%');
-  const spinTimeRef = useRef(null);
-  
-  // Effect to handle responsive padding based on screen height
-  useEffect(() => {
-    const handleResize = () => {
-      const height = window.innerHeight;
-      if(height > 720 && height < 929){
-        setPaddingTop('25%');
-      }else if(height > 930){
-        setPaddingTop('30%');
-      }else{
-        setPaddingTop('15%');
-      }
+
+const prizes = [
+    { id: "1", label: "$10", color: "#3B82F6", value: "10" },
+    { id: "2", label: "$200", color: "#EF4444", value: "200" },
+    { id: "3", label: "$15", color: "#EC4899", value: "15" },
+    { id: "4", label: "$100", color: "#D946EF", value: "100" },
+    { id: "5", label: "$175", color: "#A855F7", value: "175" },
+    { id: "6", label: "JACKPOT", color: "#8B5CF6", value: "500" },
+    { id: "7", label: "$20", color: "#6366F1", value: "20" },
+    { id: "8", label: "$5", color: "#3B82F6", value: "5" },
+    { id: "9", label: "$1", color: "#0EA5E9", value: "1" },
+    { id: "10", label: "$50", color: "#06B6D4", value: "50" },
+    { id: "11", label: "ZERO", color: "#14B8A6", value: "0" },
+    { id: "12", label: "$2", color: "#10B981", value: "2" },
+];
+
+ function Spin() {
+    const [spins, setSpins] = useState(0);
+    const [isSpinning, setIsSpinning] = useState(false);
+    const [rotation, setRotation] = useState(0);
+    const [lastPrize, setLastPrize] = useState(null);
+    const [showResult, setShowResult] = useState(false);
+
+    const handleSpin = () => {
+        if (spins <= 0 || isSpinning) return;
+
+        setIsSpinning(true);
+        setShowResult(false);
+        setSpins(spins - 1);
+
+        const randomIndex = Math.floor(Math.random() * prizes.length);
+        const selectedPrize = prizes[randomIndex];
+
+        const segmentAngle = 360 / prizes.length;
+        const targetRotation =
+            360 * 5 + (360 - randomIndex * segmentAngle - segmentAngle / 2);
+        const newRotation = rotation + targetRotation;
+
+        setRotation(newRotation);
+
+        setTimeout(() => {
+            setIsSpinning(false);
+            setLastPrize(selectedPrize);
+            setShowResult(true);
+        }, 4000);
     };
-    
-    // Initial setting
-    handleResize();
-    
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (spinTimeRef.current) {
-        clearTimeout(spinTimeRef.current);
-      }
-    };
-  }, []);
 
-  const spinWheel = () => {
-    if (spinning) return;
-    
-    setSpinButtonDisabled(true);
-    setWinner(null);
-    setShowWinnerAlert(false);
-    setSpinning(true);
-    
-    // Random number of complete rotations plus a random position
-    const spinTime = 5000 + Math.random() * 3000; // 5-8 seconds
-    const totalRotation = rotation + (3600 + Math.floor(Math.random() * 360));
-    
-    spinTimeRef.current = setTimeout(() => {
-      setSpinning(false);
-      
-      // Calculate winner based on final position
-      const degreePerSegment = 360 / prizes.length;
-      const normalizedRotation = totalRotation % 360;
-      const winningIndex = prizes.length - 1 - Math.floor(normalizedRotation / degreePerSegment);
-      const adjustedIndex = winningIndex % prizes.length;
-      
-      setWinner(prizes[adjustedIndex].value);
-      setShowWinnerAlert(true);
-      setSpinButtonDisabled(false);
-    }, spinTime);
-    
-    setRotation(totalRotation);
-  };
-
-  // Calculate segments for SVG rendering
-  const segments = prizes.map((prize, index) => {
-    const angle = 360 / prizes.length;
-    const startAngle = index * angle;
-    const endAngle = (index + 1) * angle;
-    
-    // Convert angles to radians
-    const startRad = (startAngle - 90) * Math.PI / 180;
-    const endRad = (endAngle - 90) * Math.PI / 180;
-    
-    // Calculate points
-    const x1 = 150 + 150 * Math.cos(startRad);
-    const y1 = 150 + 150 * Math.sin(startRad);
-    const x2 = 150 + 150 * Math.cos(endRad);
-    const y2 = 150 + 150 * Math.sin(endRad);
-    
-    // Path for segment
-    const largeArcFlag = angle > 180 ? 1 : 0;
-    const path = `M 150 150 L ${x1} ${y1} A 150 150 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-    
-    // Calculate text position (halfway between center and edge)
-    const textAngle = startAngle + angle / 2;
-    const textRad = (textAngle - 90) * Math.PI / 180;
-    const textX = 150 + 90 * Math.cos(textRad);
-    const textY = 150 + 90 * Math.sin(textRad);
-    
-    return {
-      path,
-      color: prize.color,
-      value: prize.value,
-      textX,
-      textY,
-      textAngle
-    };
-  });
-
-  return (
-    <>
-      <Header />
-      
-    <div className="flex flex-col items-center min-h-screen bg-white overflow-hidden" style={{ minHeight: '90vh', paddingTop: paddingTop }}>
-      <div className="flex flex-col justify-center w-full max-w-full px-4 py-4 relative">
-        <div className="relative w-full aspect-square max-w-xs mx-auto">
-          {/* Top indicator triangle marker - with corrected direction */}
-          <div className="absolute w-8 h-10 top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 z-20">
-            <div className="w-0 h-0 
-                           border-l-[16px] border-r-[16px] border-t-[28px] 
-                           border-l-transparent border-r-transparent border-t-red-600
-                           mx-auto filter drop-shadow-lg">
-            </div>
-          </div>
-          
-          {/* Wheel Container with Shadow */}
-          <div className="absolute inset-0 rounded-full shadow-xl flex items-start justify-center">
-            {/* SVG Wheel */}
-            <svg 
-              width="300" 
-              height="300" 
-              viewBox="0 0 300 300" 
-              className="w-full h-full"
-              style={{ 
-                transform: `rotate(${rotation}deg)`,
-                transition: spinning ? `transform ${spinning ? '5s' : '0s'} cubic-bezier(0.2, 0.8, 0.3, 1)` : 'none'
-              }}
-            >
-              {/* Wheel Segments */}
-              {segments.map((segment, index) => (
-                <g key={index}>
-                  <path 
-                    d={segment.path} 
-                    fill={segment.color}
-                    stroke="#ffffff" 
-                    strokeWidth="2"
-                  />
-                  <text
-                    x={segment.textX}
-                    y={segment.textY}
-                    fill="white"
-                    fontWeight="bold"
-                    fontSize="16"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(${90 + segment.textAngle}, ${segment.textX}, ${segment.textY})`}
-                    style={{ filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.5))' }}
-                  >
-                    {segment.value}
-                  </text>
-                </g>
-              ))}
-              
-              {/* Central Circle */}
-              <circle cx="150" cy="150" r="20" fill="#F1BE48" stroke="#E9A800" strokeWidth="4" />
-            </svg>
-          </div>
-          
-          {/* Outer blue border only */}
-          <div className="absolute inset-0 rounded-full border-8 border-blue-600 pointer-events-none"></div>
-        </div>
-        
-        <div className="mt-8 flex flex-col items-center w-full">
-          <button
-            onClick={spinWheel}
-            disabled={spinButtonDisabled}
-            className={`px-8 py-4 rounded-full text-xl font-bold text-white ${spinButtonDisabled ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} transition-colors shadow-lg w-full max-w-xs`}
-          >
-            {spinning ? 'Spinning...' : 'SPIN'}
-          </button>
-        </div>
-        
-        {/* Winner Alert Modal */}
-        {showWinnerAlert && winner && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs transform transition-all animate-bounce-once">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                  </svg>
+    return (
+        <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 pb-24 lg:pb-8">
+            <div className="max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-8 lg:mb-10">
+                    <div className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full mb-4 text-sm font-semibold shadow-lg">
+                        <Sparkles className="size-4" />
+                        <span>Omadingizni sinab ko'ring!</span>
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                        Ruletka
+                    </h1>
+                    <p className="text-slate-600 text-base sm:text-lg">
+                        Aylantiring va sovg'alarni yutib oling
+                    </p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-700">Congratulations!</h3>
-                <div className="mt-2 text-3xl font-bold text-blue-600">{winner}</div>
-                <p className="mt-1 text-sm text-gray-500">You won this prize!</p>
-                <button 
-                  onClick={() => setShowWinnerAlert(false)}
-                  className="mt-6 px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors w-full"
-                >
-                  OK
-                </button>
-              </div>
+
+                {/* Available Spins */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 mb-6 lg:mb-8 border border-slate-100">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl">
+                                <Trophy className="size-8 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-slate-900">
+                                    Mavjud aylanishlar
+                                </h3>
+                                <p className="text-sm text-slate-600">
+                                    Xarid yoki vazifa bajarish orqali oling
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-4xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                            {spins}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Wheel */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 mb-6 border border-slate-100">
+                    <div className="relative max-w-md mx-auto">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
+                            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[30px] border-t-blue-600 drop-shadow-lg" />
+                        </div>
+                        <div className="relative aspect-square">
+                            <svg
+                                viewBox="0 0 400 400"
+                                className="w-full h-full drop-shadow-2xl"
+                                style={{
+                                    transform: `rotate(${rotation}deg)`,
+                                    transition: isSpinning
+                                        ? "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)"
+                                        : "none",
+                                }}
+                            >
+                                <circle
+                                    cx="200"
+                                    cy="200"
+                                    r="195"
+                                    fill="#2563EB"
+                                />
+                                {prizes.map((prize, index) => {
+                                    const segmentAngle = 360 / prizes.length;
+                                    const startAngle =
+                                        index * segmentAngle - 90;
+                                    const endAngle = startAngle + segmentAngle;
+                                    const startRad =
+                                        (startAngle * Math.PI) / 180;
+                                    const endRad = (endAngle * Math.PI) / 180;
+                                    const x1 = 200 + 185 * Math.cos(startRad);
+                                    const y1 = 200 + 185 * Math.sin(startRad);
+                                    const x2 = 200 + 185 * Math.cos(endRad);
+                                    const y2 = 200 + 185 * Math.sin(endRad);
+                                    const midAngle =
+                                        (startAngle + endAngle) / 2;
+                                    const midRad = (midAngle * Math.PI) / 180;
+                                    const textX = 200 + 120 * Math.cos(midRad);
+                                    const textY = 200 + 120 * Math.sin(midRad);
+
+                                    return (
+                                        <g key={prize.id}>
+                                            <path
+                                                d={`M 200 200 L ${x1} ${y1} A 185 185 0 0 1 ${x2} ${y2} Z`}
+                                                fill={prize.color}
+                                                stroke="white"
+                                                strokeWidth="2"
+                                            />
+                                            <text
+                                                x={textX}
+                                                y={textY}
+                                                fill="white"
+                                                fontSize={
+                                                    prize.label === "JACKPOT" ||
+                                                    prize.label === "ZERO"
+                                                        ? 16
+                                                        : 20
+                                                }
+                                                fontWeight="bold"
+                                                textAnchor="middle"
+                                                dominantBaseline="middle"
+                                                transform={`rotate(${midAngle + 90}, ${textX}, ${textY})`}
+                                            >
+                                                {prize.label}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                <circle
+                                    cx="200"
+                                    cy="200"
+                                    r="40"
+                                    fill="#EAB308"
+                                />
+                                <circle
+                                    cx="200"
+                                    cy="200"
+                                    r="35"
+                                    fill="#FCD34D"
+                                />
+                            </svg>
+                        </div>
+
+                        {/* Spin Button */}
+                        <div className="mt-8">
+                            <button
+                                onClick={handleSpin}
+                                disabled={spins <= 0 || isSpinning}
+                                className="w-full h-16 text-xl font-bold rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 shadow-xl hover:shadow-2xl transition-all duration-300 disabled:cursor-not-allowed"
+                            >
+                                {isSpinning ? (
+                                    <>
+                                        <div className="animate-spin size-6 border-3 border-white border-t-transparent rounded-full mr-3" />
+                                        Aylanmoqda...
+                                    </>
+                                ) : spins <= 0 ? (
+                                    <>
+                                        <Lock className="size-6 mr-2" />
+                                        Aylanish yo'q
+                                    </>
+                                ) : (
+                                    "SPIN"
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Result Modal */}
+                {showResult && lastPrize && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+                        <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in">
+                            <div className="text-center">
+                                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-600 to-indigo-600 rounded-full mb-4">
+                                    <Gift className="size-10 text-white" />
+                                </div>
+                                <h2 className="text-3xl font-bold mb-2 text-slate-900">
+                                    Tabriklaymiz! 🎉
+                                </h2>
+                                <p className="text-slate-600 mb-6">
+                                    Siz yutib oldingiz:
+                                </p>
+                                <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 mb-6">
+                                    <div className="text-5xl font-bold text-white">
+                                        {lastPrize.label}
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={() => setShowResult(false)}
+                                    className="w-full h-12 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                                >
+                                    Yopish
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* How to Get Spins */}
+                <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+                    <h3 className="text-2xl font-bold mb-6 text-center">
+                        Aylanishlarni qanday olish mumkin?
+                    </h3>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
+                            <div className="text-4xl mb-3">🎮</div>
+                            <h4 className="font-semibold mb-2">Xarid qiling</h4>
+                            <p className="text-sm text-blue-100">
+                                O'yin valyutasi yoki Telegram xizmati xarid
+                                qiling
+                            </p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
+                            <div className="text-4xl mb-3">⭐</div>
+                            <h4 className="font-semibold mb-2">
+                                Telegram Stars
+                            </h4>
+                            <p className="text-sm text-blue-100">
+                                Telegram Stars yoki Premium sotib oling
+                            </p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
+                            <div className="text-4xl mb-3">✅</div>
+                            <h4 className="font-semibold mb-2">Vazifalar</h4>
+                            <p className="text-sm text-blue-100">
+                                Vazifalarni bajarib bepul aylanishlar oling
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-    </>
-  );
+        </div>
+    );
 }
+Spin.layout = (page) => <UserLayout>{page}</UserLayout>;
+
+export default Spin;

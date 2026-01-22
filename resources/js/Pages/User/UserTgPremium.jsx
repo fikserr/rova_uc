@@ -3,16 +3,15 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, Star, Zap } from "lucide-react";
 import { useState } from "react";
 
-function Mlegends() {
+function UserTgPremium() {
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const { products, flash } = usePage().props;
+    const { services, flash } = usePage().props;
 
     const service = {
-        title: "Mobile legends",
-        subtitle: "Diamond to'plami",
+        title: "TELEGRAM premium do'koni",
+        subtitle: "premium to'plami",
         icon: "🎮",
         color: "from-orange-500 to-red-500",
-        products: products,
     };
 
     const handlePurchase = () => {
@@ -21,9 +20,12 @@ function Mlegends() {
         }
     };
 
+    console.log(services);
+
+
     return (
         <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-24 lg:pb-8">
-            <Head title="Diamond shop" />
+            <Head title="Premium shop" />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
                     {flash.success}
@@ -79,58 +81,65 @@ function Mlegends() {
                         Paketni tanlang
                     </h2>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {service.products.map((product) => (
-                            <button
-                                key={product.id}
-                                onClick={() => setSelectedProduct(product)}
-                                className={`relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 text-left transition-all border-2 ${
-                                    selectedProduct?.id === product.id
-                                        ? "border-blue-600 shadow-lg scale-[1.02]"
-                                        : "border-slate-100 hover:border-slate-200 shadow-md hover:shadow-lg"
-                                }`}
-                            >
-                                {/* Popular Badge */}
-                                {product.popular && (
-                                    <div className="absolute -top-2 -right-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                                        <Star className="size-3 fill-white" />
-                                        Mashhur
-                                    </div>
-                                )}
-
-                                {/* Discount Badge */}
-                                {product.discount && (
-                                    <div className="absolute -top-2 -left-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                                        {product.discount}
-                                    </div>
-                                )}
-
-                                {/* Selected Indicator */}
-                                {selectedProduct?.id === product.id && (
-                                    <div className="absolute top-4 right-4 bg-blue-600 rounded-full p-1">
-                                        <CheckCircle className="size-5 text-white" />
-                                    </div>
-                                )}
-
-                                <div className="mb-4">
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-                                        {product.diamonds} Diamond
-                                    </h3>
-                                    {product.bonus && (
-                                        <div className="inline-block bg-linear-to-r from-green-100 to-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
-                                            + {product.bonus}
+                        {services.map((s) => (
+                            s.service_type == 'premium' && (
+                                <button
+                                    key={s.id}
+                                    onClick={() => setSelectedProduct(s)}
+                                    className={`relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 text-left transition-all border-2 ${
+                                        selectedProduct?.id === s.id
+                                            ? "border-blue-600 shadow-lg scale-[1.02]"
+                                            : "border-slate-100 hover:border-slate-200 shadow-md hover:shadow-lg"
+                                    }`}
+                                >
+                                    {/* Popular Badge */}
+                                    {s.popular && (
+                                        <div className="absolute -top-2 -right-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                                            <Star className="size-3 fill-white" />
+                                            Mashhur
                                         </div>
                                     )}
-                                </div>
 
-                                <div className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                    {Number(
-                                        Math.floor(product.sell_price),
-                                    ).toLocaleString("fr-FR", {
-                                        maximumFractionDigits: 4, // keeps up to 4 decimals if needed
-                                    })}{" "}
-                                    {product.sell_currency}
-                                </div>
-                            </button>
+                                    {/* Discount Badge */}
+                                    {s.discount && (
+                                        <div className="absolute -top-2 -left-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                                            {s.discount}
+                                        </div>
+                                    )}
+
+                                    {/* Selected Indicator */}
+                                    {selectedProduct?.id === s.id && (
+                                        <div className="absolute top-4 right-4 bg-blue-600 rounded-full p-1">
+                                            <CheckCircle className="size-5 text-white" />
+                                        </div>
+                                    )}
+
+                                    <div className="mb-4">
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+                                            {s.title}
+                                        </h3>
+                                        {s.value && (
+                                            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+                                            muddati :   {s.value} oy
+                                        </h3>
+                                        )}
+                                        {setSelectedProduct.bonus && (
+                                            <div className="inline-block bg-linear-to-r from-green-100 to-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
+                                                + {s.bonus}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                        {Number(
+                                            Math.floor(s.sell_price),
+                                        ).toLocaleString("fr-FR", {
+                                            maximumFractionDigits: 4, // keeps up to 4 decimals if needed
+                                        })}{" "}
+                                        {s.sell_currency}
+                                    </div>
+                                </button>
+                        )
                         ))}
                     </div>
                 </div>
@@ -201,6 +210,7 @@ function Mlegends() {
         </div>
     );
 }
-Mlegends.layout = (page) => <UserLayout>{page}</UserLayout>;
 
-export default Mlegends;
+UserTgPremium.layout = (page) => <UserLayout>{page}</UserLayout>;
+
+export default UserTgPremium;

@@ -1,5 +1,5 @@
 import AdminLayout from "@/Components/Layout/AdminLayout";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage , Head } from "@inertiajs/react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
 import ProductCard from "../../Components/ui/productCard";
@@ -69,6 +69,10 @@ export default function Services() {
 
     return (
         <div className="p-6 space-y-8">
+            <Head>
+                <title>Telegram Services</title>
+                <meta name="description" content="Your page description" />
+            </Head>
             <TopBar
                 pageFor="services"
                 setEditing={setEditing} // ✅ faqat state setter

@@ -3,12 +3,12 @@ import { FaCog, FaDollarSign, FaLayerGroup } from "react-icons/fa";
 import { IoDiamondOutline } from "react-icons/io5";
 import {
     LuBox,
+    LuCalendarCheck,
     LuLayoutDashboard,
     LuShoppingCart,
     LuStar,
     LuUser,
 } from "react-icons/lu";
-
 export function Sidebar({ isOpen = true, onClose }) {
     const { url } = usePage();
 
@@ -22,10 +22,11 @@ export function Sidebar({ isOpen = true, onClose }) {
         },
         { href: "/service-products", label: "Service Orders", icon: LuStar },
         { href: "/users", label: "Users", icon: LuUser },
-        { href: "/uc-products", label: "Products", icon: LuBox },
+        { href: "/products-uc", label: "Products", icon: LuBox },
         { href: "/currencies", label: "Curreny Rates", icon: FaDollarSign },
-        { href: "/spin-sectors", label: "Spin Sectors", icon: FaLayerGroup },
-        { href: "/spin-rules", label: "Spin Rules", icon: FaCog },
+        { href: "/spin-sectors", label: "Spin management", icon: FaCog },
+        { href: "/tasks", label: "Tasks", icon: LuCalendarCheck },
+
     ];
 
     return (
@@ -63,9 +64,17 @@ export function Sidebar({ isOpen = true, onClose }) {
                     <ul className="space-y-2">
                         {menuItems.map((item) => {
                             const Icon = item.icon;
-                            const isActive =
-                                url === item.href ||
-                                url.startsWith(item.href + "/");
+                            let isActive;
+                            if (item.href === "/products-uc") {
+                                isActive = url.startsWith("/products-"); // barcha products- yo‘llar faollashadi
+                            } else if (item.href.startsWith("/spin-sectors")) {
+                                // all spin-* routes
+                                isActive = url.startsWith("/spin-");
+                            } else {
+                                isActive =
+                                    url === item.href ||
+                                    url.startsWith(item.href + "/");
+                            }
 
                             return (
                                 <li key={item.href}>
