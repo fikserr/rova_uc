@@ -1,28 +1,29 @@
 import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
-import { ArrowLeft, CheckCircle, Shield, Star, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle, Shield, Zap  , XIcon} from "lucide-react";
 import { useState } from "react";
+import UserProductCard from '../../Components/ui/UserProductCard'
+import PubgMobileBg from '@images/pubgMobileBg.webp';
+import UcIcon from "@images/ucMain.webp";
 
 function UcShop() {
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const { products, flash } = usePage().props;
+    const { products, flash , user } = usePage().props;
 
     const service = {
         title: "PUBG MOBILE",
         subtitle: "UC to'plami",
-        icon: "🎮",
-        color: "from-orange-500 to-red-500",
+        image:PubgMobileBg,
+        color: "from-blue-500 to-blue-500",
         products: products,
     };
 
     const handlePurchase = () => {
-        if (selectedProduct) {
-            onPurchase(selectedProduct);
-        }
+        setSelectedProduct(false)
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-24 lg:pb-8">
+        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8">
             <Head title="UC shop" />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
@@ -43,8 +44,8 @@ function UcShop() {
                     className={`bg-linear-to-r ${service.color} rounded-3xl p-6 sm:p-8 mb-8 shadow-xl`}
                 >
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl text-4xl">
-                            {service.icon}
+                        <div className="bg-transparent backdrop-blur-sm p-0 rounded-2xl text-4xl">
+                            <img src={service.image} className='w-26 h-26 rounded-xl' alt="" />
                         </div>
                         <div className="flex-1">
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">
@@ -78,104 +79,80 @@ function UcShop() {
                     <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">
                         Paketni tanlang
                     </h2>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {service.products.map((product) => (
-                            <button
+                            <UserProductCard
+                                product={{
+                                    type: "uc",
+                                    value: product.uc_amount,
+                                    sell_price: product.sell_price,
+                                    sell_currency: product.sell_currency,
+                                }}
+                                onClick={setSelectedProduct.bind(null, product)}
                                 key={product.id}
-                                onClick={() => setSelectedProduct(product)}
-                                className={`relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 text-left transition-all border-2 ${
-                                    selectedProduct?.id === product.id
-                                        ? "border-blue-600 shadow-lg scale-[1.02]"
-                                        : "border-slate-100 hover:border-slate-200 shadow-md hover:shadow-lg"
-                                }`}
-                            >
-                                {/* Popular Badge */}
-                                {product.popular && (
-                                    <div className="absolute -top-2 -right-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                                        <Star className="size-3 fill-white" />
-                                        Mashhur
-                                    </div>
-                                )}
-
-                                {/* Discount Badge */}
-                                {product.discount && (
-                                    <div className="absolute -top-2 -left-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                                        {product.discount}
-                                    </div>
-                                )}
-
-                                {/* Selected Indicator */}
-                                {selectedProduct?.id === product.id && (
-                                    <div className="absolute top-4 right-4 bg-blue-600 rounded-full p-1">
-                                        <CheckCircle className="size-5 text-white" />
-                                    </div>
-                                )}
-
-                                <div className="mb-4">
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-                                        {product.uc_amount} UC
-                                    </h3>
-                                    {product.bonus && (
-                                        <div className="inline-block bg-linear-to-r from-green-100 to-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
-                                            + {product.bonus}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                    {Number(
-                                        Math.floor(product.sell_price),
-                                    ).toLocaleString("fr-FR", {
-                                        maximumFractionDigits: 4, // keeps up to 4 decimals if needed
-                                    })}{" "}
-                                    {product.sell_currency}
-                                </div>
-                            </button>
+                            />
                         ))}
                     </div>
                 </div>
 
                 {/* Purchase Summary */}
                 {selectedProduct && (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100 animate-in fade-in">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4">
-                            Buyurtma xulosasi
-                        </h3>
-                        <div className="space-y-3 mb-6">
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-600">
-                                    Mahsulot:
-                                </span>
-                                <span className="font-semibold text-slate-900">
-                                    {selectedProduct.amount}
-                                </span>
-                            </div>
-                            {selectedProduct.bonus && (
+                    <div className="w-full h-full z-99999 bg-black/90 fixed top-0 left-0 flex items-center justify-center ">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100 animate-in fade-in w-full max-w-lg relative">
+                            <h3 className="text-xl font-bold text-slate-900 mb-4">
+                                Buyurtma xulosasi
+                            </h3>
+                            <button className='bg-transparent outline-0 absolute top-4 right-6 cursor-pointer hover:text-red-500 transition-all focus:text-red-500' onClick={()=>setSelectedProduct(null)}>
+                                <XIcon/>
+                            </button>
+                            <div className="space-y-3 mb-6">
                                 <div className="flex justify-between items-center">
                                     <span className="text-slate-600">
-                                        Bonus:
+                                        Mahsulot:
                                     </span>
-                                    <span className="font-semibold text-emerald-600">
-                                        {selectedProduct.bonus}
+                                    <span className="font-semibold text-slate-900 flex items-center gap-2">
+                                        {selectedProduct.uc_amount} <img src={UcIcon} alt="" className='w-10 h-10 ' />
                                     </span>
                                 </div>
-                            )}
-                            <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                                <span className="text-slate-900 font-bold text-lg">
-                                    Jami:
-                                </span>
-                                <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                    {selectedProduct.price} {currency.code}
-                                </span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-600">
+                                        Kimga:
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                        {user.username}
+                                    </span>
+                                </div>
+                                {selectedProduct.bonus && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">
+                                            Bonus:
+                                        </span>
+                                        <span className="font-semibold text-emerald-600">
+                                            {selectedProduct.bonus}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+                                    <span className="text-slate-900 font-bold text-lg">
+                                        Jami:
+                                    </span>
+                                    <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                        {Number(
+                                            Math.floor(selectedProduct.sell_price),
+                                        ).toLocaleString("fr-FR", {
+                                            maximumFractionDigits: 4, // keeps up to 4 decimals if needed
+                                        })}{" "}
+                                        {selectedProduct.sell_currency}
+                                    </span>
+                                </div>
                             </div>
+                            <button
+                                onClick={handlePurchase}
+                                className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg rounded-2xl text-white"
+                            >
+                                Xarid qilish
+                            </button>
                         </div>
-
-                        <button
-                            onClick={handlePurchase}
-                            className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
-                        >
-                            Xarid qilish
-                        </button>
                     </div>
                 )}
 
