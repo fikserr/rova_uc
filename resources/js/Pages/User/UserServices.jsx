@@ -1,9 +1,10 @@
 import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link } from "@inertiajs/react";
 import { ArrowRight, Gamepad2, Star, TrendingUp } from "lucide-react";
-import DiamondMain from "../../../../storage/app/public/mlbbDiamondMain.webp";
-import TgPremium from "../../../../storage/app/public/tgPremium.webp";
-import UcImage from "../../../../storage/app/public/ucMain.webp";
+
+import DiamondMain from "@images/mlbbDiamondMain.webp";
+import TgPremium from "@images/tgPremium.webp";
+import UcImage from "@images/ucMain.webp";
 
 const services = [
     {
@@ -29,7 +30,7 @@ const services = [
     {
         id: "tg-stars",
         title: "TELEGRAM STARS",
-        subtitle: "Premium funksiyalar",
+        subtitle: "Telegram Yulduzlari",
         category: "Telegram",
         icon: <Star className="size-20 fill-yellow-400 text-yellow-500" />,
         color: "from-blue-400 to-cyan-500",
@@ -160,7 +161,7 @@ function UserServices() {
                 </div>
 
                 {/* Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 md:px-0">
                     {services.map((service) => (
                         <ServiceCard key={service.id} {...service} />
                     ))}

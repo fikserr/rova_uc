@@ -28,7 +28,7 @@ function Bar() {
             id: "vazifalar",
             label: "Vazifalar",
             icon: ListTodo,
-            href: "/vazifalar",
+            href: "/user-tasks",
         },
         {
             id: "xizmatlar",
