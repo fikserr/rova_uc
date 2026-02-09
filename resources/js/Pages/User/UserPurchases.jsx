@@ -1,5 +1,5 @@
 import UserLayout from "@/Components/Layout/UserLayout";
-
+import { Head } from "@inertiajs/react";
 import {
     CheckCircle,
     Clock,
@@ -112,14 +112,15 @@ function UserPurchases() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 pb-24 lg:pb-8">
+        <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 px-4 py-6 pb-24 lg:pb-8">
+            <Head title="User Purchases" />
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-6">
-                    <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                    <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:text-white">
                         Mening xaridlarim
                     </h1>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-slate-400">
                         Barcha buyurtmalaringiz tarixi
                     </p>
                 </div>
@@ -170,18 +171,18 @@ function UserPurchases() {
                 </div>
 
                 {/* Search and Filter */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md p-4 mb-6 border border-slate-100">
+                <div className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md p-4 mb-6 border border-slate-100 dark:border-slate-900">
                     <div className="flex items-center gap-3">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 " />
                             <input
                                 type="text"
                                 placeholder="Xaridlarni qidirish..."
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-600 outline-none"
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-600 outline-none dark:bg-slate-700 dark:focus:ring-blue-500 dark:text-white"
                             />
                         </div>
-                        <button className="bg-slate-50 p-3 rounded-xl hover:bg-slate-100 transition-colors">
-                            <Filter className="size-5 text-slate-600" />
+                        <button className="bg-slate-50 dark:bg-slate-600 p-3 rounded-xl hover:bg-slate-100 transition-colors hover:dark:bg-slate-500">
+                            <Filter className="size-5 text-slate-600 dark:text-white" />
                         </button>
                     </div>
                 </div>
@@ -191,31 +192,24 @@ function UserPurchases() {
                     {purchases.map((purchase) => (
                         <div
                             key={purchase.id}
-                            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 sm:p-6 border border-slate-100"
+                            className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md dark:text-white hover:shadow-lg transition-shadow p-5 sm:p-6 border border-slate-100 dark:border-slate-700"
                         >
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-start gap-4">
-                                    <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-3 rounded-xl flex-shrink-0">
-                                        <ShoppingBag className="size-6 text-white" />
+                                    <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-3 rounded-xl shrink-0">
+                                        <ShoppingBag className="size-6 text-white " />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-1 dark:text-white">
                                             {purchase.title}
                                         </h3>
-                                        <p className="text-slate-600 text-sm mb-2">
+                                        <p className="text-slate-600 text-sm mb-2 dark:text-slate-300 ">
                                             {purchase.amount}
                                         </p>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                            <Clock className="size-3" />
-                                            <span>
-                                                {purchase.date} •{" "}
-                                                {purchase.time}
-                                            </span>
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-xl font-bold text-slate-900 mb-2">
+                                    <div className="text-xl font-bold text-slate-900 mb-2 dark:text-white">
                                         {purchase.price}
                                     </div>
                                     <span
@@ -228,22 +222,33 @@ function UserPurchases() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-100">
+                            <div className="pt-4 border-t border-slate-100 dark:border-slate-300">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500">
+                                    <span className="text-slate-500 dark:text-slate-300">
                                         Buyurtma ID:
                                     </span>
-                                    <span className="font-mono font-semibold text-slate-900">
+                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
                                         {purchase.id}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm mt-2">
-                                    <span className="text-slate-500">
+                                    <span className="text-slate-500 dark:text-slate-300">
                                         O'yinchi ID:
                                     </span>
-                                    <span className="font-mono font-semibold text-slate-900">
+                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
                                         {purchase.playerId}
                                     </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm mt-2">
+                                    <span className="text-slate-500 dark:text-slate-300">
+                                        Buyurtma sanasi:
+                                    </span>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-100">
+                                        <Clock className="size-3" />
+                                        <span>
+                                            {purchase.date} • {purchase.time}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

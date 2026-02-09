@@ -1,59 +1,124 @@
+import UserLayout from "@/Components/Layout/UserLayout";
+import { Head, usePage } from "@inertiajs/react";
 import { Gift, Lock, Sparkles, Trophy } from "lucide-react";
 import { useState } from "react";
-import UserLayout from "@/Components/Layout/UserLayout";
-import { usePage } from "@inertiajs/react";
 
-
-const prizes = [
-    { id: "1", label: "$10", color: "#3B82F6", value: "10" },
-    { id: "2", label: "$200", color: "#EF4444", value: "200" },
-    { id: "3", label: "$15", color: "#EC4899", value: "15" },
-    { id: "4", label: "$100", color: "#D946EF", value: "100" },
-    { id: "5", label: "$175", color: "#A855F7", value: "175" },
-    { id: "6", label: "JACKPOT", color: "#8B5CF6", value: "500" },
-    { id: "7", label: "$20", color: "#6366F1", value: "20" },
-    { id: "8", label: "$5", color: "#3B82F6", value: "5" },
-    { id: "9", label: "$1", color: "#0EA5E9", value: "1" },
-    { id: "10", label: "$50", color: "#06B6D4", value: "50" },
-    { id: "11", label: "ZERO", color: "#14B8A6", value: "0" },
-    { id: "12", label: "$2", color: "#10B981", value: "2" },
-];
-
- function Spin() {
-    const [spins, setSpins] = useState(0);
+function Spin() {
+    const pageProps = usePage().props;
+    const initialSpins = 5;
+    const [spins, setSpins] = useState(initialSpins);
     const [isSpinning, setIsSpinning] = useState(false);
     const [rotation, setRotation] = useState(0);
     const [lastPrize, setLastPrize] = useState(null);
     const [showResult, setShowResult] = useState(false);
-    const { sectors, rules} = usePage().props;
-    console.log(rules);
-    
+    const { sectors: sectorsRaw } = pageProps;
+
+    // Filter active sectors
+    const activeSectors = Array.isArray(sectorsRaw)
+        ? sectorsRaw.filter((s) => Number(s.is_active) === 1)
+        : [];
+
+    // Map sectors for wheel
+    const sectors = activeSectors.map((s, i) => {
+        const hue = Math.round((i * 360) / Math.max(activeSectors.length, 1));
+        const color = `hsl(${hue} 75% 45%)`;
+        return {
+            id: String(s.id),
+            label: s.title || `${s.reward_type} ${s.reward_value}`,
+            color,
+            value: s.reward_value,
+            reward_type: s.reward_type,
+            probability: Number(s.probability ?? 0),
+            raw: s,
+        };
+    });
+
+    // Check if prize is UC
+    const isBlockedPrize = (sector) => {
+        return (
+            typeof sector.label === "string" &&
+            sector.label.toLowerCase().includes("uc")
+        );
+    };
+
+    // Weighted random picker
+    const pickWeightedIndex = (arr) => {
+        if (!arr || arr.length === 0) return -1;
+        const probs = arr.map((a) =>
+            Number(a.probability) > 0 ? Number(a.probability) : 0,
+        );
+        const total = probs.reduce((s, p) => s + p, 0);
+        if (total <= 0) return Math.floor(Math.random() * arr.length);
+
+        const r = Math.random() * total;
+        let acc = 0;
+        for (let i = 0; i < probs.length; i++) {
+            acc += probs[i];
+            if (r <= acc) return i;
+        }
+        return arr.length - 1;
+    };
+
+    const getLandedIndexFromRotation = (rot, sectorCount) => {
+        if (sectorCount === 0) return -1;
+        const seg = 360 / sectorCount;
+        const normalizedNegR = (360 - (rot % 360) + 360) % 360;
+        const raw = (normalizedNegR - seg / 2 + 360) % 360;
+        const idx = Math.floor(raw / seg) % sectorCount;
+        return idx;
+    };
+
     const handleSpin = () => {
-        if (spins <= 0 || isSpinning) return;
+        if (spins <= 0 || isSpinning || sectors.length === 0) return;
 
         setIsSpinning(true);
         setShowResult(false);
-        setSpins(spins - 1);
+        setSpins((p) => p - 1);
 
-        const randomIndex = Math.floor(Math.random() * prizes.length);
-        const selectedPrize = prizes[randomIndex];
+        // Pick weighted index
+        let chosenIndex = pickWeightedIndex(sectors);
+        let chosenSector = sectors[chosenIndex];
 
-        const segmentAngle = 360 / prizes.length;
-        const targetRotation =
-            360 * 5 + (360 - randomIndex * segmentAngle - segmentAngle / 2);
+        // If UC, pick next allowed sector
+        if (isBlockedPrize(chosenSector)) {
+            const allowedIndex = sectors.findIndex((s) => !isBlockedPrize(s));
+            chosenIndex = allowedIndex >= 0 ? allowedIndex : chosenIndex;
+            chosenSector = sectors[chosenIndex];
+        }
+
+        // Calculate rotation
+        const segmentAngle = 360 / sectors.length;
+        const rounds = 5;
+        const alignPart =
+            (360 - chosenIndex * segmentAngle - segmentAngle / 2 + 360) % 360;
+        const targetRotation = rounds * 360 + alignPart;
         const newRotation = rotation + targetRotation;
 
-        setRotation(newRotation);
+        setRotation(targetRotation);
 
+        // Show result after animation
         setTimeout(() => {
             setIsSpinning(false);
-            setLastPrize(selectedPrize);
+            const landedIndex = getLandedIndexFromRotation(
+                targetRotation,
+                sectors.length,
+            );
+            const landed = sectors[landedIndex] ?? sectors[chosenIndex];
+            setLastPrize(landed);
             setShowResult(true);
+            setTimeout(() => {
+                setRotation(0);
+            }, 300);
         }, 4000);
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 pb-24 lg:pb-8">
+        <div
+            className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50
+                        dark:from-slate-950 dark:via-slate-900 dark:to-slate-950
+                        px-4 py-6 pb-24 lg:pb-8"
+        >
+            <Head title="Ruletka" />
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-8 lg:mb-10">
@@ -61,26 +126,33 @@ const prizes = [
                         <Sparkles className="size-4" />
                         <span>Omadingizni sinab ko'ring!</span>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                    <h1
+                        className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3
+                                   bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent
+                                   dark:text-slate-100"
+                    >
                         Ruletka
                     </h1>
-                    <p className="text-slate-600 text-base sm:text-lg">
+                    <p className="text-slate-600 text-base sm:text-lg dark:text-slate-400">
                         Aylantiring va sovg'alarni yutib oling
                     </p>
                 </div>
 
                 {/* Available Spins */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 mb-6 lg:mb-8 border border-slate-100">
+                <div
+                    className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 mb-6 lg:mb-8 border border-slate-100
+                                dark:bg-slate-800/80 dark:border-white/10 dark:shadow-none"
+                >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl">
                                 <Trophy className="size-8 text-white" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-slate-900">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                                     Mavjud aylanishlar
                                 </h3>
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
                                     Xarid yoki vazifa bajarish orqali oling
                                 </p>
                             </div>
@@ -92,11 +164,15 @@ const prizes = [
                 </div>
 
                 {/* Wheel */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 mb-6 border border-slate-100">
+                <div
+                    className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 mb-6 border border-slate-100
+                                dark:bg-slate-800/80 dark:border-white/10 dark:shadow-none"
+                >
                     <div className="relative max-w-md mx-auto">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
                             <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[30px] border-t-blue-600 drop-shadow-lg" />
                         </div>
+
                         <div className="relative aspect-square">
                             <svg
                                 viewBox="0 0 400 400"
@@ -114,8 +190,8 @@ const prizes = [
                                     r="195"
                                     fill="#2563EB"
                                 />
-                                {prizes.map((prize, index) => {
-                                    const segmentAngle = 360 / prizes.length;
+                                {sectors.map((prize, index) => {
+                                    const segmentAngle = 360 / sectors.length;
                                     const startAngle =
                                         index * segmentAngle - 90;
                                     const endAngle = startAngle + segmentAngle;
@@ -131,6 +207,8 @@ const prizes = [
                                     const midRad = (midAngle * Math.PI) / 180;
                                     const textX = 200 + 120 * Math.cos(midRad);
                                     const textY = 200 + 120 * Math.sin(midRad);
+                                    const fontSize =
+                                        prize.label.length > 12 ? 12 : 16;
 
                                     return (
                                         <g key={prize.id}>
@@ -144,12 +222,7 @@ const prizes = [
                                                 x={textX}
                                                 y={textY}
                                                 fill="white"
-                                                fontSize={
-                                                    prize.label === "JACKPOT" ||
-                                                    prize.label === "ZERO"
-                                                        ? 16
-                                                        : 20
-                                                }
+                                                fontSize={fontSize}
                                                 fontWeight="bold"
                                                 textAnchor="middle"
                                                 dominantBaseline="middle"
@@ -179,8 +252,17 @@ const prizes = [
                         <div className="mt-8">
                             <button
                                 onClick={handleSpin}
-                                disabled={spins <= 0 || isSpinning}
-                                className="w-full h-16 text-xl font-bold rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 shadow-xl hover:shadow-2xl transition-all duration-300 disabled:cursor-not-allowed"
+                                disabled={
+                                    spins <= 0 ||
+                                    isSpinning ||
+                                    sectors.length === 0
+                                }
+                                className="w-full h-16 text-xl font-bold rounded-2xl
+                                           bg-linear-to-r from-blue-600 to-indigo-600
+                                           hover:from-blue-700 hover:to-indigo-700
+                                           disabled:from-slate-400 disabled:to-slate-500
+                                           shadow-xl hover:shadow-2xl transition-all duration-300
+                                           disabled:cursor-not-allowed flex items-center justify-center text-white"
                             >
                                 {isSpinning ? (
                                     <>
@@ -192,6 +274,8 @@ const prizes = [
                                         <Lock className="size-6 mr-2" />
                                         Aylanish yo'q
                                     </>
+                                ) : sectors.length === 0 ? (
+                                    "Sektorlar yo'q"
                                 ) : (
                                     "SPIN"
                                 )}
@@ -203,69 +287,44 @@ const prizes = [
                 {/* Result Modal */}
                 {showResult && lastPrize && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-                        <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in">
+                        <div
+                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in
+                                        dark:bg-slate-800"
+                        >
                             <div className="text-center">
                                 <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-600 to-indigo-600 rounded-full mb-4">
                                     <Gift className="size-10 text-white" />
                                 </div>
-                                <h2 className="text-3xl font-bold mb-2 text-slate-900">
+                                <h2 className="text-3xl font-bold mb-2 text-slate-900 dark:text-slate-100">
                                     Tabriklaymiz! 🎉
                                 </h2>
-                                <p className="text-slate-600 mb-6">
+                                <p className="text-slate-600 mb-6 dark:text-slate-400">
                                     Siz yutib oldingiz:
                                 </p>
                                 <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 mb-6">
                                     <div className="text-5xl font-bold text-white">
                                         {lastPrize.label}
                                     </div>
+                                    <div className="text-sm text-white/80 mt-2">
+                                        {lastPrize.value
+                                            ? `Qiymati: ${lastPrize.value}`
+                                            : null}
+                                    </div>
                                 </div>
-                                <Button
+                                <button
                                     onClick={() => setShowResult(false)}
-                                    className="w-full h-12 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                                    className="w-full h-12 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg"
                                 >
                                     Yopish
-                                </Button>
+                                </button>
                             </div>
                         </div>
                     </div>
                 )}
-
-                {/* How to Get Spins */}
-                <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
-                    <h3 className="text-2xl font-bold mb-6 text-center">
-                        Aylanishlarni qanday olish mumkin?
-                    </h3>
-                    <div className="grid sm:grid-cols-3 gap-4">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
-                            <div className="text-4xl mb-3">🎮</div>
-                            <h4 className="font-semibold mb-2">Xarid qiling</h4>
-                            <p className="text-sm text-blue-100">
-                                O'yin valyutasi yoki Telegram xizmati xarid
-                                qiling
-                            </p>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
-                            <div className="text-4xl mb-3">⭐</div>
-                            <h4 className="font-semibold mb-2">
-                                Telegram Stars
-                            </h4>
-                            <p className="text-sm text-blue-100">
-                                Telegram Stars yoki Premium sotib oling
-                            </p>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/20">
-                            <div className="text-4xl mb-3">✅</div>
-                            <h4 className="font-semibold mb-2">Vazifalar</h4>
-                            <p className="text-sm text-blue-100">
-                                Vazifalarni bajarib bepul aylanishlar oling
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );
 }
-Spin.layout = (page) => <UserLayout>{page}</UserLayout>;
 
+Spin.layout = (page) => <UserLayout>{page}</UserLayout>;
 export default Spin;

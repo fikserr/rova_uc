@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -9,7 +9,6 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 /* Chrome, Edge, Safari */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

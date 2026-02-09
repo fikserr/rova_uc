@@ -3,9 +3,9 @@ import Header from "../shared/header";
 
 function UserLayout({ children }) {
     return (
-        <div className="w-full relative h-max bg-[#EFF6FF]">
+        <div className="w-full relative h-max min-h-screen flex flex-col bg-gray-100 dark:bg-slate-800">
             {/* Topbar */}
-            <header className="z-20 h-max w-full fixed top-0 left-0 bg-white shadow flex items-center px-4">
+            <header className="z-20 h-max w-full fixed top-0 left-0 bg-white shadow flex items-center p-0">
                 <Header />
             </header>
 

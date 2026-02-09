@@ -1,6 +1,6 @@
 import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
-import { ArrowLeft, CheckCircle, Shield, Zap , XIcon } from "lucide-react";
+import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useState } from "react";
 import UserProductCard from "../../Components/ui/UserProductCard";
 
@@ -12,7 +12,7 @@ function UserTgPremium() {
         title: "TELEGRAM premium do'koni",
         subtitle: "premium to'plami",
         icon: "🎮",
-        color: "from-orange-500 to-red-500",
+        color: "from-blue-500 to-blue-500",
     };
 
     const handlePurchase = () => {
@@ -22,7 +22,7 @@ function UserTgPremium() {
     console.log(services);
 
     return (
-        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8">
+        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8 dark:bg-slate-900">
             <Head title="Premium shop" />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
@@ -32,7 +32,7 @@ function UserTgPremium() {
             <div className="max-w-6xl mx-auto">
                 {/* Back Button */}
                 <Link href={"/user-services"}>
-                    <button className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors group">
+                    <button className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 hover:dark:text-slate-100 mb-6 transition-colors group ">
                         <ArrowLeft className="size-5 group-hover:-translate-x-1 transition-transform" />
                         <span className="font-medium">Orqaga</span>
                     </button>
@@ -75,7 +75,7 @@ function UserTgPremium() {
 
                 {/* Products Grid */}
                 <div className="mb-8">
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
                         Paketni tanlang
                     </h2>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,8 +108,11 @@ function UserTgPremium() {
                             <h3 className="text-xl font-bold text-slate-900 mb-4">
                                 Buyurtma xulosasi
                             </h3>
-                            <button className='bg-transparent outline-0 absolute top-4 right-6 cursor-pointer hover:text-red-500 transition-all focus:text-red-500' onClick={()=>setSelectedProduct(null)}>
-                                <XIcon/>
+                            <button
+                                className="bg-transparent outline-0 absolute top-4 right-6 cursor-pointer hover:text-red-500 transition-all focus:text-red-500"
+                                onClick={() => setSelectedProduct(null)}
+                            >
+                                <XIcon />
                             </button>
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between items-center">
@@ -167,12 +170,12 @@ function UserTgPremium() {
                 )}
 
                 {/* Info Section */}
-                <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-                    <h4 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <h4 className="font-semibold text-slate-900 mb-2 flex items-center gap-2 dark:text-white">
                         <Shield className="size-5 text-blue-600" />
                         Muhim ma'lumot
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-600">
+                    <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                         <li>
                             • Yetkazib berish 1-5 daqiqa ichida amalga
                             oshiriladi

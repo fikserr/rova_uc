@@ -1,4 +1,6 @@
 import UserLayout from "@/Components/Layout/UserLayout";
+import { toggleTheme } from "@/Hook/theme";
+import { Head, usePage } from "@inertiajs/react";
 import {
     Bell,
     Calendar,
@@ -16,40 +18,19 @@ import {
     Wallet,
     X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function UserProfile() {
     const [copiedReferral, setCopiedReferral] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-
-    // Dark mode from localStorage
-    const [mode, setMode] = useState(() => {
-        const stored = localStorage.getItem("darkMode");
-        return stored === "true" ? "dark" : "light";
-    });
-
-    const darkMode = mode === "dark";
-
-    useEffect(() => {
-        const handler = () => {
-            const stored = localStorage.getItem("darkMode");
-            setMode(stored === "true" ? "dark" : "light");
-        };
-        window.addEventListener("storage", handler);
-        return () => window.removeEventListener("storage", handler);
-    }, []);
-
-    const toggleDarkMode = () => {
-        const next = !darkMode;
-        localStorage.setItem("darkMode", next.toString());
-        setMode(next ? "dark" : "light");
-    };
-
+    const { user } = usePage().props;
     const handleCopyReferral = () => {
         navigator.clipboard.writeText("https://t.me/yourbot?start=SAFAROV_SH");
         setCopiedReferral(true);
         setTimeout(() => setCopiedReferral(false), 2000);
     };
+
+    console.log(user);
 
     const stats = [
         {
@@ -103,43 +84,48 @@ function UserProfile() {
         },
     ];
 
+    const createdDate = new Date(user.created_at);
+
+    // Format as DD.MM.YYYY
+    const day = String(createdDate.getDate()).padStart(2, "0");
+    const month = String(createdDate.getMonth() + 1).padStart(2, "0"); // Month is 0-based
+    const year = createdDate.getFullYear();
+
+    const formattedDate = `${day}.${month}.${year}`;
+
     return (
-        <div
-            className={`min-h-[calc(100vh-140px)] px-4 py-6 pb-24 ${
-                darkMode
-                    ? "bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"
-                    : "bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50"
-            }`}
-        >
+        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8  bg-linear-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 from-slate-50 via-blue-50 to-indigo-50 transition-all">
+            <Head>
+                <title>User Profile</title>
+            </Head>
+
             <div className="max-w-4xl mx-auto">
-                {/* Header */}
-                <div className="bg-linear-to-br from-blue-600 via-indigo-600 to-violet-600 rounded-3xl p-5 sm:p-8 mb-6 shadow-xl">
+                <div className=" bg-linear-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-3xl p-5 sm:p-8 mb-6 shadow-xl transition-colors duration-300 ">
                     <div className="flex items-center gap-4 mb-5">
                         <div className="bg-white/20 p-3 sm:p-4 rounded-2xl border-4 border-white/30">
-                            <User className="size-12 sm:size-16 text-white" />
+                            <User className="size-6 sm:size-16 text-white" />
                         </div>
                         <div className="flex-1">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                                SAFAROV_SH
+                            <h1 className="text-xl sm:text-3xl font-bold text-white">
+                                {user.username}
                             </h1>
                             <div className="flex items-center gap-2 text-white/90 text-sm">
                                 <Calendar className="size-4" />
-                                <span>A'zo: Yanvar 2025</span>
+                                <span>A'zo: {formattedDate}</span>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowSettings(true)}
                             className="bg-white/20 p-3 rounded-xl hover:bg-white/30"
                         >
-                            <Settings className="size-6 text-white" />
+                            <Settings className="size-4 md:size-6  text-white" />
                         </button>
                     </div>
 
-                    {/* Balance */}
                     <div className="bg-white/10 rounded-2xl p-4 border border-white/20 flex items-center justify-between">
                         <div>
                             <p className="text-white/80 text-sm">Hisobingiz</p>
-                            <p className="text-3xl font-bold text-white">
+                            <p className="text-xl md:text-3xl font-bold text-white">
                                 0 USDT
                             </p>
                         </div>
@@ -156,11 +142,8 @@ function UserProfile() {
                         return (
                             <div
                                 key={stat.id}
-                                className={`rounded-2xl p-4 sm:p-6 border ${
-                                    darkMode
-                                        ? "bg-slate-800/80 border-slate-700 text-white"
-                                        : "bg-white/80 border-slate-100"
-                                }`}
+                                className="backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all
+                            dark:bg-slate-800/80 dark:border-slate-700 bg-white/80 border-slate-100 border dark:text-white"
                             >
                                 <div
                                     className={`bg-linear-to-br ${stat.color} w-11 h-11 rounded-xl flex items-center justify-center mb-2`}
@@ -177,7 +160,6 @@ function UserProfile() {
                         );
                     })}
                 </div>
-
                 {/* Invite Friends */}
                 <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-5 sm:p-8 mb-6 shadow-xl">
                     <div className="flex gap-4 mb-4">
@@ -233,47 +215,35 @@ function UserProfile() {
                 </div>
             </div>
 
-            {/* Settings Bottom Sheet */}
+            {/* Settings Modal */}
             {showSettings && (
-                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
-                    <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b sticky top-0 bg-white">
-                            <h2 className="text-lg font-bold">Sozlamalar</h2>
+                <div className="fixed inset-0 bg-black/50 z-9999 flex items-center justify-center">
+                    <div className="w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b dark:border-zinc-400 sticky top-0 bg-white dark:bg-zinc-900">
+                            <h2 className="text-lg font-bold dark:text-white">
+                                Sozlamalar
+                            </h2>
                             <button
                                 onClick={() => setShowSettings(false)}
-                                className="p-2 rounded-xl bg-slate-100"
+                                className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-800 dark:text-white"
                             >
                                 <X className="size-5" />
                             </button>
                         </div>
 
                         <div className="p-4 space-y-4">
-                            {/* Dark Mode */}
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border">
+                            {/* Dark Mode Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border dark:border-zinc-700 dark:text-white">
                                 <div className="flex items-center gap-3">
-                                    {darkMode ? <Moon /> : <Sun />}
-                                    <span className="font-semibold">
-                                        {darkMode
-                                            ? "Qorong'i rejim"
-                                            : "Yorug' rejim"}
-                                    </span>
+                                    <Moon className="dark:hidden" />
+                                    <Sun className="hidden dark:block" />
+                                    <span className="font-semibold">Theme</span>
                                 </div>
                                 <button
-                                    onClick={toggleDarkMode}
-                                    className={`relative w-14 h-8 rounded-full ${
-                                        darkMode
-                                            ? "bg-blue-600"
-                                            : "bg-slate-300"
-                                    }`}
+                                    onClick={toggleTheme}
+                                    className="relative w-14 h-8 rounded-full bg-slate-300 dark:bg-blue-600"
                                 >
-                                    <div
-                                        className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
-                                            darkMode
-                                                ? "translate-x-6"
-                                                : "translate-x-0"
-                                        }`}
-                                    />
+                                    <div className="absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform dark:translate-x-6" />
                                 </button>
                             </div>
 
@@ -282,34 +252,20 @@ function UserProfile() {
                                 return (
                                     <button
                                         key={opt.id}
-                                        onClick={() =>
-                                            opt.id === "logout" &&
-                                            alert("Hisobdan chiqildi")
-                                        }
-                                        className={`w-full flex gap-4 p-4 rounded-2xl border ${
+                                        className={`w-full flex gap-4 p-4 rounded-2xl border dark:text-white ${
                                             opt.danger
-                                                ? "bg-red-50 border-red-200"
-                                                : "bg-slate-50 border-slate-200"
+                                                ? "bg-red-50 border-red-200 dark:bg-red-900  dark:border-red-400"
+                                                : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
                                         }`}
                                     >
-                                        <div
-                                            className={`p-3 rounded-xl ${
-                                                opt.danger
-                                                    ? "bg-red-100"
-                                                    : "bg-linear-to-br from-blue-600 to-indigo-600"
-                                            }`}
-                                        >
-                                            <Icon
-                                                className={`size-5 ${opt.danger ? "text-red-600" : "text-white"}`}
-                                            />
+                                        <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600">
+                                            <Icon className="size-5 text-white" />
                                         </div>
                                         <div className="text-left">
-                                            <div
-                                                className={`font-semibold ${opt.danger ? "text-red-600" : "text-slate-900"}`}
-                                            >
+                                            <div className="font-semibold">
                                                 {opt.label}
                                             </div>
-                                            <div className="text-xs text-slate-600">
+                                            <div className="text-xs opacity-70">
                                                 {opt.description}
                                             </div>
                                         </div>
