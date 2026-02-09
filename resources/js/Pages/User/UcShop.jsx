@@ -1,29 +1,29 @@
 import UserLayout from "@/Components/Layout/UserLayout";
-import { Head, Link, usePage } from "@inertiajs/react";
-import { ArrowLeft, CheckCircle, Shield, Zap  , XIcon} from "lucide-react";
-import { useState } from "react";
-import UserProductCard from '../../Components/ui/UserProductCard'
-import PubgMobileBg from '@images/pubgMobileBg.webp';
+import PubgMobileBg from "@images/pubgMobileBg.webp";
 import UcIcon from "@images/ucMain.webp";
+import { Head, Link, usePage } from "@inertiajs/react";
+import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
+import { useState } from "react";
+import UserProductCard from "../../Components/ui/UserProductCard";
 
 function UcShop() {
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const { products, flash , user } = usePage().props;
+    const { products, flash, user } = usePage().props;
 
     const service = {
         title: "PUBG MOBILE",
         subtitle: "UC to'plami",
-        image:PubgMobileBg,
+        image: PubgMobileBg,
         color: "from-blue-500 to-blue-500",
         products: products,
     };
 
     const handlePurchase = () => {
-        setSelectedProduct(false)
+        setSelectedProduct(false);
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8">
+        <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8 dark:bg-slate-900">
             <Head title="UC shop" />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
@@ -33,7 +33,7 @@ function UcShop() {
             <div className="max-w-6xl mx-auto">
                 {/* Back Button */}
                 <Link href={"/user-services"}>
-                    <button className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors group">
+                    <button className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 hover:dark:text-slate-100 mb-6 transition-colors group ">
                         <ArrowLeft className="size-5 group-hover:-translate-x-1 transition-transform" />
                         <span className="font-medium">Orqaga</span>
                     </button>
@@ -45,7 +45,11 @@ function UcShop() {
                 >
                     <div className="flex items-center gap-4 mb-3">
                         <div className="bg-transparent backdrop-blur-sm p-0 rounded-2xl text-4xl">
-                            <img src={service.image} className='w-26 h-26 rounded-xl' alt="" />
+                            <img
+                                src={service.image}
+                                className="w-26 h-26 rounded-xl"
+                                alt=""
+                            />
                         </div>
                         <div className="flex-1">
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">
@@ -76,10 +80,10 @@ function UcShop() {
 
                 {/* Products Grid */}
                 <div className="mb-8">
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
                         Paketni tanlang
                     </h2>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {service.products.map((product) => (
                             <UserProductCard
                                 product={{
@@ -102,8 +106,11 @@ function UcShop() {
                             <h3 className="text-xl font-bold text-slate-900 mb-4">
                                 Buyurtma xulosasi
                             </h3>
-                            <button className='bg-transparent outline-0 absolute top-4 right-6 cursor-pointer hover:text-red-500 transition-all focus:text-red-500' onClick={()=>setSelectedProduct(null)}>
-                                <XIcon/>
+                            <button
+                                className="bg-transparent outline-0 absolute top-4 right-6 cursor-pointer hover:text-red-500 transition-all focus:text-red-500"
+                                onClick={() => setSelectedProduct(null)}
+                            >
+                                <XIcon />
                             </button>
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between items-center">
@@ -111,7 +118,12 @@ function UcShop() {
                                         Mahsulot:
                                     </span>
                                     <span className="font-semibold text-slate-900 flex items-center gap-2">
-                                        {selectedProduct.uc_amount} <img src={UcIcon} alt="" className='w-10 h-10 ' />
+                                        {selectedProduct.uc_amount}{" "}
+                                        <img
+                                            src={UcIcon}
+                                            alt=""
+                                            className="w-10 h-10 "
+                                        />
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
@@ -138,7 +150,9 @@ function UcShop() {
                                     </span>
                                     <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                                         {Number(
-                                            Math.floor(selectedProduct.sell_price),
+                                            Math.floor(
+                                                selectedProduct.sell_price,
+                                            ),
                                         ).toLocaleString("fr-FR", {
                                             maximumFractionDigits: 4, // keeps up to 4 decimals if needed
                                         })}{" "}
@@ -157,12 +171,12 @@ function UcShop() {
                 )}
 
                 {/* Info Section */}
-                <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-                    <h4 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <h4 className="font-semibold text-slate-900 mb-2 flex items-center gap-2 dark:text-white">
                         <Shield className="size-5 text-blue-600" />
                         Muhim ma'lumot
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-600">
+                    <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                         <li>
                             • Yetkazib berish 1-5 daqiqa ichida amalga
                             oshiriladi
