@@ -4,8 +4,6 @@ import Header from "../shared/header";
 import TelegramAuthBootstrap from "../TelegramAuthBootstrap";
 
 function UserLayout({ children }) {
-    const { user } = usePage().props;
-    const hasInitData = typeof window !== "undefined" && !!window.Telegram?.WebApp?.initData?.trim?.();
 
     return (
 

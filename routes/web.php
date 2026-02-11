@@ -21,7 +21,7 @@ Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
 Route::middleware(['auth'])->group(function () {
-    Route::middleware(middleware: ['telegram.webapp'])->group(function () {
+    Route::middleware(['telegram.webapp'])->group(function () {
         Route::get('/', function () {
             return Inertia::render('User/UserServices');
         });
