@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 
-class User extends Model
+class User extends Model implements AuthenticatableContract
 {
+    use Authenticatable;
+
     protected $table = 'users';
 
     protected $primaryKey = 'id';
@@ -19,11 +23,16 @@ class User extends Model
         'username',
         'phone_number',
         'role',
-        'created_at' => 'datetime',
+        'created_at',
     ];
 
     public function balance()
     {
         return $this->hasOne(UserBalance::class, 'user_id', 'id');
+    }
+
+    public function todos()
+    {
+        return $this->hasMany(UserTodo::class, 'user_id', 'id');
     }
 }
