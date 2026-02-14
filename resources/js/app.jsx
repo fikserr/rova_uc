@@ -5,12 +5,19 @@ import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
 import AdminLayout from "./Pages/Layout/AdminLayout";
 import UserLayout from "./Pages/Layout/UserLayout";
+import TelegramAuthBootstrap from "./Components/TelegramAuthBootstrap";
 
 import axios from "axios";
 
-/* ---------------------------------
-   AXIOS GLOBAL CONFIG
----------------------------------- */
+import { Ziggy } from "./ziggy";
+import { route } from "ziggy-js";
+
+if (typeof window !== "undefined") {
+    Ziggy.url = window.location.origin;
+}
+
+window.route = route;
+window.Ziggy = Ziggy;
 
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
@@ -20,21 +27,25 @@ axios.defaults.baseURL = window.location.origin;
    INERTIA APP
 ---------------------------------- */
 
+
 createInertiaApp({
     resolve: async (name) => {
         const pages = import.meta.glob("./Pages/**/*.jsx");
         const importPage = pages[`./Pages/${name}.jsx`];
 
-        if (!importPage) {
-            const NotFound = await pages["./Pages/Errors/NotFound.jsx"]();
-            return NotFound.default;
-        }
-
         const page = await importPage();
         const Component = page.default;
 
-        if (typeof Component.layout === "undefined") {
-            Component.layout = (pageElement) => {
+        const WrappedPage = (props) => (
+            <>
+                <TelegramAuthBootstrap />
+                <Component {...props} />
+            </>
+        );
+
+        WrappedPage.layout =
+            Component.layout ??
+            ((pageElement) => {
                 if (pageElement?.props?.auth?.user) {
                     const isAdmin =
                         pageElement?.props?.auth?.user?.role === "admin";
@@ -46,10 +57,9 @@ createInertiaApp({
                 } else {
                     return pageElement;
                 }
-            };
-        }
+            });
 
-        return Component;
+        return WrappedPage;
     },
 
     setup({ el, App, props }) {
@@ -60,3 +70,4 @@ createInertiaApp({
         color: "#3B82F6",
     },
 });
+
