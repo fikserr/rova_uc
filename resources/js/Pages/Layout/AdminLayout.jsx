@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Sidebar } from "../Sidebar";
 import React from "react";
-import TelegramAuthBootstrap from "../TelegramAuthBootstrap";
+import { Sidebar } from "../../Components/Sidebar";
 export default function AdminLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 

@@ -1,4 +1,3 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
 import { Head, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
@@ -226,4 +225,3 @@ export default function UcProducts() {
         </div>
     );
 }
-UcProducts.layout = (page) => <AdminLayout>{page}</AdminLayout>;

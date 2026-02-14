@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { Head } from "@inertiajs/react";
 import {
     CheckCircle,
@@ -135,11 +134,15 @@ function UserBalance() {
                                     <div className="mt-4 space-y-2 text-xs">
                                         <div className="flex items-center gap-2">
                                             <TrendingDown className="size-4 text-emerald-500" />
-                                            <span className='text-slate-800 dark:text-slate-50'>Komissiya: {method.fee}</span>
+                                            <span className="text-slate-800 dark:text-slate-50">
+                                                Komissiya: {method.fee}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Clock className="size-4 text-blue-500" />
-                                            <span className='text-slate-800 dark:text-slate-50'>Vaqt: {method.time}</span>
+                                            <span className="text-slate-800 dark:text-slate-50">
+                                                Vaqt: {method.time}
+                                            </span>
                                         </div>
                                     </div>
                                 </button>
@@ -182,6 +185,5 @@ function UserBalance() {
         </>
     );
 }
-UserBalance.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default UserBalance;

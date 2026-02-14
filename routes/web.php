@@ -20,7 +20,7 @@ Route::post('/telegram/webapp/session', [TelegramWebAppController::class, 'sessi
 Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
-Route::middleware(['auth'])->group(function () {
+// Route::middleware(['auth'])->group(function () {
     Route::middleware(['telegram.webapp'])->group(function () {
         Route::get('/', function () {
             return Inertia::render('User/UserServices');
@@ -130,4 +130,4 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/user-todos/{todo}', [UserTodoController::class, 'toggle'])->name('user-todos.toggle');
         Route::delete('/user-todos/{todo}', [UserTodoController::class, 'destroy'])->name('user-todos.destroy');
     });
-});
+// });

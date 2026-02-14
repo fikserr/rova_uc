@@ -14,7 +14,7 @@ const Header = () => {
         >
             <div className="flex gap-4 items-center">
                 <img
-                    src={user.photo_url? user.photo_url : "https://www.freeiconspng.com/uploads/pubg-circle-battlegrounds-photo-23.png"}
+                    src={"https://www.freeiconspng.com/uploads/pubg-circle-battlegrounds-photo-23.png"}
                     alt="Profile"
                     className="w-10 h-10"
                 />

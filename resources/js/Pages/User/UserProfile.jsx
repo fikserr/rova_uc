@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { toggleTheme } from "@/Hook/theme";
 import { Head, usePage } from "@inertiajs/react";
 import {
@@ -280,5 +279,4 @@ function UserProfile() {
     );
 }
 
-UserProfile.layout = (page) => <UserLayout>{page}</UserLayout>;
 export default UserProfile;

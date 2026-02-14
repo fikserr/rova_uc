@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import PubgMobileBg from "@images/pubgMobileBg.webp";
 import UcIcon from "@images/ucMain.webp";
 import { Head, Link, usePage } from "@inertiajs/react";
@@ -192,6 +191,5 @@ function UcShop() {
         </div>
     );
 }
-UcShop.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default UcShop;

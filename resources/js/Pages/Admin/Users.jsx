@@ -1,4 +1,3 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
 import { Head } from "@inertiajs/react";
 import { Ban, Eye, Search } from "lucide-react";
 import { useState } from "react";
@@ -387,5 +386,4 @@ function Users({ users }) {
         </div>
     );
 }
-Users.layout = (page) => <AdminLayout>{page}</AdminLayout>;
 export default Users;

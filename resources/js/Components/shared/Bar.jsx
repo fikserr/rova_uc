@@ -40,6 +40,7 @@ function Bar() {
         },
     ];
 
+
     return (
         <nav
             className={`fixed bottom-0 left-0 right-0 border-t  z-50 transition-colors duration-300 bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-800 py-0 shadow-black pb-[env(safe-area-inset-bottom)] `}

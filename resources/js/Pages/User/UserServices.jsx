@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import MlbbDesktop from "@images/mlbb_desktop.webp";
 import MlbbMobile from "@images/mlbb_mobile.webp";
 import PubgDesktop from "@images/pubg_desktop.webp";
@@ -257,5 +256,4 @@ function UserServices() {
     );
 }
 
-UserServices.layout = (page) => <UserLayout>{page}</UserLayout>;
 export default UserServices;

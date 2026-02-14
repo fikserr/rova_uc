@@ -1,5 +1,4 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
-import { useForm, usePage , Head } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
 import ProductCard from "../../Components/ui/productCard";
@@ -272,4 +271,3 @@ export default function Services() {
         </div>
     );
 }
-Services.layout = (page) => <AdminLayout>{page}</AdminLayout>;

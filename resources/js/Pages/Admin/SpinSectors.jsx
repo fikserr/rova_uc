@@ -1,4 +1,3 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
 import { useForm, usePage } from "@inertiajs/react";
 import { Edit2, Palette, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { useState } from "react";
@@ -342,4 +341,3 @@ const Row = ({ label, value }) => (
     </div>
 );
 
-SpinSectors.layout = (page) => <AdminLayout>{page}</AdminLayout>;

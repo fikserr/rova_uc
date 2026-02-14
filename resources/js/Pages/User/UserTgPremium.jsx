@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useState } from "react";
@@ -191,7 +190,5 @@ function UserTgPremium() {
         </div>
     );
 }
-
-UserTgPremium.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default UserTgPremium;

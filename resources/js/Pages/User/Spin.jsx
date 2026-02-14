@@ -1,4 +1,4 @@
-import UserLayout from "@/Components/Layout/UserLayout";
+
 import { Head, usePage } from "@inertiajs/react";
 import { Gift, Lock, Sparkles, Trophy } from "lucide-react";
 import { useState } from "react";
@@ -326,5 +326,4 @@ function Spin() {
     );
 }
 
-Spin.layout = (page) => <UserLayout>{page}</UserLayout>;
 export default Spin;
