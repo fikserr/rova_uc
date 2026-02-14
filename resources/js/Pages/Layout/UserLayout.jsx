@@ -1,7 +1,6 @@
 import { usePage } from "@inertiajs/react";
-import Bar from "../shared/Bar";
-import Header from "../shared/header";
-import TelegramAuthBootstrap from "../TelegramAuthBootstrap";
+import Header from "../../Components/shared/header";
+import Bar from '../../Components/shared/Bar'
 
 function UserLayout({ children }) {
 
@@ -17,7 +16,7 @@ function UserLayout({ children }) {
                 <main className="w-full h-full flex-1 p-0 my-14  bg-transparent">
                     {children}
                 </main>
-                <Bar />
+                <Bar/>
             </div>
         </>
 

@@ -1,4 +1,3 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
 import { Head, useForm, usePage } from "@inertiajs/react";
 import { Edit2 } from "lucide-react";
 import { useState } from "react";
@@ -339,5 +338,3 @@ export default function Currencies() {
         </div>
     );
 }
-
-Currencies.layout = (page) => <AdminLayout>{page}</AdminLayout>;

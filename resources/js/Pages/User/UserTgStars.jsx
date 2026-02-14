@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useState } from "react";
@@ -187,7 +186,5 @@ function UserTgStars() {
         </div>
     );
 }
-
-UserTgStars.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default UserTgStars;

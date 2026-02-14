@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { Head } from "@inertiajs/react";
 import {
     CheckCircle,
@@ -273,7 +272,5 @@ function UserPurchases() {
         </div>
     );
 }
-
-UserPurchases.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default UserPurchases;

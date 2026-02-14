@@ -1,8 +1,7 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
-import ProductCard from '../../Components/ui/productCard'
-import { Head, useForm, usePage } from "@inertiajs/react";
+import ProductCard from "../../Components/ui/productCard";
 export default function MlProducts() {
     const { products, flash } = usePage().props;
     const [editing, setEditing] = useState(null);
@@ -77,10 +76,11 @@ export default function MlProducts() {
                 <meta name="description" content="Your page description" />
             </Head>
             <TopBar
-            setEditing={setEditing}
-            setFormOpen={setFormOpen}
-            reset={reset}
-            pageFor={"diamonds"} />
+                setEditing={setEditing}
+                setFormOpen={setFormOpen}
+                reset={reset}
+                pageFor={"diamonds"}
+            />
 
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">
@@ -94,7 +94,7 @@ export default function MlProducts() {
                     products.map((product) => {
                         return (
                             <ProductCard
-                                cardFor={'diamonds'}
+                                cardFor={"diamonds"}
                                 key={product.id}
                                 product={product}
                                 onEdit={editProduct}
@@ -195,7 +195,9 @@ export default function MlProducts() {
                                         setData("cost_currency", e.target.value)
                                     }
                                 >
-                                    <option value="none">Valyuta tanlang</option>
+                                    <option value="none">
+                                        Valyuta tanlang
+                                    </option>
                                     <option value="USD">USD</option>
                                     <option value="UZS">UZS</option>
                                     <option value="IQD">IQD</option>
@@ -224,5 +226,3 @@ export default function MlProducts() {
         </div>
     );
 }
-
-MlProducts.layout = (page) => <AdminLayout>{page}</AdminLayout>;

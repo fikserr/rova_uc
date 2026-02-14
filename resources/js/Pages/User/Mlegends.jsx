@@ -1,4 +1,3 @@
-import UserLayout from "@/Components/Layout/UserLayout";
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, Zap , XIcon } from "lucide-react";
 import { useState } from "react";
@@ -177,6 +176,5 @@ function Mlegends() {
         </div>
     );
 }
-Mlegends.layout = (page) => <UserLayout>{page}</UserLayout>;
 
 export default Mlegends;

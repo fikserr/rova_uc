@@ -1,4 +1,3 @@
-import AdminLayout from "@/Components/Layout/AdminLayout";
 import { useForm, usePage } from "@inertiajs/react";
 import { Plus, Settings } from "lucide-react";
 import { useState } from "react";
@@ -323,5 +322,3 @@ export default function SpinRules() {
         </div>
     );
 }
-
-SpinRules.layout = (page) => <AdminLayout>{page}</AdminLayout>;

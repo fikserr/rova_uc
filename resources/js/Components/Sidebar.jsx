@@ -9,6 +9,7 @@ import {
     LuStar,
     LuUser,
 } from "react-icons/lu";
+
 export function Sidebar({ isOpen = true, onClose }) {
     const { url } = usePage();
 
