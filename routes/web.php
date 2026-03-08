@@ -17,7 +17,7 @@ use Inertia\Inertia;
 // Telegram WebView: session login via initData (no login/password)
 // NOTE: No middleware here - controller does its own verification via TelegramAuthService::verify()
 Route::post('/telegram/webapp/session', [TelegramWebAppController::class, 'sessionLogin'])
-    ->name('telegram.webapp.session');  
+    ->name('telegram.webapp.session');
 
 Route::get('/login', function () {
     return Inertia::render('Auth/Login');
@@ -117,6 +117,9 @@ Route::middleware(['auth'])->group(function () {
         });
         Route::get('/user-purchases', function () {
             return Inertia::render('User/UserPurchases');
+        });
+        Route::get('/user-profile/security', function () {
+            return Inertia::render('User/UserSecurity');
         });
         Route::get('/user-products-uc', action: [UcProductController::class, 'userIndex'])
             ->name('user-products-uc.index');

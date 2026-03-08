@@ -11,21 +11,21 @@ use Illuminate\Support\Facades\Hash;
 class PasswordController extends Controller
 {
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'id' => ['required', 'exists:users,id'],
-            'password' => ['required', 'min:6'],
-        ]);
+{
+    $data = $request->validate([
+        'id' => ['required', 'exists:users,id'],
+        'password' => ['required', 'min:8'],
+    ]);
 
-        Password::create([
-            'user_id' => $data['user_id'],
-            'password' => Hash::make($data['password']),
-        ]);
+    Password::create([
+        'user_id' => $data['id'],
+        'password' => Hash::make($data['password']),
+    ]);
 
-        return response()->json([
-            'success' => true
-        ]);
-    }
+    return response()->json([
+        'success' => true
+    ]);
+}
     public function update(Request $request, $userId)
     {
         $data = $request->validate([
