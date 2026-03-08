@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Loader } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors } = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false,
     });
@@ -47,14 +47,12 @@ export default function Login({ status, canResetPassword }) {
                             <div className="relative">
                                 <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                                 <input
-                                    type="username"
-                                    id="username"
+                                    type="text"
                                     placeholder="telegram username"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-                                        errors.email ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    value={data.username}
+                                    onChange={(e) => setData('username', e.target.value)}
+                                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
                             </div>
                             {errors.email && (
@@ -75,9 +73,8 @@ export default function Login({ status, canResetPassword }) {
                                     placeholder="••••••••"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-                                        errors.password ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
                                 <button
                                     type="button"

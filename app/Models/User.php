@@ -24,4 +24,19 @@ class User extends Authenticatable
      * The primary key type is integer (unsignedBigInteger)
      */
     protected $keyType = 'int';
+
+
+    public function balance()
+    {
+        return $this->hasOne(UserBalance::class, 'user_id', 'id');
+    }
+
+    public function todos()
+    {
+        return $this->hasMany(UserTodo::class, 'user_id', 'id');
+    }
+    public function password()
+    {
+        return $this->hasOne(Password::class, 'user_id', 'id');
+    }
 }

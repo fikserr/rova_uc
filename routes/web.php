@@ -8,7 +8,8 @@ use App\Http\Controllers\Admin\SpinSectorController;
 use App\Http\Controllers\Admin\UcProductController;
 use App\Http\Controllers\Api\TelegramWebAppController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\UserTodoController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::post('/telegram/webapp/session', [TelegramWebAppController::class, 'sessi
 Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
+Route::post('/login', [LoginController::class, 'store']);
+Route::post('/logout', [LoginController::class, 'destroy']);
 
 Route::middleware(['auth'])->group(function () {
     Route::middleware(['telegram.webapp'])->group(function () {

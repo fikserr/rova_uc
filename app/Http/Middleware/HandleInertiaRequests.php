@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'username' => $user->username,
                     'phone_number' => $user->phone_number,
+                    'hasPassword' => $user->password()->exists(),
                     'role' => $user->role,
                 ] : null,
             ],
@@ -52,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                 'username' => $user->username,
                 'phone_number' => $user->phone_number,
                 'role' => $user->role,
+                'hasPassword' => $user->password()->exists(),
             ] : null,
         ]);
     }
