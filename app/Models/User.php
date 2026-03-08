@@ -2,20 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class User extends Model implements AuthenticatableContract
+class User extends Authenticatable
 {
-    use Authenticatable;
+    use HasFactory, Notifiable;
 
-    protected $table = 'users';
-
-    protected $primaryKey = 'id';
     public $incrementing = false;
-    protected $keyType = 'int';
-
     public $timestamps = false;
 
     protected $fillable = [
@@ -23,16 +18,10 @@ class User extends Model implements AuthenticatableContract
         'username',
         'phone_number',
         'role',
-        'created_at',
     ];
 
-    public function balance()
-    {
-        return $this->hasOne(UserBalance::class, 'user_id', 'id');
-    }
-
-    public function todos()
-    {
-        return $this->hasMany(UserTodo::class, 'user_id', 'id');
-    }
+    /**
+     * The primary key type is integer (unsignedBigInteger)
+     */
+    protected $keyType = 'int';
 }

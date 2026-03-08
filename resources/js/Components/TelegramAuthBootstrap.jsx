@@ -12,7 +12,10 @@ export default function TelegramAuthBootstrap() {
     useEffect(() => {
         if (tried.current) return;
         const user = props?.auth?.user ?? props?.user ?? null;
-        if (user) return;
+        if (user) {
+            console.log('✅ User already authenticated:', user);
+            return;
+        }
 
         const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
         let initData = tg?.initData?.trim?.();
@@ -20,7 +23,10 @@ export default function TelegramAuthBootstrap() {
             const m = window.location.hash.match(/tgWebAppData=(.+)$/);
             if (m) initData = decodeURIComponent(m[1]);
         }
-        if (!initData?.trim?.()) return;
+        if (!initData?.trim?.()) {
+            console.log('⚠️ No Telegram initData found');
+            return;
+        }
         initData = initData.trim();
 
         tried.current = true;
@@ -38,6 +44,7 @@ export default function TelegramAuthBootstrap() {
             headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken);
         }
 
+        console.log('📤 Sending Telegram initData to backend...');
         fetch(route('telegram.webapp.session'), {
             method: 'POST',
             headers,
@@ -45,9 +52,16 @@ export default function TelegramAuthBootstrap() {
             body: JSON.stringify({ init_data: initData }),
         })
             .then((r) => {
-                if (r.ok) router.reload();
+                if (r.ok) {
+                    console.log('✅ Auth successful, reloading...');
+                    router.reload();
+                } else {
+                    console.error('❌ Auth failed, status', r.status);
+                }
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.error('❌ Telegram auth request error', err);
+            });
     }, [props?.auth?.user, props?.user]);
 
     return null;

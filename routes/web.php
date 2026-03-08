@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\SpinSectorController;
 use App\Http\Controllers\Admin\UcProductController;
 use App\Http\Controllers\Api\TelegramWebAppController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\User\UserTodoController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,10 +17,12 @@ use Inertia\Inertia;
 // Telegram WebView: session login via initData (no login/password)
 // NOTE: No middleware here - controller does its own verification via TelegramAuthService::verify()
 Route::post('/telegram/webapp/session', [TelegramWebAppController::class, 'sessionLogin'])
-    ->name('telegram.webapp.session');
+    ->name('telegram.webapp.session');  
+
 Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
+
 Route::middleware(['auth'])->group(function () {
     Route::middleware(['telegram.webapp'])->group(function () {
         Route::get('/', function () {
@@ -101,7 +104,8 @@ Route::middleware(['auth'])->group(function () {
 
 
         // userlar uchun route lar shu yerda bo'ladi
-
+        Route::post('/password', [PasswordController::class, 'store']);
+        Route::put('/password/{user}', [PasswordController::class, 'update']);
         Route::get('/user-services', function () {
             return Inertia::render('User/UserServices');
         });

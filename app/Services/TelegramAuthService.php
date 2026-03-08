@@ -59,6 +59,16 @@ class TelegramAuthService
         $calculatedHashA = hash_hmac('sha256', $dataCheckString, $secretKeyA);
         $calculatedHashB = hash_hmac('sha256', $dataCheckString, $secretKeyB);
 
+        \Log::debug('Hash verification', [
+            'received_hash' => $hash,
+            'calculated_hash_a' => $calculatedHashA,
+            'calculated_hash_b' => $calculatedHashB,
+            'data_check_string' => $dataCheckString,
+            'bot_token' => substr($botToken, 0, 10) . '...',
+            'match_a' => hash_equals($calculatedHashA, $hash),
+            'match_b' => hash_equals($calculatedHashB, $hash),
+        ]);
+
         if (! hash_equals($calculatedHashA, $hash) && ! hash_equals($calculatedHashB, $hash)) {
             return config('app.debug') ? ['_fail' => 'hash_mismatch'] : null;
         }

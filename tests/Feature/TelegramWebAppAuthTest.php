@@ -16,7 +16,7 @@ class TelegramWebAppAuthTest extends TestCase
     #[Test]
     public function it_authenticates_user_with_valid_telegram_init_data(): void
     {
-        // Create a mock valid initData
+        // Use the actual bot token from config (not a dummy)
         $botToken = config('services.telegram.bot_token');
         
         // Simulate valid Telegram initData
@@ -29,11 +29,13 @@ class TelegramWebAppAuthTest extends TestCase
         ]);
         
         $authDate = time();
-        $dataCheckString = "auth_date=$authDate\nuser=" . urlencode($userData);
+        // Data check string uses DECODED (non-URL-encoded) values, sorted alphabetically
+        $dataCheckString = "auth_date=$authDate\nuser=$userData";
         
         $secretKey = hash_hmac('sha256', 'WebAppData', $botToken, true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
         
+        // But initData sent to backend must have URL-encoded user value
         $initData = "auth_date=$authDate&user=" . urlencode($userData) . "&hash=$hash";
         
         // Test the auth endpoint
@@ -109,7 +111,7 @@ class TelegramWebAppAuthTest extends TestCase
         ]);
         
         $authDate = time();
-        $dataCheckString = "auth_date=$authDate\nuser=" . urlencode($userData);
+        $dataCheckString = "auth_date=$authDate\nuser=$userData";
         
         $secretKey = hash_hmac('sha256', 'WebAppData', $botToken, true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
@@ -152,7 +154,7 @@ class TelegramWebAppAuthTest extends TestCase
         ]);
         
         $authDate = time();
-        $dataCheckString = "auth_date=$authDate\nuser=" . urlencode($userData);
+        $dataCheckString = "auth_date=$authDate\nuser=$userData";
         
         $secretKey = hash_hmac('sha256', 'WebAppData', $botToken, true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
