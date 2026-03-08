@@ -18,7 +18,11 @@ const Header = () => {
                     alt="Profile"
                     className="w-10 h-10"
                 />
-                <h1 className="text-lg font-bold">{user?.username}</h1>
+                <h1 className="text-lg font-bold">
+                    {user?.username.length > 12
+							? user?.username.slice(0, 12) + '…'
+							: user?.username}
+                </h1>
             </div>
             <div className="w-max px-4 py-2 border-2 border-blue-500 rounded-full">
                 <p className="text-base text-blue-500 ">

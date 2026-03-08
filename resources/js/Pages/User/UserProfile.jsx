@@ -1,5 +1,5 @@
 import { toggleTheme } from "@/Hook/theme";
-import { Head, usePage } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import {
     Bell,
     Calendar,
@@ -70,9 +70,9 @@ function UserProfile() {
         },
         {
             id: "security",
-            label: "Xavfsizlik",
+            label: "Parol va xavfsizlik",
             icon: Lock,
-            description: "Parol va xavfsizlik",
+            link: "/user-profile/security",
         },
         {
             id: "logout",
@@ -106,7 +106,9 @@ function UserProfile() {
                         </div>
                         <div className="flex-1">
                             <h1 className="text-xl sm:text-3xl font-bold text-white">
-                                {user.username}
+                                {user.username.length > 12
+                                    ? user.username.slice(0, 12) + "…"
+                                    : user.username}
                             </h1>
                             <div className="flex items-center gap-2 text-white/90 text-sm">
                                 <Calendar className="size-4" />
@@ -249,26 +251,31 @@ function UserProfile() {
                             {settingsOptions.map((opt) => {
                                 const Icon = opt.icon;
                                 return (
-                                    <button
-                                        key={opt.id}
-                                        className={`w-full flex gap-4 p-4 rounded-2xl border dark:text-white ${
-                                            opt.danger
-                                                ? "bg-red-50 border-red-200 dark:bg-red-900  dark:border-red-400"
-                                                : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
-                                        }`}
+                                    <Link
+                                        href={opt.link || "#"}
+                                        className="w-full "
                                     >
-                                        <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600">
-                                            <Icon className="size-5 text-white" />
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="font-semibold">
-                                                {opt.label}
+                                        <button
+                                            key={opt.id}
+                                            className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border dark:text-white ${
+                                                opt.danger
+                                                    ? "bg-red-50 border-red-200 dark:bg-red-900  dark:border-red-400"
+                                                    : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
+                                            }`}
+                                        >
+                                            <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600">
+                                                <Icon className="size-5 text-white" />
                                             </div>
-                                            <div className="text-xs opacity-70">
-                                                {opt.description}
+                                            <div className="text-left flex flex-col  justify-center ">
+                                                <div className="font-semibold">
+                                                    {opt.label}
+                                                </div>
+                                                <div className="text-xs opacity-70">
+                                                    {opt.description}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </button>
+                                        </button>
+                                    </Link>
                                 );
                             })}
                         </div>
