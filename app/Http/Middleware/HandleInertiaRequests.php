@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\UserBalance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -37,6 +38,9 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $balance = $user
+            ? (UserBalance::where('user_id', $user->id)->value('balance') ?? 0)
+            : 0;
 
         return array_merge(parent::share($request), [
             'auth' => [
@@ -46,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                     'phone_number' => $user->phone_number,
                     'hasPassword' => $user->password()->exists(),
                     'role' => $user->role,
+                    'balance' => $balance,
                 ] : null,
             ],
             'user' => $user ? [
@@ -54,6 +59,7 @@ class HandleInertiaRequests extends Middleware
                 'phone_number' => $user->phone_number,
                 'role' => $user->role,
                 'hasPassword' => $user->password()->exists(),
+                'balance' => $balance,
             ] : null,
         ]);
     }

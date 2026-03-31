@@ -29,7 +29,14 @@ class TelegramWebAppController extends Controller
             return response()->json(['message' => 'Missing user data'], 422);
         }
 
-        $user = $this->upsertUser($userPayload);
+        $user = $this->findRegisteredUser($userPayload);
+        if (! $user) {
+            Log::warning('Telegram authenticate rejected: user not registered', [
+                'telegram_id' => $userPayload['id'] ?? null,
+                'username' => $userPayload['username'] ?? null,
+            ]);
+            return response()->json(['message' => 'User is not registered via bot'], 403);
+        }
 
         return response()->json([
             'status' => 'ok',
@@ -70,7 +77,15 @@ class TelegramWebAppController extends Controller
         }
 
         try {
-            $user = $this->upsertUser($userPayload);
+            $user = $this->findRegisteredUser($userPayload);
+            if (! $user) {
+                Log::warning('Telegram sessionLogin rejected: user not registered', [
+                    'telegram_id' => $userPayload['id'] ?? null,
+                    'username' => $userPayload['username'] ?? null,
+                ]);
+                return response()->json(['message' => 'User is not registered via bot'], 403);
+            }
+
             Auth::login($user, false);
             return response()->json([
                 'status' => 'ok',
@@ -89,7 +104,14 @@ class TelegramWebAppController extends Controller
             return response()->json(['message' => 'Missing user data'], 422);
         }
 
-        $user = $this->upsertUser($userPayload);
+        $user = $this->findRegisteredUser($userPayload);
+        if (! $user) {
+            Log::warning('Telegram me rejected: user not registered', [
+                'telegram_id' => $userPayload['id'] ?? null,
+                'username' => $userPayload['username'] ?? null,
+            ]);
+            return response()->json(['message' => 'User is not registered via bot'], 403);
+        }
 
         return response()->json([
             'status' => 'ok',
@@ -114,16 +136,12 @@ class TelegramWebAppController extends Controller
         return $user;
     }
 
-    private function upsertUser(array $userPayload): User
+    private function findRegisteredUser(array $userPayload): ?User
     {
-        $user = User::firstOrCreate(
-            ['id' => $userPayload['id']],
-            [
-                'username' => $userPayload['username'] ?? null,
-                'role' => 'user',
-                'created_at' => now(),
-            ]
-        );
+        $user = User::find($userPayload['id']);
+        if (! $user) {
+            return null;
+        }
 
         if (($userPayload['username'] ?? null) && $user->username !== $userPayload['username']) {
             $user->update(['username' => $userPayload['username']]);

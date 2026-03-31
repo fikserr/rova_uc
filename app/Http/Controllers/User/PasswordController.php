@@ -6,27 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Password;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class PasswordController extends Controller
 {
     public function store(Request $request)
     {
-        Log::info('Password store request', $request->all());
-
         $data = $request->validate([
             'password' => ['required', 'min:8'],
         ]);
 
-        $userId = auth()->id();
-
-        Password::create([
-            'user_id' => $userId,
+        Password::updateOrCreate([
+            'user_id' => auth()->id(),
+        ], [
             'password' => Hash::make($data['password']),
-        ]);
-
-        Log::info('Password created', [
-            'user_id' => $userId
         ]);
 
         return back()->with('success', 'Password saved successfully');
@@ -34,10 +26,7 @@ class PasswordController extends Controller
 
     public function update(Request $request, $userId)
     {
-        Log::info('Password update request', [
-            'user_id' => $userId,
-            'request' => $request->all()
-        ]);
+        abort_unless((int) $userId === (int) auth()->id(), 403);
 
         $data = $request->validate([
             'current_password' => ['required'],
@@ -46,30 +35,20 @@ class PasswordController extends Controller
 
         $password = Password::where('user_id', $userId)->first();
 
-        if (!$password) {
+        if (! $password) {
             return back()->withErrors([
-                'current_password' => 'Password topilmadi'
+                'current_password' => 'Password topilmadi',
             ]);
         }
 
-        // eski parolni tekshiramiz
-        if (!Hash::check($data['current_password'], $password->password)) {
-
-            Log::warning('Wrong current password', [
-                'user_id' => $userId
-            ]);
-
+        if (! Hash::check($data['current_password'], $password->password)) {
             return back()->withErrors([
-                'current_password' => 'Eski parolingiz to‘g‘ri emas'
+                'current_password' => "Eski parolingiz to'g'ri emas",
             ]);
         }
 
         $password->update([
-            'password' => Hash::make($data['password'])
-        ]);
-
-        Log::info('Password updated', [
-            'user_id' => $userId
+            'password' => Hash::make($data['password']),
         ]);
 
         return back()->with('success', 'Password updated successfully');

@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\UserBalance;
-use App\Services\TelegramAuthService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -19,6 +17,12 @@ class TelegramWebAppAuthTest extends TestCase
         // Use the actual bot token from config (not a dummy)
         $botToken = config('services.telegram.bot_token');
         
+        User::create([
+            'id' => 123456789,
+            'username' => 'testuser',
+            'role' => 'user',
+        ]);
+
         // Simulate valid Telegram initData
         // Format: param1=value1&param2=value2&...&hash=signature
         $userData = json_encode([
@@ -50,14 +54,14 @@ class TelegramWebAppAuthTest extends TestCase
             'user' => ['id', 'username', 'role'],
         ]);
         
-        // User should be created in database
+        // User should exist in database
         $this->assertDatabaseHas('users', [
             'id' => 123456789,
             'username' => 'testuser',
             'role' => 'user',
         ]);
         
-        // UserBalance should be created
+        // UserBalance should be ensured
         $this->assertDatabaseHas('user_balances', [
             'user_id' => 123456789,
             'balance' => 0,
@@ -108,6 +112,12 @@ class TelegramWebAppAuthTest extends TestCase
             'id' => 987654321,
             'first_name' => 'John',
             'username' => 'johnuser',
+        ]);
+
+        User::create([
+            'id' => 987654321,
+            'username' => 'johnuser',
+            'role' => 'user',
         ]);
         
         $authDate = time();
@@ -174,6 +184,34 @@ class TelegramWebAppAuthTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => 555555555,
             'username' => 'newusername',
+        ]);
+    }
+
+    #[Test]
+    public function it_rejects_valid_init_data_when_user_is_not_registered(): void
+    {
+        $botToken = config('services.telegram.bot_token');
+
+        $userData = json_encode([
+            'id' => 222333444,
+            'first_name' => 'No',
+            'username' => 'notregistered',
+        ]);
+
+        $authDate = time();
+        $dataCheckString = "auth_date=$authDate\nuser=$userData";
+        $secretKey = hash_hmac('sha256', 'WebAppData', $botToken, true);
+        $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
+
+        $initData = "auth_date=$authDate&user=" . urlencode($userData) . "&hash=$hash";
+
+        $response = $this->postJson('/telegram/webapp/session', [
+            'init_data' => $initData,
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJsonFragment([
+            'message' => 'User is not registered via bot',
         ]);
     }
 }

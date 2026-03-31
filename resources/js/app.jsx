@@ -35,17 +35,21 @@ createInertiaApp({
 
         const page = await importPage();
         const Component = page.default;
+        const isAuthPage = name.startsWith("Auth/");
 
         const WrappedPage = (props) => (
-            <>
-                <TelegramAuthBootstrap />
+            <TelegramAuthBootstrap isAuthPage={isAuthPage} user={props?.auth?.user}>
                 <Component {...props} />
-            </>
+            </TelegramAuthBootstrap>
         );
 
         WrappedPage.layout =
             Component.layout ??
             ((pageElement) => {
+                if (isAuthPage) {
+                    return pageElement;
+                }
+
                 if (pageElement?.props?.auth?.user) {
                     const isAdmin =
                         pageElement?.props?.auth?.user?.role === "admin";
@@ -70,4 +74,3 @@ createInertiaApp({
         color: "#3B82F6",
     },
 });
-
