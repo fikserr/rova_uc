@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -17,14 +18,44 @@ class ServiceController extends Controller
     }
     public function userStars()
     {
+        $userId = auth()->id();
+        $lastTargetTelegramUsername = '';
+
+        if ($userId) {
+            $lastServiceOrder = DB::table('service_orders')
+                ->where('user_id', $userId)
+                ->orderByDesc('id')
+                ->first(['target_telegram_id']);
+
+            if ($lastServiceOrder?->target_telegram_id) {
+                $lastTargetTelegramUsername = (string) $lastServiceOrder->target_telegram_id;
+            }
+        }
+
         return Inertia::render('User/UserTgStars', [
-            'services' => Service::orderBy('id', 'desc')->get()
+            'services' => Service::orderBy('id', 'desc')->get(),
+            'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
         ]);
     }
     public function userPremium()
     {
+        $userId = auth()->id();
+        $lastTargetTelegramUsername = '';
+
+        if ($userId) {
+            $lastServiceOrder = DB::table('service_orders')
+                ->where('user_id', $userId)
+                ->orderByDesc('id')
+                ->first(['target_telegram_id']);
+
+            if ($lastServiceOrder?->target_telegram_id) {
+                $lastTargetTelegramUsername = (string) $lastServiceOrder->target_telegram_id;
+            }
+        }
+
         return Inertia::render('User/UserTgPremium', [
-            'services' => Service::orderBy('id', 'desc')->get()
+            'services' => Service::orderBy('id', 'desc')->get(),
+            'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
         ]);
     }
     public function store(Request $request)

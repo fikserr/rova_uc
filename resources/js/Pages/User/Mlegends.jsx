@@ -1,12 +1,19 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, Zap , XIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
 import MlbbMaiBG from "@images/mlbbMainBG.webp";
 import { IoDiamondOutline } from "react-icons/io5";
 function Mlegends() {
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const { products, user,flash } = usePage().props;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState("click");
+    const [mlAccountId, setMlAccountId] = useState("");
+    const [mlServerId, setMlServerId] = useState("");
+    const { products, user,flash, lastMlAccount } = usePage().props;
+
+    const userBalance = Number(user?.balance ?? 0);
 
     const service = {
         title: "Mobile legends",
@@ -16,8 +23,61 @@ function Mlegends() {
         products: products,
     };
 
-    const handlePurchase = () => {
-        setSelectedProduct(false)
+    useEffect(() => {
+        if (!selectedProduct) return;
+
+        const enough = userBalance >= Number(selectedProduct.sell_price ?? 0);
+        setPaymentMethod(enough ? "balance" : "click");
+    }, [selectedProduct, userBalance]);
+
+    useEffect(() => {
+        if (!selectedProduct) return;
+
+        setMlAccountId(lastMlAccount?.ml_account_id ?? "");
+        setMlServerId(lastMlAccount?.ml_server_id ?? "");
+    }, [selectedProduct, lastMlAccount]);
+
+    const handlePurchase = async () => {
+        if (!selectedProduct || isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        try {
+            if (!mlAccountId.trim() || !mlServerId.trim()) {
+                alert("ML Account ID va Server ID kiriting");
+                return;
+            }
+
+            const response = await axios.post("/payment/create", {
+                telegram_id: user?.id,
+                payment_method: paymentMethod,
+                order_type: "ml",
+                product_id: selectedProduct.id,
+                ml_account_id: mlAccountId.trim(),
+                ml_server_id: mlServerId.trim(),
+            });
+
+            if (response?.data?.paid_with === "balance") {
+                alert("Buyurtma balansdan muvaffaqiyatli to'landi");
+                setSelectedProduct(null);
+                window.location.reload();
+                return;
+            }
+
+            const paymentUrl = response?.data?.payment_url;
+
+            if (paymentUrl) {
+                window.location.href = paymentUrl;
+                return;
+            }
+
+            alert("To'lov havolasi olinmadi");
+        } catch (error) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Buyurtma yuborishda xatolik yuz berdi");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -120,6 +180,32 @@ function Mlegends() {
                                         {user.username}
                                     </span>
                                 </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-slate-600 text-sm">
+                                            ML Account ID
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={mlAccountId}
+                                            onChange={(e) => setMlAccountId(e.target.value)}
+                                            placeholder="Account ID"
+                                            className="mt-1 w-full h-11 rounded-xl border border-slate-300 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-600 text-sm">
+                                            Server ID
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={mlServerId}
+                                            onChange={(e) => setMlServerId(e.target.value)}
+                                            placeholder="Server ID"
+                                            className="mt-1 w-full h-11 rounded-xl border border-slate-300 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                </div>
                                 {selectedProduct.bonus && (
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-600">
@@ -144,11 +230,39 @@ function Mlegends() {
                                     </span>
                                 </div>
                             </div>
+                            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <p className="text-sm text-slate-600 mb-2">
+                                    Balans: <strong>{Number(userBalance).toLocaleString("fr-FR")} UZS</strong>
+                                </p>
+                                {userBalance >= Number(selectedProduct.sell_price ?? 0) ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod("balance")}
+                                            className={`h-10 rounded-xl text-sm font-semibold ${paymentMethod === "balance" ? "bg-emerald-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}
+                                        >
+                                            Balansdan to'lash
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod("click")}
+                                            className={`h-10 rounded-xl text-sm font-semibold ${paymentMethod === "click" ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}
+                                        >
+                                            Click orqali
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-amber-700">
+                                        Balans yetarli emas, Click orqali to'lov ishlatiladi.
+                                    </p>
+                                )}
+                            </div>
                             <button
                                 onClick={handlePurchase}
-                                className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg rounded-2xl text-white"
+                                disabled={isSubmitting}
+                                className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg rounded-2xl text-white disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Xarid qilish
+                                {isSubmitting ? "Yuborilmoqda..." : "Xarid qilish"}
                             </button>
                         </div>
                     </div>

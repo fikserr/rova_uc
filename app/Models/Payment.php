@@ -10,6 +10,8 @@ class Payment extends Model
         'user_id',
         'click_trans_id',
         'amount',
+        'currency',
+        'provider',
         'status'
     ];
 }

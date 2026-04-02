@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MlProduct;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MlProductController extends Controller
 {
@@ -17,8 +18,19 @@ class MlProductController extends Controller
     }
     public function userIndex()
     {
+        $userId = auth()->id();
+        $lastMlAccount = null;
+
+        if ($userId) {
+            $lastMlAccount = DB::table('ml_accounts')
+                ->where('user_id', $userId)
+                ->orderByDesc('id')
+                ->first(['ml_account_id', 'ml_server_id']);
+        }
+
         return Inertia::render('User/Mlegends', [
-            'products' => MlProduct::orderByDesc('id')->get()
+            'products' => MlProduct::orderByDesc('id')->get(),
+            'lastMlAccount' => $lastMlAccount,
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\MlProductController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
 use App\Http\Controllers\Admin\SpinSectorController;
@@ -29,6 +30,8 @@ Route::get('/login', function () {
 
 Route::post('/login', [LoginController::class, 'store']);
 Route::post('/logout', [LoginController::class, 'destroy']);
+Route::post('/click/prepare', [ClickController::class, 'prepare']);
+Route::post('/click/complete', [ClickController::class, 'complete']);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -95,11 +98,19 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/users', [UserController::class, 'index'])
         ->name('users.index');
+    Route::get('/uc-orders', [OrderController::class, 'ucOrders'])
+        ->name('orders.uc');
+    Route::get('/ml-orders', [OrderController::class, 'mlOrders'])
+        ->name('orders.ml');
+    Route::get('/service-orders', [OrderController::class, 'serviceOrders'])
+        ->name('orders.service');
+    Route::post('/orders/status', [OrderController::class, 'updateStatus'])
+        ->name('orders.status');
 
-    Route::post('/click/prepare', [ClickController::class, 'prepare']);
-    Route::post('/click/complete', [ClickController::class, 'complete']);
     Route::post('/payment/create', [PaymentController::class, 'create'])
         ->name('payment.create');
+    Route::get('/payment/status', [PaymentController::class, 'status'])
+        ->name('payment.status');
 
     Route::post('/password', [PasswordController::class, 'store']);
     Route::put('/password/{user}', [PasswordController::class, 'update']);

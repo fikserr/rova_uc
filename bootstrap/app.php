@@ -32,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Excluding this route from CSRF avoids first-load 419 issues in mobile WebView.
         $middleware->validateCsrfTokens(except: [
             'telegram/webapp/session',
+            'click/prepare',
+            'click/complete',
         ]);
 
         $middleware->web(append: [

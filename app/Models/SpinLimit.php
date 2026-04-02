@@ -12,6 +12,8 @@ class SpinLimit extends Model
 
     protected $fillable = [
         'user_id',
+        'spins_used',
+        'last_spin_at',
         'spins_today',
         'last_spin_date',
     ];

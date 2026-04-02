@@ -190,7 +190,7 @@
 
 
 
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import {
     CheckCircle,
     Clock,
@@ -205,6 +205,7 @@ function UserBalance() {
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
+    const { user } = usePage().props;
 
     const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
@@ -231,6 +232,7 @@ function UserBalance() {
         if (!selectedMethod || !amount) return;
 
         try {
+            setLoading(true);
             const res = await axios.post("/payment/create", {
                 telegram_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
                 amount: amount
@@ -245,6 +247,8 @@ function UserBalance() {
         } catch (e) {
             console.error(e);
             alert("To'lov yaratishda xatolik");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -266,7 +270,7 @@ function UserBalance() {
                                     Joriy balans
                                 </p>
                                 <p className="text-4xl font-bold text-blue-600">
-                                    0 UZS
+                                    {Number(user?.balance ?? 0).toLocaleString("fr-FR")} UZS
                                 </p>
                             </div>
                             <div className="bg-blue-600 p-4 rounded-2xl">

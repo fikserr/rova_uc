@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\UcProduct;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class UcProductController extends Controller
@@ -18,8 +19,19 @@ class UcProductController extends Controller
     }
     public function userIndex()
     {
+        $userId = auth()->id();
+        $lastPubgAccount = null;
+
+        if ($userId) {
+            $lastPubgAccount = DB::table('pubg_accounts')
+                ->where('user_id', $userId)
+                ->orderByDesc('id')
+                ->first(['pubg_player_id', 'pubg_name']);
+        }
+
         return Inertia::render('User/UcShop', [
             'products' => UcProduct::orderBy('id', 'desc')->get(),
+            'lastPubgAccount' => $lastPubgAccount,
         ]);
     }
     public function store(Request $request)

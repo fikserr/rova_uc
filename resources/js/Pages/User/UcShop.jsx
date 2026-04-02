@@ -2,12 +2,19 @@ import PubgMobileBg from "@images/pubgMobileBg.webp";
 import UcIcon from "@images/ucMain.webp";
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
 
 function UcShop() {
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const { products, flash, user } = usePage().props;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState("click");
+    const [pubgPlayerId, setPubgPlayerId] = useState("");
+    const [pubgName, setPubgName] = useState("");
+    const { products, flash, user, lastPubgAccount } = usePage().props;
+
+    const userBalance = Number(user?.balance ?? 0);
 
     const service = {
         title: "PUBG MOBILE",
@@ -17,8 +24,61 @@ function UcShop() {
         products: products,
     };
 
-    const handlePurchase = () => {
-        setSelectedProduct(false);
+    useEffect(() => {
+        if (!selectedProduct) return;
+
+        const enough = userBalance >= Number(selectedProduct.sell_price ?? 0);
+        setPaymentMethod(enough ? "balance" : "click");
+    }, [selectedProduct, userBalance]);
+
+    useEffect(() => {
+        if (!selectedProduct) return;
+
+        setPubgPlayerId(lastPubgAccount?.pubg_player_id ?? "");
+        setPubgName(lastPubgAccount?.pubg_name ?? "");
+    }, [selectedProduct, lastPubgAccount]);
+
+    const handlePurchase = async () => {
+        if (!selectedProduct || isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        try {
+            if (!pubgPlayerId.trim()) {
+                alert("PUBG Player ID kiriting");
+                return;
+            }
+
+            const response = await axios.post("/payment/create", {
+                telegram_id: user?.id,
+                payment_method: paymentMethod,
+                order_type: "uc",
+                product_id: selectedProduct.id,
+                pubg_player_id: pubgPlayerId.trim(),
+                pubg_name: pubgName.trim(),
+            });
+
+            if (response?.data?.paid_with === "balance") {
+                alert("Buyurtma balansdan muvaffaqiyatli to'landi");
+                setSelectedProduct(null);
+                window.location.reload();
+                return;
+            }
+
+            const paymentUrl = response?.data?.payment_url;
+
+            if (paymentUrl) {
+                window.location.href = paymentUrl;
+                return;
+            }
+
+            alert("To'lov havolasi olinmadi");
+        } catch (error) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Buyurtma yuborishda xatolik yuz berdi");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -133,6 +193,30 @@ function UcShop() {
                                         {user.username}
                                     </span>
                                 </div>
+                                <div>
+                                    <label className="text-slate-600 text-sm">
+                                        PUBG Player ID
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={pubgPlayerId}
+                                        onChange={(e) => setPubgPlayerId(e.target.value)}
+                                        placeholder="Masalan: 5123456789"
+                                        className="mt-1 w-full h-11 rounded-xl border border-slate-300 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-slate-600 text-sm">
+                                        PUBG Nickname (ixtiyoriy)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={pubgName}
+                                        onChange={(e) => setPubgName(e.target.value)}
+                                        placeholder="Nickname"
+                                        className="mt-1 w-full h-11 rounded-xl border border-slate-300 px-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
                                 {selectedProduct.bonus && (
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-600">
@@ -159,11 +243,39 @@ function UcShop() {
                                     </span>
                                 </div>
                             </div>
+                            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <p className="text-sm text-slate-600 mb-2">
+                                    Balans: <strong>{Number(userBalance).toLocaleString("fr-FR")} UZS</strong>
+                                </p>
+                                {userBalance >= Number(selectedProduct.sell_price ?? 0) ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod("balance")}
+                                            className={`h-10 rounded-xl text-sm font-semibold ${paymentMethod === "balance" ? "bg-emerald-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}
+                                        >
+                                            Balansdan to'lash
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod("click")}
+                                            className={`h-10 rounded-xl text-sm font-semibold ${paymentMethod === "click" ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}
+                                        >
+                                            Click orqali
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-amber-700">
+                                        Balans yetarli emas, Click orqali to'lov ishlatiladi.
+                                    </p>
+                                )}
+                            </div>
                             <button
                                 onClick={handlePurchase}
-                                className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg rounded-2xl text-white"
+                                disabled={isSubmitting}
+                                className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg rounded-2xl text-white disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Xarid qilish
+                                {isSubmitting ? "Yuborilmoqda..." : "Xarid qilish"}
                             </button>
                         </div>
                     </div>

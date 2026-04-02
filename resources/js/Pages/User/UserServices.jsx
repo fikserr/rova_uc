@@ -7,6 +7,8 @@ import TelegramStars from "@images/telegram_stars.webp";
 
 import { Head, Link } from "@inertiajs/react";
 import { ArrowRight, Gamepad2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useDevice from "../../Hook/useDevice";
@@ -160,6 +162,7 @@ function ServiceCard({
 
 function UserServices() {
     const mobile = useDevice() === "mobile";
+    const [paymentNotice, setPaymentNotice] = useState("");
 
     const Desktopimages = [
         {img:MlbbDesktop , href:"/user-products-ml" },
@@ -169,12 +172,71 @@ function UserServices() {
     ];
     const Mobileimages = [MlbbMobile, PubgMobile];
     const images = mobile ? Mobileimages : Desktopimages;
+
+    useEffect(() => {
+        const initStartParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+        const query = new URLSearchParams(window.location.search);
+        const queryStartParam =
+            query.get("tgWebAppStartParam") ||
+            query.get("startapp") ||
+            query.get("start_param");
+
+        const startParam = initStartParam || queryStartParam;
+        const match = /^paid_(uc|ml|service)_(\d+)$/.exec(startParam || "");
+
+        if (!match) {
+            return;
+        }
+
+        const orderType = match[1];
+        const orderId = Number(match[2]);
+        let stopped = false;
+
+        const poll = async (attempt = 0) => {
+            if (stopped) return;
+
+            try {
+                const response = await axios.get("/payment/status", {
+                    params: {
+                        order_type: orderType,
+                        order_id: orderId,
+                    },
+                });
+
+                if (response?.data?.paid) {
+                    setPaymentNotice("To'lov tasdiqlandi, buyurtmangiz qabul qilindi.");
+                    return;
+                }
+            } catch (error) {
+                // callback delay bo‘lsa keyingi poll’da qayta tekshiriladi
+            }
+
+            if (attempt >= 15) {
+                setPaymentNotice("To'lov tekshirilmoqda, birozdan keyin yangilanadi.");
+                return;
+            }
+
+            setTimeout(() => poll(attempt + 1), 2000);
+        };
+
+        poll();
+
+        return () => {
+            stopped = true;
+        };
+    }, []);
+
     return (
         <div className="min-h-screen px-4 py-10 md:py-6 pb-6 bg-transparent dark:bg-slate-950">
             <style>{customPaginationStyles}</style>
             <Head title="Xizmatlar" />
 
             <div className="max-w-7xl mx-auto">
+                {paymentNotice && (
+                    <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        {paymentNotice}
+                    </div>
+                )}
                 {/* Hero */}
                 <div className="w-full mb-8 md:mb-12 ">
                     <Swiper
