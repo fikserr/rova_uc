@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\MlProductController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
 use App\Http\Controllers\Admin\SpinSectorController;
@@ -13,6 +14,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Payment\ClickController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\User\PasswordController;
+use App\Http\Controllers\User\PurchaseController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserTodoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -98,6 +101,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/users', [UserController::class, 'index'])
         ->name('users.index');
+    Route::get('/referral-settings', [ReferralController::class, 'index'])
+        ->name('referrals.index');
+    Route::post('/referral-settings', [ReferralController::class, 'update'])
+        ->name('referrals.update');
     Route::get('/uc-orders', [OrderController::class, 'ucOrders'])
         ->name('orders.uc');
     Route::get('/ml-orders', [OrderController::class, 'mlOrders'])
@@ -118,15 +125,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user-services', function () {
         return Inertia::render('User/UserServices');
     });
-    Route::get('/user-profile', function () {
-        return Inertia::render('User/UserProfile');
-    });
+    Route::get('/user-profile', [ProfileController::class, 'show'])
+        ->name('user-profile.show');
     Route::get('/user-balance', function () {
         return Inertia::render('User/UserBalance');
     });
-    Route::get('/user-purchases', function () {
-        return Inertia::render('User/UserPurchases');
-    });
+    Route::get('/user-purchases', [PurchaseController::class, 'index'])
+        ->name('user-purchases.index');
     Route::get('/user-profile/security', function () {
         return Inertia::render('User/UserSecurity');
     });

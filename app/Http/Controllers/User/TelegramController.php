@@ -22,12 +22,21 @@ class TelegramController extends Controller
         $telegramId = $from['id'];
         $username = $from['username'] ?? null;
 
-        // /start
-        if (($message['text'] ?? null) === '/start') {
+        // /start or /start <payload>
+        $text = trim((string) ($message['text'] ?? ''));
+        if (str_starts_with($text, '/start')) {
+            $parts = preg_split('/\s+/', $text, 2);
+            $startPayload = $parts[1] ?? null;
+            $referrerId = null;
+
+            if ($startPayload && preg_match('/^ref_(\d+)$/', $startPayload, $m)) {
+                $referrerId = (int) $m[1];
+            }
 
             $apiResponse = Http::post(url('/api/users/start'), [
                 'telegram_id' => $telegramId,
                 'username' => $username,
+                'referrer_id' => $referrerId,
             ]);
 
             $data = $apiResponse->json();

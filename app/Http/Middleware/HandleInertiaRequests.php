@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\UserBalance;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -51,6 +52,9 @@ class HandleInertiaRequests extends Middleware
                     'hasPassword' => $user->password()->exists(),
                     'role' => $user->role,
                     'balance' => $balance,
+                    'created_at' => $user->created_at ? Carbon::parse($user->created_at)->toDateTimeString() : null,
+
+
                 ] : null,
             ],
             'user' => $user ? [
@@ -60,6 +64,8 @@ class HandleInertiaRequests extends Middleware
                 'role' => $user->role,
                 'hasPassword' => $user->password()->exists(),
                 'balance' => $balance,
+                'created_at' => $user->created_at ? Carbon::parse($user->created_at)->toDateTimeString() : null,
+
             ] : null,
         ]);
     }

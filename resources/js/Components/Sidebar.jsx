@@ -22,6 +22,7 @@ export function Sidebar({ isOpen = true, onClose }) {
             icon: IoDiamondOutline,
         },
         { href: "/service-orders", label: "Service Orders", icon: LuStar },
+        { href: "/referral-settings", label: "Referral Settings", icon: FaLayerGroup },
         { href: "/users", label: "Users", icon: LuUser },
         { href: "/products-uc", label: "Products", icon: LuBox },
         { href: "/currencies", label: "Curreny Rates", icon: FaDollarSign },
