@@ -157,7 +157,7 @@ function UserTgPremium() {
                 {/* Purchase Summary */}
                 {selectedProduct && (
                     <div className="w-full h-full z-99999 bg-black/90 fixed top-0 left-0 flex items-center justify-center">
-                        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100 animate-in fade-in w-full max-w-lg relative">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100 animate-in fade-in w-full md:max-w-lg max-w-xs relative">
                             <h3 className="text-xl font-bold text-slate-900 mb-4">
                                 Buyurtma xulosasi
                             </h3>
