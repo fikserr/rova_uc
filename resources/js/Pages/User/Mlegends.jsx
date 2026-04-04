@@ -5,6 +5,7 @@ import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
 import MlbbMaiBG from "@images/mlbbMainBG.webp";
 import { IoDiamondOutline } from "react-icons/io5";
+import { title } from 'framer-motion/client'
 function Mlegends() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,6 +146,7 @@ function Mlegends() {
                                     value: product.diamonds,
                                     sell_price: product.sell_price,
                                     sell_currency: product.sell_currency,
+                                    title: product.title,
                                 }}
                                 onClick={setSelectedProduct.bind(null, product)}
                                 key={product.id}

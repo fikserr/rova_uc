@@ -1,12 +1,25 @@
+import { usePage } from '@inertiajs/react'
 import { Edit2, Trash2 } from "lucide-react";
 
 function ProductCard({ product, onEdit, onDelete, cardFor }) {
-    const calculateProfit = (sellPrice, costPrice, costCurrency) => {
-        const usdRate = 12500; // Example rate
-        const costInUZS =
-            costCurrency === "USD" ? costPrice * usdRate : costPrice;
-        return sellPrice - costInUZS;
-    };
+    const {currency_rates} = usePage().props;
+    console.log(currency_rates);
+
+    const calculateProfit = (sellPrice, costPrice, sellCurrency,costCurrency) => {
+    const usdRate = 12100 // In a real app, maybe fetch this from an API
+
+    // Ensure we are working with numbers
+    const sell = Number(sellPrice) || 0;
+    const cost = Number(costPrice) || 0;
+
+    // Convert Sell Price to UZS if it's in USD
+    const sellInUZS = sellCurrency === "USD" ? sell * usdRate : sell;
+
+    // Convert Cost Price to UZS if it's in USD
+    const costInUZS = costCurrency === "USD" ? cost * usdRate : cost;
+
+    return sellInUZS - costInUZS;
+};
 
     return (
         <div
@@ -73,7 +86,8 @@ function ProductCard({ product, onEdit, onDelete, cardFor }) {
                 <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Cost Price:</span>
                     <span className="text-sm font-medium text-gray-900">
-                        ${product.cost_price}
+                        {product.cost_price}{' '}
+                        {product.cost_currency}
                     </span>
                 </div>
                 <div className="flex justify-between pt-2 border-t">
@@ -82,6 +96,7 @@ function ProductCard({ product, onEdit, onDelete, cardFor }) {
                         {calculateProfit(
                             product.sell_price,
                             product.cost_price,
+                            product.sellCurrency,
                             product.cost_currency
                         ).toLocaleString()}{" "}
                         UZS

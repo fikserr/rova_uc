@@ -27,7 +27,6 @@ axios.defaults.baseURL = window.location.origin;
    INERTIA APP
 ---------------------------------- */
 
-
 createInertiaApp({
     resolve: async (name) => {
         const pages = import.meta.glob("./Pages/**/*.jsx");
