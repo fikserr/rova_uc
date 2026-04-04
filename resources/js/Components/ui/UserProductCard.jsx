@@ -5,34 +5,34 @@ import { IoDiamondOutline } from "react-icons/io5";
    Title generator (single source of truth)
 --------------------------------------------- */
 
-function generateCardTitle(product) {
-    const { type, service_type, value } = product;
+// function generateCardTitle(product) {
+//     const { type, service_type, value } = product;
 
-    switch (type) {
-        case "uc":
-            return `${value} UC`;
+//     switch (type) {
+//         case "uc":
+//             return `${value} UC`;
 
-        case "diamond":
-            return `${value} Diamonds`;
+//         case "diamond":
+//             return `${value} Diamonds`;
 
-        case "tg":
-            if (service_type === "stars") {
-                return `${value} Stars`;
-            }
+//         case "tg":
+//             if (service_type === "stars") {
+//                 return `${value} Stars`;
+//             }
 
-            if (service_type === "premium") {
-                if (value % 12 === 0) {
-                    return `${value / 12} Year Premium`;
-                } else {
-                    return `${value} Month Premium`;
-                }
-            }
-            break;
+//             if (service_type === "premium") {
+//                 if (value % 12 === 0) {
+//                     return `${value / 12} Year Premium`;
+//                 } else {
+//                     return `${value} Month Premium`;
+//                 }
+//             }
+//             break;
 
-        default:
-            return "Unknown Product";
-    }
-}
+//         default:
+//             return "Unknown Product";
+//     }
+// }
 
 /* ---------------------------------------------
    Icon resolver
@@ -53,7 +53,10 @@ function getProductIcon(product) {
 
 export default function UserProductCard({ product, onClick }) {
     const Icon = getProductIcon(product);
-    const title = generateCardTitle(product);
+    // const title = generateCardTitle(product);
+
+    console.log(product);
+
 
     return (
         <button
@@ -68,7 +71,7 @@ export default function UserProductCard({ product, onClick }) {
                     {typeof Icon === "string" ? (
                         <img
                             src={Icon}
-                            alt={title}
+                            alt={product.title}
                             className="w-9 md:w-12 h-9 md:h-12 object-contain"
                         />
                     ) : (
@@ -78,7 +81,7 @@ export default function UserProductCard({ product, onClick }) {
 
                 <div >
                     <h3 className="text-base md:text-xl font-bold text-slate-900 font font-mono dark:text-white">
-                        {title}
+                        {product.title}
                     </h3>
                     <p className="hidden md:block md:text-xs text-slate-500 dark:text-slate-400">
                         {product.type === "uc"

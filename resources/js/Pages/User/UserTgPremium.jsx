@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
+import { title } from 'framer-motion/client'
 
 function UserTgPremium() {
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -74,6 +75,9 @@ function UserTgPremium() {
         }
     };
 
+    console.log(services);
+
+
     return (
         <div className="min-h-[calc(100vh-140px)]  px-4 py-6 pb-8 lg:pb-8 dark:bg-slate-900">
             <Head title="Premium shop" />
@@ -142,6 +146,7 @@ function UserTgPremium() {
                                             value: s.value,
                                             sell_price: s.sell_price,
                                             sell_currency: s.sell_currency,
+                                            title: s.title,
                                         }}
                                         onClick={setSelectedProduct.bind(
                                             null,
@@ -173,9 +178,10 @@ function UserTgPremium() {
                                         Mahsulot:
                                     </span>
                                     <span className="font-semibold text-slate-900">
-                                        {selectedProduct.value % 12 == 0
+                                        {/* {selectedProduct.value % 12 == 0
                                             ? `${selectedProduct.value / 12} yillik premium`
-                                            : `${selectedProduct.value} oylik premium`}
+                                            : `${selectedProduct.value} oylik premium`} */}
+                                            {selectedProduct.title}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">

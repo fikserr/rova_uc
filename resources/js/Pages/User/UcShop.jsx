@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
+import { title } from 'framer-motion/client'
 
 function UcShop() {
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -150,6 +151,7 @@ function UcShop() {
                                     value: product.uc_amount,
                                     sell_price: product.sell_price,
                                     sell_currency: product.sell_currency,
+                                    title: product.title,
                                 }}
                                 onClick={setSelectedProduct.bind(null, product)}
                                 key={product.id}

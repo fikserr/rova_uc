@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle, Shield, XIcon, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import UserProductCard from "../../Components/ui/UserProductCard";
+import { title } from 'framer-motion/client'
 
 function UserTgStars() {
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -142,6 +143,7 @@ function UserTgStars() {
                                             value: s.value,
                                             sell_price: s.sell_price,
                                             sell_currency: s.sell_currency,
+                                            title:s.title,
                                         }}
                                         onClick={setSelectedProduct.bind(
                                             null,
