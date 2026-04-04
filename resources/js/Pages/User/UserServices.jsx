@@ -108,7 +108,7 @@ function ServiceCard({
                 )}
 
                 {category && (
-                    <div className="text-white/80 text-xs font-semibold mb-3 uppercase absolute top-10 right-0 bg-black/70 px-2 py-1 rounded-l-full backdrop-blur-sm">
+                    <div className="text-white/80 md:text-xs text-[8px] font-semibold mb-1 uppercase absolute top-9 right-0 bg-black/60 px-2 py-1 rounded-l-full backdrop-blur-sm">
                         {category}
                     </div>
                 )}
@@ -127,9 +127,9 @@ function ServiceCard({
             </div>
 
             {/* Content */}
-            <div className="p-4 sm:p-5 bg-white dark:bg-slate-800">
+            <div className="md:p-4 p-3 sm:p-5 bg-white dark:bg-slate-800">
                 <h3
-                    className="font-bold text-xs sm:text-lg mb-1 transition
+                    className="font-bold text-[9px] md:text-lg mb-1 transition
                             group-hover:text-blue-500
                             dark:text-slate-100 dark:group-hover:text-blue-400 "
                 >
@@ -137,7 +137,7 @@ function ServiceCard({
                 </h3>
 
                 {subtitle && (
-                    <p className="text-xs text-gray-600 mb-3 dark:text-slate-400">
+                    <p className="text-xs hidden md:block text-gray-600 mb-3 dark:text-slate-400">
                         {subtitle}
                     </p>
                 )}
@@ -270,7 +270,7 @@ function UserServices() {
                     <h1 className="text-3xl text-black dark:text-white">
                         Xizmatlar
                     </h1>
-                    <div className="w-full grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 sm:px-4 md:px-0 place-items-center">
+                    <div className="w-full grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 sm:px-4 md:px-0 place-items-center">
                         {services.map((service) => (
                             <ServiceCard key={service.id} {...service} />
                         ))}

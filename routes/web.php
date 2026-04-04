@@ -127,7 +127,7 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::get('/user-profile', [ProfileController::class, 'show'])
         ->name('user-profile.show');
-    Route::get('/user-balance', function () {
+    Route::get('/user-profile/user-balance', function () {
         return Inertia::render('User/UserBalance');
     });
     Route::get('/user-purchases', [PurchaseController::class, 'index'])

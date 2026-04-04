@@ -22,7 +22,8 @@ import { useState } from "react";
 function UserProfile() {
     const [copiedReferral, setCopiedReferral] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const { user, referral } = usePage().props;
+    const { user, referral , stats = {} } = usePage().props;
+
 
     const referralLink = referral?.link || "https://t.me/yourbot?start=ref";
     const referralFriendsCount = Number(referral?.friends_count ?? 0);
@@ -35,7 +36,7 @@ function UserProfile() {
         setTimeout(() => setCopiedReferral(false), 2000);
     };
 
-    const stats = [
+    const Userstats = [
         {
             id: "purchases",
             label: "Xaridlar",
@@ -46,7 +47,7 @@ function UserProfile() {
         {
             id: "spent",
             label: "Jami sarflangan",
-            value: `${Number(user?.balance ?? 0).toLocaleString("fr-FR")} UZS`,
+            value: `${Number(stats.total_spent ?? 0).toLocaleString("fr-FR")} UZS`,
             icon: Wallet,
             color: "from-emerald-500 to-teal-600",
         },
@@ -107,10 +108,12 @@ function UserProfile() {
                             <User className="size-6 sm:size-16 text-white" />
                         </div>
                         <div className="flex-1">
-                            <h1 className="text-xl sm:text-3xl font-bold text-white">
-                                {displayName.length > 18 ? `${displayName.slice(0, 18)}...` : displayName}
+                            <h1 className="text-base md:text-xl font-bold text-white">
+                                {displayName.length > 18
+                                    ? `${displayName.slice(0, 18)}...`
+                                    : displayName}
                             </h1>
-                            <div className="flex items-center gap-2 text-white/90 text-sm">
+                            <div className="flex items-center gap-2 text-white/90 md:text-sm text-xs">
                                 <Calendar className="size-4" />
                                 <span>A'zo: {formattedDate}</span>
                             </div>
@@ -127,17 +130,22 @@ function UserProfile() {
                         <div>
                             <p className="text-white/80 text-sm">Hisobingiz</p>
                             <p className="text-xl md:text-3xl font-bold text-white">
-                                {Number(user?.balance ?? 0).toLocaleString("fr-FR")} UZS
+                                {Number(user?.balance ?? 0).toLocaleString(
+                                    "fr-FR",
+                                )}{" "}
+                                UZS
                             </p>
                         </div>
-                        <button className="bg-white text-blue-600 px-5 py-2 rounded-xl font-semibold">
-                            To'ldirish
-                        </button>
+                        <Link href="/user-profile/user-balance">
+                            <button className="bg-white text-blue-600 px-5 py-2 rounded-xl font-semibold">
+                                To'ldirish
+                            </button>
+                        </Link>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                    {stats.map((stat) => {
+                    {Userstats.map((stat) => {
                         const Icon = stat.icon;
                         return (
                             <div
@@ -149,8 +157,12 @@ function UserProfile() {
                                 >
                                     <Icon className="size-5 text-white" />
                                 </div>
-                                <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
-                                <div className="text-xs sm:text-sm opacity-70">{stat.label}</div>
+                                <div className="text-2xl sm:text-3xl font-bold">
+                                    {stat.value}
+                                </div>
+                                <div className="text-xs sm:text-sm opacity-70">
+                                    {stat.label}
+                                </div>
                             </div>
                         );
                     })}
@@ -162,15 +174,24 @@ function UserProfile() {
                             <Users className="size-8 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-xl sm:text-2xl font-bold text-white">Do'stlarni taklif qiling</h3>
-                            <p className="text-white/90 text-sm">Har bir do'st uchun bonus balansga tushadi</p>
+                            <h3 className="text-xl sm:text-2xl font-bold text-white">
+                                Do'stlarni taklif qiling
+                            </h3>
+                            <p className="text-white/90 text-sm">
+                                Har bir do'st uchun bonus balansga tushadi
+                            </p>
                         </div>
                     </div>
 
                     <div className="bg-white/10 rounded-xl p-4 border border-white/20 mb-4">
                         <div className="flex items-center gap-2">
-                            <code className="flex-1 text-white text-xs sm:text-sm break-all">{referralLink}</code>
-                            <button onClick={handleCopyReferral} className="bg-white/20 p-2 rounded-lg">
+                            <code className="flex-1 text-white text-xs sm:text-sm break-all">
+                                {referralLink}
+                            </code>
+                            <button
+                                onClick={handleCopyReferral}
+                                className="bg-white/20 p-2 rounded-lg"
+                            >
                                 {copiedReferral ? (
                                     <Check className="size-5 text-green-300" />
                                 ) : (
@@ -182,14 +203,21 @@ function UserProfile() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-white/10 rounded-xl p-3 text-center">
-                            <div className="text-2xl font-bold text-white">{referralFriendsCount}</div>
-                            <div className="text-xs text-white/80">Do'stlar</div>
+                            <div className="text-2xl font-bold text-white">
+                                {referralFriendsCount}
+                            </div>
+                            <div className="text-xs text-white/80">
+                                Do'stlar
+                            </div>
                         </div>
                         <div className="bg-white/10 rounded-xl p-3 text-center">
                             <div className="text-2xl font-bold text-white">
-                                {referralEarnedAmount.toLocaleString("fr-FR")} {referralCurrency}
+                                {referralEarnedAmount.toLocaleString("fr-FR")}{" "}
+                                {referralCurrency}
                             </div>
-                            <div className="text-xs text-white/80">Ishlab topilgan</div>
+                            <div className="text-xs text-white/80">
+                                Ishlab topilgan
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -197,9 +225,11 @@ function UserProfile() {
 
             {showSettings && (
                 <div className="fixed inset-0 bg-black/50 z-9999 flex items-center justify-center">
-                    <div className="w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="w-full md:max-w-md max-w-xs bg-white dark:bg-zinc-900 rounded-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b dark:border-zinc-400 sticky top-0 bg-white dark:bg-zinc-900">
-                            <h2 className="text-lg font-bold dark:text-white">Sozlamalar</h2>
+                            <h2 className="text-lg font-bold dark:text-white">
+                                Sozlamalar
+                            </h2>
                             <button
                                 onClick={() => setShowSettings(false)}
                                 className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-800 dark:text-white"
@@ -226,7 +256,11 @@ function UserProfile() {
                             {settingsOptions.map((opt) => {
                                 const Icon = opt.icon;
                                 return (
-                                    <Link href={opt.link || "#"} className="w-full" key={opt.id}>
+                                    <Link
+                                        href={opt.link || "#"}
+                                        className="w-full"
+                                        key={opt.id}
+                                    >
                                         <button
                                             className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border dark:text-white ${
                                                 opt.danger
@@ -238,8 +272,12 @@ function UserProfile() {
                                                 <Icon className="size-5 text-white" />
                                             </div>
                                             <div className="text-left flex flex-col justify-center">
-                                                <div className="font-semibold">{opt.label}</div>
-                                                <div className="text-xs opacity-70">{opt.description}</div>
+                                                <div className="font-semibold">
+                                                    {opt.label}
+                                                </div>
+                                                <div className="text-xs opacity-70">
+                                                    {opt.description}
+                                                </div>
                                             </div>
                                         </button>
                                     </Link>
@@ -254,4 +292,3 @@ function UserProfile() {
 }
 
 export default UserProfile;
-

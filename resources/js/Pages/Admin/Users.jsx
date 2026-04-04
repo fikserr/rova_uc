@@ -21,6 +21,9 @@ function Users({ users }) {
             user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.phone_number.includes(searchTerm),
     );
+
+    console.log(users);
+
     return (
         <div className="p-4 sm:p-6 lg:p-8">
             <Head>
@@ -53,7 +56,7 @@ function Users({ users }) {
                 <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
                     <p className="text-sm text-gray-500">Total Balance (UZS)</p>
                     <p className="text-xl md:text-2xl font-bold text-blue-600 mt-1">
-                        {users.reduce((sum, u) => sum + u.balance, 0)}
+                        {users.reduce((sum, u) => sum + Number(u.balance || 0), 0).toLocaleString("fr-FR")} UZS
                     </p>
                 </div>
                 <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
@@ -158,7 +161,7 @@ function Users({ users }) {
                                                 className="text-blue-600 hover:text-blue-800"
                                                 title="View Details"
                                             >
-                                                <Eye className="w-4 h-4" />
+                                                <Eye onClick={() => window.open(`https://telegram.me/${user.username}`, "_blank")} className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() =>
