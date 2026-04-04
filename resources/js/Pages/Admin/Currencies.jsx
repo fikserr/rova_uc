@@ -9,7 +9,6 @@ export default function Currencies() {
         code: "",
         name: "",
         symbol: "",
-        is_base: false,
     });
     const rateForm = useForm({
         currency_code: "",
@@ -314,15 +313,9 @@ export default function Currencies() {
                             />
 
                             <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={data.is_base}
-                                    onChange={(e) =>
-                                        setData("is_base", e.target.checked)
-                                    }
-                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-400"
-                                />
-                                Base valyuta
+                                <span className="text-sm text-gray-500">
+                                    Base valyuta doim UZS
+                                </span>
                             </label>
 
                             <button

@@ -82,19 +82,30 @@ class PaymentController extends Controller
                 return ['error' => 'PUBG Player ID kiriting'];
             }
 
+            $pricing = $this->calculateBasePricing(
+                (float) $product->sell_price,
+                (string) $product->sell_currency,
+                (float) $product->cost_price,
+                (string) $product->cost_currency
+            );
+
+            if ($pricing['error']) {
+                return ['error' => $pricing['error']];
+            }
+
             $accountId = $this->resolvePubgAccountId($userId, $pubgPlayerId, $pubgName);
 
             return [
                 'error' => null,
-                'amount' => (float) $product->sell_price,
+                'amount' => (float) $pricing['sell_base'],
                 'order_payload' => [
                     'pubg_account_id' => $accountId,
                     'product_id' => $product->id,
-                    'sell_price' => $product->sell_price,
-                    'sell_currency' => $product->sell_currency,
+                    'sell_price' => $pricing['sell_base'],
+                    'sell_currency' => 'UZS',
                     'cost_price' => $product->cost_price,
                     'cost_currency' => $product->cost_currency,
-                    'profit_base' => max((float) $product->sell_price - (float) $product->cost_price, 0),
+                    'profit_base' => $pricing['profit_base'],
                 ],
             ];
         }
@@ -114,19 +125,30 @@ class PaymentController extends Controller
                 return ['error' => 'ML Account ID va Server ID kiriting'];
             }
 
+            $pricing = $this->calculateBasePricing(
+                (float) $product->sell_price,
+                (string) $product->sell_currency,
+                (float) $product->cost_price,
+                (string) $product->cost_currency
+            );
+
+            if ($pricing['error']) {
+                return ['error' => $pricing['error']];
+            }
+
             $accountId = $this->resolveMlAccountId($userId, $mlAccountIdValue, $mlServerIdValue);
 
             return [
                 'error' => null,
-                'amount' => (float) $product->sell_price,
+                'amount' => (float) $pricing['sell_base'],
                 'order_payload' => [
                     'ml_account_id' => $accountId,
                     'product_id' => $product->id,
-                    'sell_price' => $product->sell_price,
-                    'sell_currency' => $product->sell_currency,
+                    'sell_price' => $pricing['sell_base'],
+                    'sell_currency' => 'UZS',
                     'cost_price' => $product->cost_price,
                     'cost_currency' => $product->cost_currency,
-                    'profit_base' => max((float) $product->sell_price - (float) $product->cost_price, 0),
+                    'profit_base' => $pricing['profit_base'],
                 ],
             ];
         }
@@ -144,17 +166,28 @@ class PaymentController extends Controller
                 return ['error' => 'Target Telegram username kiriting'];
             }
 
+            $pricing = $this->calculateBasePricing(
+                (float) $service->sell_price,
+                (string) $service->sell_currency,
+                (float) $service->cost_price,
+                (string) $service->cost_currency
+            );
+
+            if ($pricing['error']) {
+                return ['error' => $pricing['error']];
+            }
+
             return [
                 'error' => null,
-                'amount' => (float) $service->sell_price,
+                'amount' => (float) $pricing['sell_base'],
                 'order_payload' => [
                     'service_id' => $service->id,
                     'target_telegram_id' => ltrim($targetTelegramUsername, '@'),
-                    'sell_price' => $service->sell_price,
-                    'sell_currency' => $service->sell_currency,
+                    'sell_price' => $pricing['sell_base'],
+                    'sell_currency' => 'UZS',
                     'cost_price' => $service->cost_price,
                     'cost_currency' => $service->cost_currency,
-                    'profit_base' => max((float) $service->sell_price - (float) $service->cost_price, 0),
+                    'profit_base' => $pricing['profit_base'],
                 ],
             ];
         }
@@ -416,5 +449,49 @@ class PaymentController extends Controller
             'status' => $order->status,
             'paid' => in_array($order->status, ['paid', 'delivered'], true),
         ]);
+    }
+
+    private function calculateBasePricing(
+        float $sellPrice,
+        string $sellCurrency,
+        float $costPrice,
+        string $costCurrency
+    ): array {
+        $sellBase = $this->convertToBaseUzs($sellPrice, $sellCurrency);
+        if ($sellBase === null) {
+            return ['error' => strtoupper($sellCurrency) . ' kursi topilmadi'];
+        }
+
+        $costBase = $this->convertToBaseUzs($costPrice, $costCurrency);
+        if ($costBase === null) {
+            return ['error' => strtoupper($costCurrency) . ' kursi topilmadi'];
+        }
+
+        return [
+            'error' => null,
+            'sell_base' => round($sellBase, 2),
+            'cost_base' => round($costBase, 2),
+            'profit_base' => round($sellBase - $costBase, 2),
+        ];
+    }
+
+    private function convertToBaseUzs(float $amount, string $currencyCode): ?float
+    {
+        $code = strtoupper(trim($currencyCode));
+
+        if ($code === '' || $code === 'UZS') {
+            return $amount;
+        }
+
+        $rate = DB::table('currency_rates')
+            ->where('currency_code', $code)
+            ->orderByDesc('id')
+            ->value('rate_to_base');
+
+        if ($rate === null) {
+            return null;
+        }
+
+        return $amount * (float) $rate;
     }
 }

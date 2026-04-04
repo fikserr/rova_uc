@@ -15,11 +15,14 @@ function Users({ users }) {
             ),
         );
     };
-
+    console.log(users);
+    
     const filteredUsers = users.filter(
         (user) =>
-            user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.phone_number.includes(searchTerm),
+            (user.username || "")
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            (user.phone_number || "").includes(searchTerm),
     );
 
     console.log(users);
@@ -62,7 +65,13 @@ function Users({ users }) {
                 <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
                     <p className="text-sm text-gray-500">Total Spent (UZS)</p>
                     <p className="text-xl md:text-2xl font-bold text-purple-600 mt-1">
-                        0
+                        {users
+                            .reduce(
+                                (sum, u) => sum + Number(u.totalSpent || 0),
+                                0,
+                            )
+                            .toLocaleString("fr-FR")}{" "}
+                        UZS
                     </p>
                 </div>
             </div>
@@ -135,7 +144,10 @@ function Users({ users }) {
                                         {user.totalOrders}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        0 UZS
+                                        {Number(
+                                            user.totalSpent || 0,
+                                        ).toLocaleString("fr-FR")}{" "}
+                                        UZS
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(
@@ -152,7 +164,7 @@ function Users({ users }) {
                                         >
                                             {user.isActive
                                                 ? "Active"
-                                                : "Blocked"}
+                                                : "Offline"}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -224,7 +236,7 @@ function Users({ users }) {
                                             : "bg-red-100 text-red-800"
                                     }`}
                                 >
-                                    {user.isActive ? "Active" : "Blocked"}
+                                    {user.isActive ? "Active" : "Offline"}
                                 </span>
                             </button>
 
@@ -250,6 +262,18 @@ function Users({ users }) {
                                             </p>
                                             <p className="font-medium text-gray-900">
                                                 {user.totalOrders}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-gray-500 text-xs">
+                                                Spent
+                                            </p>
+                                            <p className="font-medium text-gray-900">
+                                                {Number(
+                                                    user.totalSpent || 0,
+                                                ).toLocaleString("fr-FR")}{" "}
+                                                UZS
                                             </p>
                                         </div>
 
@@ -363,7 +387,10 @@ function Users({ users }) {
                                     Total Spent
                                 </p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    0 UZS
+                                    {Number(
+                                        selectedUser.totalSpent || 0,
+                                    ).toLocaleString("fr-FR")}{" "}
+                                    UZS
                                 </p>
                             </div>
                             <div>

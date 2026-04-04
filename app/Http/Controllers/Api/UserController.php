@@ -14,17 +14,53 @@ class UserController extends Controller
 {
     public function index()
     {
+        $activeSince = now()->subMinutes(15)->timestamp;
+        $activeUserIds = DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->where('last_activity', '>=', $activeSince)
+            ->distinct()
+            ->pluck('user_id')
+            ->map(fn ($id) => (string) $id)
+            ->flip();
+
+        $ucOrderStats = DB::table('uc_orders')
+            ->selectRaw('user_id, COUNT(*) as orders_count, SUM(CASE WHEN status IN (?, ?) THEN sell_price ELSE 0 END) as total_spent', ['paid', 'delivered'])
+            ->groupBy('user_id');
+
+        $mlOrderStats = DB::table('ml_orders')
+            ->selectRaw('user_id, COUNT(*) as orders_count, SUM(CASE WHEN status IN (?, ?) THEN sell_price ELSE 0 END) as total_spent', ['paid', 'delivered'])
+            ->groupBy('user_id');
+
+        $serviceOrderStats = DB::table('service_orders')
+            ->selectRaw('user_id, COUNT(*) as orders_count, SUM(CASE WHEN status IN (?, ?) THEN sell_price ELSE 0 END) as total_spent', ['paid', 'delivered'])
+            ->groupBy('user_id');
+
+        $orderStatsByUser = DB::query()
+            ->fromSub(
+                $ucOrderStats->unionAll($mlOrderStats)->unionAll($serviceOrderStats),
+                'order_stats'
+            )
+            ->selectRaw('user_id, SUM(orders_count) as total_orders, SUM(total_spent) as total_spent')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
         $users = User::with('balance')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($user) {
+            ->map(function ($user) use ($orderStatsByUser, $activeUserIds) {
+                $stats = $orderStatsByUser->get($user->id);
+
                 return [
                     'id' => $user->id,
                     'username' => $user->username,
                     'phone_number' => $user->phone_number,
+                    'isActive' => isset($activeUserIds[(string) $user->id]),
                     'balance' => $user->balance?->balance ?? 0,
+                    'totalOrders' => (int) ($stats->total_orders ?? 0),
+                    'totalSpent' => (float) ($stats->total_spent ?? 0),
                     'role' => $user->role,
-                     'created_at' => now()
+                    'created_at' => $user->created_at,
                 ];
             });
 

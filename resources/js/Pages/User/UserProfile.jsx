@@ -40,7 +40,7 @@ function UserProfile() {
         {
             id: "purchases",
             label: "Xaridlar",
-            value: "12",
+            value: String(Number(stats.total_purchases ?? 0)),
             icon: ShoppingBag,
             color: "from-blue-600 to-indigo-600",
         },

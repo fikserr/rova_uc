@@ -16,6 +16,8 @@ class ProfileController extends Controller
 
         $referralsCount = 0;
         $referralsEarned = 0.0;
+        $totalPurchases = 0;
+        $totalSpent = 0.0;
 
         if ($userId) {
             $referralsCount = (int) DB::table('referrals')
@@ -25,6 +27,37 @@ class ProfileController extends Controller
             $referralsEarned = (float) DB::table('referrals')
                 ->where('referrer_id', $userId)
                 ->sum('reward_amount');
+
+            $paidStatuses = ['paid', 'delivered'];
+
+            $ucPaidCount = (int) DB::table('uc_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->count();
+            $mlPaidCount = (int) DB::table('ml_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->count();
+            $servicePaidCount = (int) DB::table('service_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->count();
+
+            $ucPaidSpent = (float) DB::table('uc_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->sum('sell_price');
+            $mlPaidSpent = (float) DB::table('ml_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->sum('sell_price');
+            $servicePaidSpent = (float) DB::table('service_orders')
+                ->where('user_id', $userId)
+                ->whereIn('status', $paidStatuses)
+                ->sum('sell_price');
+
+            $totalPurchases = $ucPaidCount + $mlPaidCount + $servicePaidCount;
+            $totalSpent = $ucPaidSpent + $mlPaidSpent + $servicePaidSpent;
         }
 
         $botUsername = $this->resolveBotUsername();
@@ -35,6 +68,11 @@ class ProfileController extends Controller
                 'link' => $referralLink,
                 'friends_count' => $referralsCount,
                 'earned_amount' => $referralsEarned,
+                'currency' => 'UZS',
+            ],
+            'stats' => [
+                'total_purchases' => $totalPurchases,
+                'total_spent' => $totalSpent,
                 'currency' => 'UZS',
             ],
         ]);

@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\CurrencyController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\MlProductController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProfitAnalyticsController;
 use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
@@ -38,121 +40,134 @@ Route::post('/click/complete', [ClickController::class, 'complete']);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
+        if (auth()->user()?->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         return Inertia::render('User/UserServices');
     });
 
-    Route::get('/tasks', function () {
-        return Inertia::render('Admin/Tasks');
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
+
+        Route::get('/tasks', function () {
+            return Inertia::render('Admin/Tasks');
+        });
+
+        Route::get('/products-uc', [UcProductController::class, 'index'])
+            ->name('uc-products.index');
+        Route::post('/uc-products', [UcProductController::class, 'store'])
+            ->name('uc-products.store');
+        Route::put('/uc-products/{product}', [UcProductController::class, 'update'])
+            ->name('uc-products.update');
+        Route::delete('/uc-products/{product}', [UcProductController::class, 'destroy'])
+            ->name('uc-products.destroy');
+
+        Route::get('/currencies', [CurrencyController::class, 'index'])
+            ->name('currencies.index');
+        Route::post('/currencies', [CurrencyController::class, 'store'])
+            ->name('currencies.store');
+        Route::put('/currencies/{currency}', [CurrencyController::class, 'update'])
+            ->name('currencies.update');
+        Route::post('/currencies/rate', [CurrencyController::class, 'storeRate'])
+            ->name('currencies.rate.store');
+
+        Route::get('/products-services', [ServiceController::class, 'index'])
+            ->name('services.index');
+        Route::post('/services', [ServiceController::class, 'store'])
+            ->name('services.store');
+        Route::put('/services/{service}', [ServiceController::class, 'update'])
+            ->name('services.update');
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy'])
+            ->name('services.destroy');
+
+        Route::get('/spin-sectors', [SpinSectorController::class, 'index'])
+            ->name('spin-sectors.index');
+        Route::post('/spin-sectors', [SpinSectorController::class, 'store'])
+            ->name('spin-sectors.store');
+        Route::put('/spin-sectors/{sector}', [SpinSectorController::class, 'update'])
+            ->name('spin-sectors.update');
+        Route::delete('/spin-sectors/{sector}', [SpinSectorController::class, 'destroy'])
+            ->name('spin-sectors.destroy');
+
+        Route::get('/spin-rules', [SpinRuleController::class, 'index'])
+            ->name('spin-rules.index');
+        Route::post('/spin-rules', [SpinRuleController::class, 'store'])
+            ->name('spin-rules.store');
+        Route::put('/spin-rules/{rule}', [SpinRuleController::class, 'update'])
+            ->name('spin-rules.update');
+        Route::delete('/spin-rules/{rule}', [SpinRuleController::class, 'destroy'])
+            ->name('spin-rules.destroy');
+
+        Route::get('/products-ml', [MlProductController::class, 'index'])
+            ->name('ml-products.index');
+        Route::post('/ml-products', [MlProductController::class, 'store'])
+            ->name('ml-products.store');
+        Route::put('/ml-products/{product}', [MlProductController::class, 'update'])
+            ->name('ml-products.update');
+        Route::delete('/ml-products/{product}', [MlProductController::class, 'destroy'])
+            ->name('ml-products.destroy');
+
+        Route::get('/users', [UserController::class, 'index'])
+            ->name('users.index');
+        Route::get('/profit-analytics', [ProfitAnalyticsController::class, 'index'])
+            ->name('profit.analytics');
+        Route::get('/referral-settings', [ReferralController::class, 'index'])
+            ->name('referrals.index');
+        Route::post('/referral-settings', [ReferralController::class, 'update'])
+            ->name('referrals.update');
+        Route::get('/uc-orders', [OrderController::class, 'ucOrders'])
+            ->name('orders.uc');
+        Route::get('/ml-orders', [OrderController::class, 'mlOrders'])
+            ->name('orders.ml');
+        Route::get('/service-orders', [OrderController::class, 'serviceOrders'])
+            ->name('orders.service');
+        Route::post('/orders/status', [OrderController::class, 'updateStatus'])
+            ->name('orders.status');
+
+        Route::post('/password', [PasswordController::class, 'store']);
+        Route::put('/password/{user}', [PasswordController::class, 'update']);
     });
 
-    Route::get('/products-uc', [UcProductController::class, 'index'])
-        ->name('uc-products.index');
-    Route::post('/uc-products', [UcProductController::class, 'store'])
-        ->name('uc-products.store');
-    Route::put('/uc-products/{product}', [UcProductController::class, 'update'])
-        ->name('uc-products.update');
-    Route::delete('/uc-products/{product}', [UcProductController::class, 'destroy'])
-        ->name('uc-products.destroy');
+    Route::middleware(['role:user'])->group(function () {
+        Route::post('/payment/create', [PaymentController::class, 'create'])
+            ->name('payment.create');
+        Route::get('/payment/status', [PaymentController::class, 'status'])
+            ->name('payment.status');
 
-    Route::get('/currencies', [CurrencyController::class, 'index'])
-        ->name('currencies.index');
-    Route::post('/currencies', [CurrencyController::class, 'store'])
-        ->name('currencies.store');
-    Route::put('/currencies/{currency}', [CurrencyController::class, 'update'])
-        ->name('currencies.update');
-    Route::post('/currencies/rate', [CurrencyController::class, 'storeRate'])
-        ->name('currencies.rate.store');
+        Route::get('/user-services', function () {
+            return Inertia::render('User/UserServices');
+        });
+        Route::get('/user-profile', [ProfileController::class, 'show'])
+            ->name('user-profile.show');
+        Route::get('/user-profile/user-balance', function () {
+            return Inertia::render('User/UserBalance');
+        });
+        Route::get('/user-purchases', [PurchaseController::class, 'index'])
+            ->name('user-purchases.index');
+        Route::get('/user-profile/security', function () {
+            return Inertia::render('User/UserSecurity');
+        });
 
-    Route::get('/products-services', [ServiceController::class, 'index'])
-        ->name('services.index');
-    Route::post('/services', [ServiceController::class, 'store'])
-        ->name('services.store');
-    Route::put('/services/{service}', [ServiceController::class, 'update'])
-        ->name('services.update');
-    Route::delete('/services/{service}', [ServiceController::class, 'destroy'])
-        ->name('services.destroy');
+        Route::get('/user-products-uc', [UcProductController::class, 'userIndex'])
+            ->name('user-products-uc.index');
+        Route::get('/user-telegram-stars', [ServiceController::class, 'userStars'])
+            ->name('user-telegram-stars.index');
+        Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
+            ->name('user-telegram-premium.index');
+        Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
+            ->name('user-products-ml.index');
+        Route::get('/user-spin', [SpinSectorController::class, 'SpinSector'])
+            ->name('user-spin-sectors.index');
 
-    Route::get('/spin-sectors', [SpinSectorController::class, 'index'])
-        ->name('spin-sectors.index');
-    Route::post('/spin-sectors', [SpinSectorController::class, 'store'])
-        ->name('spin-sectors.store');
-    Route::put('/spin-sectors/{sector}', [SpinSectorController::class, 'update'])
-        ->name('spin-sectors.update');
-    Route::delete('/spin-sectors/{sector}', [SpinSectorController::class, 'destroy'])
-        ->name('spin-sectors.destroy');
-
-    Route::get('/spin-rules', [SpinRuleController::class, 'index'])
-        ->name('spin-rules.index');
-    Route::post('/spin-rules', [SpinRuleController::class, 'store'])
-        ->name('spin-rules.store');
-    Route::put('/spin-rules/{rule}', [SpinRuleController::class, 'update'])
-        ->name('spin-rules.update');
-    Route::delete('/spin-rules/{rule}', [SpinRuleController::class, 'destroy'])
-        ->name('spin-rules.destroy');
-
-    Route::get('/products-ml', [MlProductController::class, 'index'])
-        ->name('ml-products.index');
-    Route::post('/ml-products', [MlProductController::class, 'store'])
-        ->name('ml-products.store');
-    Route::put('/ml-products/{product}', [MlProductController::class, 'update'])
-        ->name('ml-products.update');
-    Route::delete('/ml-products/{product}', [MlProductController::class, 'destroy'])
-        ->name('ml-products.destroy');
-
-    Route::get('/users', [UserController::class, 'index'])
-        ->name('users.index');
-    Route::get('/referral-settings', [ReferralController::class, 'index'])
-        ->name('referrals.index');
-    Route::post('/referral-settings', [ReferralController::class, 'update'])
-        ->name('referrals.update');
-    Route::get('/uc-orders', [OrderController::class, 'ucOrders'])
-        ->name('orders.uc');
-    Route::get('/ml-orders', [OrderController::class, 'mlOrders'])
-        ->name('orders.ml');
-    Route::get('/service-orders', [OrderController::class, 'serviceOrders'])
-        ->name('orders.service');
-    Route::post('/orders/status', [OrderController::class, 'updateStatus'])
-        ->name('orders.status');
-
-    Route::post('/payment/create', [PaymentController::class, 'create'])
-        ->name('payment.create');
-    Route::get('/payment/status', [PaymentController::class, 'status'])
-        ->name('payment.status');
-
-    Route::post('/password', [PasswordController::class, 'store']);
-    Route::put('/password/{user}', [PasswordController::class, 'update']);
-
-    Route::get('/user-services', function () {
-        return Inertia::render('User/UserServices');
+        Route::get('/user-tasks', [UserTodoController::class, 'index'])
+            ->name('user-tasks.index');
+        Route::post('/user-todos', [UserTodoController::class, 'store'])
+            ->name('user-todos.store');
+        Route::patch('/user-todos/{todo}', [UserTodoController::class, 'toggle'])
+            ->name('user-todos.toggle');
+        Route::delete('/user-todos/{todo}', [UserTodoController::class, 'destroy'])
+            ->name('user-todos.destroy');
     });
-    Route::get('/user-profile', [ProfileController::class, 'show'])
-        ->name('user-profile.show');
-    Route::get('/user-profile/user-balance', function () {
-        return Inertia::render('User/UserBalance');
-    });
-    Route::get('/user-purchases', [PurchaseController::class, 'index'])
-        ->name('user-purchases.index');
-    Route::get('/user-profile/security', function () {
-        return Inertia::render('User/UserSecurity');
-    });
-
-    Route::get('/user-products-uc', [UcProductController::class, 'userIndex'])
-        ->name('user-products-uc.index');
-    Route::get('/user-telegram-stars', [ServiceController::class, 'userStars'])
-        ->name('user-telegram-stars.index');
-    Route::get('/user-telegram-premium', [ServiceController::class, 'userPremium'])
-        ->name('user-telegram-premium.index');
-    Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
-        ->name('user-products-ml.index');
-    Route::get('/user-spin', [SpinSectorController::class, 'SpinSector'])
-        ->name('user-spin-sectors.index');
-
-    Route::get('/user-tasks', [UserTodoController::class, 'index'])
-        ->name('user-tasks.index');
-    Route::post('/user-todos', [UserTodoController::class, 'store'])
-        ->name('user-todos.store');
-    Route::patch('/user-todos/{todo}', [UserTodoController::class, 'toggle'])
-        ->name('user-todos.toggle');
-    Route::delete('/user-todos/{todo}', [UserTodoController::class, 'destroy'])
-        ->name('user-todos.destroy');
 });
