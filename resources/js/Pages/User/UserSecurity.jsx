@@ -12,7 +12,8 @@ import {
 
 function UserSecurity() {
 
-    const user = usePage().props.auth?.user;
+    const { auth, flash, errors } = usePage().props;
+    const user = auth?.user;
 
     const userId = user?.id;
     const hasPassword = !!user?.hasPassword;
@@ -84,7 +85,11 @@ function UserSecurity() {
                 },
 
                 onError: (errors) => {
-                    setError(errors.password || "Something went wrong");
+                    setError(
+                        errors.current_password ||
+                        errors.password ||
+                        "Xatolik yuz berdi"
+                    );
                 }
             });
 
@@ -100,7 +105,11 @@ function UserSecurity() {
                 },
 
                 onError: (errors) => {
-                    setError(errors.password || "Something went wrong");
+                    setError(
+                        errors.current_password ||
+                        errors.password ||
+                        "Xatolik yuz berdi"
+                    );
                 }
             });
 
@@ -109,8 +118,8 @@ function UserSecurity() {
     };
 
     if (!user) return null;
-    console.log(success);
-    console.log(user);
+    const successMessage = success || flash?.success;
+    const errorMessage = error || errors?.current_password || errors?.password;
     
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -295,15 +304,15 @@ function UserSecurity() {
 
                         </div>
 
-                        {error && (
+                        {errorMessage && (
                             <p className="text-red-500 text-sm">
-                                {error}
+                                {errorMessage}
                             </p>
                         )}
 
-                        {success && (
+                        {successMessage && (
                             <p className="text-green-600 text-sm">
-                                {success}
+                                {successMessage}
                             </p>
                         )}
 

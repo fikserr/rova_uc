@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\BroadcastNotificationController;
+use App\Http\Controllers\Admin\ManualTopupController as AdminManualTopupController;
 use App\Http\Controllers\Admin\MlProductController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProfitAnalyticsController;
@@ -15,7 +17,9 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Payment\ClickController;
 use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\User\ManualTopupController;
 use App\Http\Controllers\User\PasswordController;
+use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PurchaseController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserTodoController;
@@ -33,12 +37,15 @@ Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
 
-Route::post('/login', [LoginController::class, 'store']);
+Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:10,1');
 Route::post('/logout', [LoginController::class, 'destroy']);
-Route::post('/click/prepare', [ClickController::class, 'prepare']);
-Route::post('/click/complete', [ClickController::class, 'complete']);
+Route::post('/click/prepare', [ClickController::class, 'prepare'])->middleware('throttle:60,1');
+Route::post('/click/complete', [ClickController::class, 'complete'])->middleware('throttle:60,1');
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/password', [PasswordController::class, 'store']);
+    Route::put('/password/{user}', [PasswordController::class, 'update']);
+
     Route::get('/', function () {
         if (auth()->user()?->role === 'admin') {
             return redirect()->route('admin.dashboard');
@@ -123,15 +130,31 @@ Route::middleware(['auth'])->group(function () {
             ->name('orders.ml');
         Route::get('/service-orders', [OrderController::class, 'serviceOrders'])
             ->name('orders.service');
+        Route::get('/uc-orders/data', [OrderController::class, 'ucOrdersData'])
+            ->name('orders.uc.data');
+        Route::get('/ml-orders/data', [OrderController::class, 'mlOrdersData'])
+            ->name('orders.ml.data');
+        Route::get('/service-orders/data', [OrderController::class, 'serviceOrdersData'])
+            ->name('orders.service.data');
         Route::post('/orders/status', [OrderController::class, 'updateStatus'])
             ->name('orders.status');
+        Route::get('/broadcast-notifications', [BroadcastNotificationController::class, 'index'])
+            ->name('broadcast-notifications.index');
+        Route::post('/broadcast-notifications', [BroadcastNotificationController::class, 'store'])
+            ->name('broadcast-notifications.store');
 
-        Route::post('/password', [PasswordController::class, 'store']);
-        Route::put('/password/{user}', [PasswordController::class, 'update']);
+        Route::get('/manual-topups', [AdminManualTopupController::class, 'index'])
+            ->name('manual-topups.index');
+        Route::post('/manual-topups/{id}/approve', [AdminManualTopupController::class, 'approve'])
+            ->name('manual-topups.approve');
+        Route::post('/manual-topups/{id}/reject', [AdminManualTopupController::class, 'reject'])
+            ->name('manual-topups.reject');
+
     });
 
     Route::middleware(['role:user'])->group(function () {
         Route::post('/payment/create', [PaymentController::class, 'create'])
+            ->middleware('throttle:20,1')
             ->name('payment.create');
         Route::get('/payment/status', [PaymentController::class, 'status'])
             ->name('payment.status');
@@ -146,6 +169,16 @@ Route::middleware(['auth'])->group(function () {
         });
         Route::get('/user-purchases', [PurchaseController::class, 'index'])
             ->name('user-purchases.index');
+        Route::get('/user-notifications', [NotificationController::class, 'index'])
+            ->name('user-notifications.index');
+        Route::patch('/user-notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+            ->name('user-notifications.read');
+
+        Route::post('/manual-topup', [ManualTopupController::class, 'store'])
+            ->middleware('throttle:5,60')
+            ->name('manual-topup.store');
+        Route::get('/manual-topup/my', [ManualTopupController::class, 'myRequests'])
+            ->name('manual-topup.my');
         Route::get('/user-profile/security', function () {
             return Inertia::render('User/UserSecurity');
         });

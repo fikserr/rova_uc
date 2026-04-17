@@ -2,24 +2,28 @@ import { usePage } from '@inertiajs/react'
 import { Edit2, Trash2 } from "lucide-react";
 
 function ProductCard({ product, onEdit, onDelete, cardFor }) {
-    const {currency_rates} = usePage().props;
-    console.log(currency_rates);
+    const { currency_rates: currencyRates = {} } = usePage().props;
 
-    const calculateProfit = (sellPrice, costPrice, sellCurrency,costCurrency) => {
-    const usdRate = 12100 // In a real app, maybe fetch this from an API
+    const getRateToBase = (currencyCode) => {
+        const normalizedCode = String(currencyCode ?? "UZS").trim().toUpperCase();
+        if (normalizedCode === "UZS") {
+            return 1;
+        }
 
-    // Ensure we are working with numbers
-    const sell = Number(sellPrice) || 0;
-    const cost = Number(costPrice) || 0;
+        return Number(currencyRates[normalizedCode] ?? 0);
+    };
 
-    // Convert Sell Price to UZS if it's in USD
-    const sellInUZS = sellCurrency === "USD" ? sell * usdRate : sell;
+    const calculateProfit = (sellPrice, costPrice, sellCurrency, costCurrency) => {
+        const sell = Number(sellPrice) || 0;
+        const cost = Number(costPrice) || 0;
+        const sellRate = getRateToBase(sellCurrency);
+        const costRate = getRateToBase(costCurrency);
 
-    // Convert Cost Price to UZS if it's in USD
-    const costInUZS = costCurrency === "USD" ? cost * usdRate : cost;
+        const sellInUZS = sell * sellRate;
+        const costInUZS = cost * costRate;
 
-    return sellInUZS - costInUZS;
-};
+        return sellInUZS - costInUZS;
+    };
 
     return (
         <div
@@ -93,11 +97,13 @@ function ProductCard({ product, onEdit, onDelete, cardFor }) {
                 <div className="flex justify-between pt-2 border-t">
                     <span className="text-sm text-gray-500">Profit:</span>
                     <span className="text-sm font-medium text-green-600">
-                        {calculateProfit(
-                            product.sell_price,
-                            product.cost_price,
-                            product.sellCurrency,
-                            product.cost_currency
+                        {Number(
+                            product.profit_base ?? calculateProfit(
+                                product.sell_price,
+                                product.cost_price,
+                                product.sell_currency,
+                                product.cost_currency
+                            )
                         ).toLocaleString()}{" "}
                         UZS
                     </span>

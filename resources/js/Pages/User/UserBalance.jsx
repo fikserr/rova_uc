@@ -1,275 +1,113 @@
-// import { Head } from "@inertiajs/react";
-// import {
-//     CheckCircle,
-//     Clock,
-//     CreditCard,
-//     Shield,
-//     TrendingDown,
-// } from "lucide-react";
-// import { useState } from "react";
-
-// function UserBalance() {
-//     const [selectedMethod, setSelectedMethod] = useState(null);
-//     const [amount, setAmount] = useState("");
-
-//     const paymentMethods = [
-//         {
-//             id: "uzb-som",
-//             label: "Uzb-Som",
-//             icon: "🇺🇿",
-//             provider: "Click / Payme",
-//             fee: "0%",
-//             time: "1-5 daqiqa",
-//             color: "from-green-400 to-emerald-500",
-//         },
-//         {
-//             id: "chet-eldan",
-//             label: "Chet eldan",
-//             icon: "💳",
-//             provider: "RuBank",
-//             fee: "2%",
-//             time: "5-15 daqiqa",
-//             color: "from-blue-400 to-indigo-500",
-//         },
-//     ];
-
-//     const handlePayment = () => {
-//         if (selectedMethod && amount && parseFloat(amount) >= 1) {
-//             console.log("Processing payment:", {
-//                 method: selectedMethod,
-//                 amount,
-//             });
-//         }
-//     };
-
-//     const isPaymentDisabled =
-//         !selectedMethod || !amount || parseFloat(amount) < 1;
-
-//     const selectedMethodData = paymentMethods.find(
-//         (m) => m.id === selectedMethod,
-//     );
-
-//     return (
-//         <>
-//             <Head title="Hisobni to‘ldirish" />
-
-//             <div
-//                 className={`min-h-[calc(100vh-140px)] px-4 py-6 pb-24 lg:pb-8 transition-colors duration-300 dark:bg-linear-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50`}
-//             >
-//                 <div className="max-w-6xl mx-auto">
-//                     {/* Header */}
-//                     <div className="text-center mb-8 lg:mb-10">
-//                         <div className="inline-flex items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full mb-4 text-sm font-semibold shadow-lg">
-//                             <Shield className="size-4" />
-//                             <span>Xavfsiz to'lov tizimi</span>
-//                         </div>
-
-//                         <h1
-//                             className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 bg-linear-to-r bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300 from-slate-900 to-slate-700`}
-//                         >
-//                             Hisobni to'ldirish
-//                         </h1>
-
-//                         <p className="text-slate-600 dark:text-slate-200">
-//                             Qulay to'lov usulini tanlang
-//                         </p>
-//                     </div>
-
-//                     {/* Balance */}
-//                     <div
-//                         className={`backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 mb-8 border dark:bg-slate-800/80 dark:border-slate-700 "bg-white/80 border-slate-100`}
-//                     >
-//                         <div className="flex items-center justify-between">
-//                             <div>
-//                                 <p className="dark:text-slate-400 text-slate-600">
-//                                     Joriy balans
-//                                 </p>
-//                                 <p className="text-4xl sm:text-5xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-//                                     0 UZS
-//                                 </p>
-//                             </div>
-//                             <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-4 sm:p-6 rounded-2xl">
-//                                 <CreditCard className="size-10 text-white" />
-//                             </div>
-//                         </div>
-//                     </div>
-
-//                     {/* Payment Methods */}
-//                     <div className="mb-8">
-//                         <h2
-//                             className={`text-xl sm:text-2xl font-bold mb-6 dark:text-white text-slate-900`}
-//                         >
-//                             To'lov usulini tanlang
-//                         </h2>
-
-//                         <div className="grid sm:grid-cols-2 gap-4">
-//                             {paymentMethods.map((method) => (
-//                                 <button
-//                                     key={method.id}
-//                                     onClick={() => setSelectedMethod(method.id)}
-//                                     className={`relative backdrop-blur-sm rounded-2xl p-6 text-left border-2 transition-all ${
-//                                         selectedMethod === method.id
-//                                             ? "border-blue-500 shadow-lg scale-[1.02]  "
-//                                             : "dark:bg-slate-800/80 dark:border-slate-700 bg-white/80 border-slate-100"
-//                                     }`}
-//                                 >
-//                                     {selectedMethod === method.id && (
-//                                         <div className="absolute top-4 right-4 bg-blue-600 rounded-full p-1">
-//                                             <CheckCircle className="size-5 text-white" />
-//                                         </div>
-//                                     )}
-
-//                                     <div className="text-4xl mb-3 text-slate-800 dark:text-white">
-//                                         {method.icon}
-//                                     </div>
-//                                     <h3
-//                                         className={`text-xl font-bold dark:text-white  text-slate-900`}
-//                                     >
-//                                         {method.label}
-//                                     </h3>
-//                                     <p className="dark:text-slate-300 text-slate-900">
-//                                         {method.provider}
-//                                     </p>
-
-//                                     <div className="mt-4 space-y-2 text-xs">
-//                                         <div className="flex items-center gap-2">
-//                                             <TrendingDown className="size-4 text-emerald-500" />
-//                                             <span className="text-slate-800 dark:text-slate-50">
-//                                                 Komissiya: {method.fee}
-//                                             </span>
-//                                         </div>
-//                                         <div className="flex items-center gap-2">
-//                                             <Clock className="size-4 text-blue-500" />
-//                                             <span className="text-slate-800 dark:text-slate-50">
-//                                                 Vaqt: {method.time}
-//                                             </span>
-//                                         </div>
-//                                     </div>
-//                                 </button>
-//                             ))}
-//                         </div>
-//                     </div>
-
-//                     {/* Amount */}
-//                     {selectedMethod && (
-//                         <div
-//                             className={`backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border dark:bg-slate-800/80 dark:border-slate-700 bg-white/80 border-slate-100 `}
-//                         >
-//                             <h3
-//                                 className={`text-xl font-bold mb-4 dark:text-white text-slate-900 `}
-//                             >
-//                                 Summa kiriting
-//                             </h3>
-
-//                             <input
-//                                 type="number"
-//                                 min="1"
-//                                 step="0.01"
-//                                 placeholder="0.00"
-//                                 value={amount}
-//                                 onChange={(e) => setAmount(e.target.value)}
-//                                 className="h-16 text-2xl mb-4 w-full outline-0 border-b-2 dark:border-white dark:text-white"
-//                             />
-
-//                             <button
-//                                 onClick={handlePayment}
-//                                 disabled={isPaymentDisabled}
-//                                 className="w-full h-14 text-lg font-bold bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl dark:text-white cursor-pointer"
-//                             >
-//                                 To'lovni amalga oshirish
-//                             </button>
-//                         </div>
-//                     )}
-//                 </div>
-//             </div>
-//         </>
-//     );
-// }
-
-// export default UserBalance;
-
-
-
 import { Head, usePage } from "@inertiajs/react";
-import {
-    CheckCircle,
-    Clock,
-    CreditCard,
-    Shield,
-    TrendingDown,
-} from "lucide-react";
-import { useState } from "react";
 import axios from "axios";
+import { CheckCircle, Clock, CreditCard, Receipt, Upload, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+const STATUS_LABEL = {
+    pending:  { text: "Ko'rib chiqilmoqda", cls: "bg-amber-100 text-amber-700" },
+    approved: { text: "Tasdiqlandi",         cls: "bg-emerald-100 text-emerald-700" },
+    rejected: { text: "Rad etildi",          cls: "bg-rose-100 text-rose-700" },
+};
 
 function UserBalance() {
-    const [selectedMethod, setSelectedMethod] = useState(null);
-    const [amount, setAmount] = useState("");
-    const [loading, setLoading] = useState(false);
     const { user } = usePage().props;
 
-    const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    // ── Click to'lov ─────────────────────────────────────────────
+    const [selectedMethod, setSelectedMethod] = useState(null);
+    const [amount, setAmount]                 = useState("");
+    const [loading, setLoading]               = useState(false);
+
+    // ── Chek to'lov ──────────────────────────────────────────────
+    const [checkAmount, setCheckAmount]   = useState("");
+    const [receiptFile, setReceiptFile]   = useState(null);
+    const [preview, setPreview]           = useState(null);
+    const [checkLoading, setCheckLoading] = useState(false);
+    const [checkSuccess, setCheckSuccess] = useState(false);
+    const [myRequests, setMyRequests]     = useState([]);
+    const fileInputRef = useRef(null);
+
+    const quickAmounts = [10000, 30000, 50000, 100000, 200000, 500000];
 
     const paymentMethods = [
-        {
-            id: "uzb-som",
-            label: "Uzb-Som",
-            icon: "🇺🇿",
-            provider: "Click / Payme",
-            fee: "0%",
-            time: "1-5 daqiqa",
-        },
-        {
-            id: "chet-eldan",
-            label: "Chet eldan",
-            icon: "💳",
-            provider: "RuBank",
-            fee: "2%",
-            time: "5-15 daqiqa",
-        },
+        { id: "click",  label: "Click / Payme", icon: "🇺🇿", desc: "Karta orqali" },
+        { id: "manual", label: "Chek / Bank o'tkazma", icon: "🧾", desc: "Chek rasmini yuborish" },
     ];
 
-    const handlePayment = async () => {
-        if (!selectedMethod || !amount) return;
+    useEffect(() => {
+        axios.get("/manual-topup/my")
+            .then(res => setMyRequests(res.data))
+            .catch(() => {});
+    }, [checkSuccess]);
 
+    // ── Click to'lov ─────────────────────────────────────────────
+    const handleClickPay = async () => {
+        if (!amount) return;
         try {
             setLoading(true);
             const res = await axios.post("/payment/create", {
                 telegram_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
-                amount: amount
+                amount,
             });
-
-            const url = res.data.payment_url;
-
-            if (url) {
-                window.location.href = url;
+            if (res.data.payment_url) {
+                window.location.href = res.data.payment_url;
             }
-
-        } catch (e) {
-            console.error(e);
+        } catch {
             alert("To'lov yaratishda xatolik");
         } finally {
             setLoading(false);
         }
     };
 
-    const isPaymentDisabled =
-        !selectedMethod || !amount || parseFloat(amount) < 1;
+    // ── Chek upload ───────────────────────────────────────────────
+    const onFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setReceiptFile(file);
+        setPreview(URL.createObjectURL(file));
+    };
+
+    const removeFile = () => {
+        setReceiptFile(null);
+        setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const handleCheckSubmit = async () => {
+        if (!receiptFile || !checkAmount || parseFloat(checkAmount) < 1000) return;
+        try {
+            setCheckLoading(true);
+            const form = new FormData();
+            form.append("amount", checkAmount);
+            form.append("receipt", receiptFile);
+            await axios.post("/manual-topup", form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            setCheckSuccess(true);
+            setCheckAmount("");
+            removeFile();
+            setTimeout(() => setCheckSuccess(false), 5000);
+        } catch (e) {
+            alert(e.response?.data?.message ?? "Xatolik yuz berdi");
+        } finally {
+            setCheckLoading(false);
+        }
+    };
+
+    const checkDisabled = !receiptFile || !checkAmount || parseFloat(checkAmount) < 1000 || checkLoading;
 
     return (
         <>
-            <Head title="Hisobni to‘ldirish" />
+            <Head title="Hisobni to'ldirish" />
 
-            <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-24 lg:pb-8 bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
-                <div className="max-w-6xl mx-auto">
+            <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-24 lg:pb-8 bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
+                <div className="max-w-2xl mx-auto space-y-5">
 
-                    {/* Balance */}
-                    <div className="rounded-3xl shadow-xl p-6 mb-8 bg-white">
+                    {/* Balans kartasi */}
+                    <div className="rounded-3xl shadow-xl p-6 bg-white dark:bg-slate-800">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-600">
-                                    Joriy balans
-                                </p>
-                                <p className="text-4xl font-bold text-blue-600">
+                                <p className="text-slate-500 dark:text-slate-400 text-sm">Joriy balans</p>
+                                <p className="text-4xl font-bold text-blue-600 mt-1">
                                     {Number(user?.balance ?? 0).toLocaleString("fr-FR")} UZS
                                 </p>
                             </div>
@@ -279,59 +117,180 @@ function UserBalance() {
                         </div>
                     </div>
 
-                    {/* Payment Methods */}
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold mb-6">
+                    {/* To'lov usulini tanlash */}
+                    <div>
+                        <h2 className="text-base font-bold text-slate-700 dark:text-white mb-3">
                             To'lov usulini tanlang
                         </h2>
-
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            {paymentMethods.map((method) => (
+                        <div className="grid grid-cols-2 gap-3">
+                            {paymentMethods.map((m) => (
                                 <button
-                                    key={method.id}
-                                    onClick={() => setSelectedMethod(method.id)}
-                                    className={`rounded-2xl p-6 border-2 ${selectedMethod === method.id
-                                            ? "border-blue-500"
-                                            : "border-slate-200"
-                                        }`}
+                                    key={m.id}
+                                    onClick={() => setSelectedMethod(m.id)}
+                                    className={`rounded-2xl p-4 border-2 text-left transition-all ${
+                                        selectedMethod === m.id
+                                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                    }`}
                                 >
-                                    <div className="text-4xl mb-3">
-                                        {method.icon}
-                                    </div>
-                                    <h3 className="text-xl font-bold">
-                                        {method.label}
-                                    </h3>
-                                    <p>{method.provider}</p>
+                                    <div className="text-3xl mb-2">{m.icon}</div>
+                                    <p className="font-bold text-sm text-slate-800 dark:text-white">{m.label}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{m.desc}</p>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Amount */}
-                    {selectedMethod && (
-                        <div className="rounded-2xl shadow-xl p-6 bg-white">
-                            <h3 className="text-xl font-bold mb-4">
-                                Summa kiriting
-                            </h3>
+                    {/* ── Click to'lov ─────────────────────────────── */}
+                    {selectedMethod === "click" && (
+                        <div className="rounded-2xl shadow p-5 bg-white dark:bg-slate-800">
+                            <h3 className="font-bold text-slate-800 dark:text-white mb-4">Summani kiriting</h3>
+
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                {quickAmounts.map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => setAmount(String(amt))}
+                                        className={`py-2 px-3 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                                            amount === String(amt)
+                                                ? "border-blue-500 bg-blue-50 text-blue-700"
+                                                : "border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white hover:border-blue-300"
+                                        }`}
+                                    >
+                                        {Number(amt).toLocaleString("fr-FR")}
+                                    </button>
+                                ))}
+                            </div>
 
                             <input
                                 type="number"
-                                min="1"
-                                placeholder="10000"
+                                min="1000"
+                                placeholder="Summa (so'm)"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
-                                className="h-16 text-2xl mb-4 w-full border-b-2 outline-none"
+                                className="h-14 text-xl w-full border-b-2 outline-none bg-transparent dark:text-white dark:border-slate-500 mb-4"
                             />
 
                             <button
-                                onClick={handlePayment}
-                                disabled={isPaymentDisabled || loading}
-                                className="w-full h-14 text-lg font-bold bg-blue-600 text-white rounded-2xl"
+                                onClick={handleClickPay}
+                                disabled={!amount || parseFloat(amount) < 1 || loading}
+                                className="w-full h-12 font-bold bg-blue-600 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? "Yuklanmoqda..." : "To'lovni amalga oshirish"}
+                                {loading ? "Yuklanmoqda..." : `${Number(amount || 0).toLocaleString("fr-FR")} UZS to'lash`}
                             </button>
                         </div>
                     )}
+
+                    {/* ── Chek orqali to'lov ────────────────────────── */}
+                    {selectedMethod === "manual" && (
+                        <div className="rounded-2xl shadow p-5 bg-white dark:bg-slate-800 space-y-4">
+                            <h3 className="font-bold text-slate-800 dark:text-white">Chek orqali to'ldirish</h3>
+
+                            <ol className="text-sm text-slate-500 dark:text-slate-400 space-y-1 list-decimal list-inside">
+                                <li>Bank orqali pul o'tkazing</li>
+                                <li>Chek rasmini yuklang</li>
+                                <li>Summani kiriting va yuboring</li>
+                            </ol>
+
+                            {/* Rasm yuklash */}
+                            {!preview ? (
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl h-36 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
+                                >
+                                    <Upload className="size-8" />
+                                    <span className="text-sm font-medium">Chek rasmini tanlang</span>
+                                    <span className="text-xs">JPG, PNG, WEBP — maks 10MB</span>
+                                </button>
+                            ) : (
+                                <div className="relative">
+                                    <img
+                                        src={preview}
+                                        alt="Chek"
+                                        className="w-full max-h-64 object-contain rounded-xl border border-slate-200 dark:border-slate-600"
+                                    />
+                                    <button
+                                        onClick={removeFile}
+                                        className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 hover:bg-rose-600"
+                                    >
+                                        <X className="size-4" />
+                                    </button>
+                                </div>
+                            )}
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={onFileChange}
+                            />
+
+                            {/* Summa */}
+                            <div>
+                                <label className="text-sm text-slate-500 dark:text-slate-400 mb-1 block">
+                                    O'tkazilgan summa (so'm)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1000"
+                                    placeholder="50000"
+                                    value={checkAmount}
+                                    onChange={(e) => setCheckAmount(e.target.value)}
+                                    className="w-full h-12 border-b-2 border-slate-300 dark:border-slate-500 outline-none bg-transparent text-xl dark:text-white"
+                                />
+                            </div>
+
+                            {checkSuccess && (
+                                <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl p-3 text-sm font-medium">
+                                    <CheckCircle className="size-5 shrink-0" />
+                                    Chekingiz yuborildi! Ko'rib chiqilgandan so'ng balansingizga qo'shiladi.
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleCheckSubmit}
+                                disabled={checkDisabled}
+                                className="w-full h-12 font-bold bg-blue-600 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {checkLoading ? "Yuborilmoqda..." : "Chekni yuborish"}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ── So'rovlar tarixi ──────────────────────────── */}
+                    {myRequests.length > 0 && (
+                        <div className="rounded-2xl shadow p-5 bg-white dark:bg-slate-800">
+                            <h3 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                                <Receipt className="size-5" /> So'rovlar tarixi
+                            </h3>
+                            <div className="space-y-2">
+                                {myRequests.map((r) => {
+                                    const s = STATUS_LABEL[r.status] ?? { text: r.status, cls: "bg-slate-100 text-slate-600" };
+                                    return (
+                                        <div key={r.id} className="flex items-center justify-between py-2 border-b dark:border-slate-700 last:border-0">
+                                            <div>
+                                                <p className="font-semibold text-slate-800 dark:text-white text-sm">
+                                                    {Number(r.amount).toLocaleString("fr-FR")} UZS
+                                                </p>
+                                                <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                                    <Clock className="size-3" />
+                                                    {new Date(r.created_at).toLocaleString("ru-RU")}
+                                                </p>
+                                                {r.notes && (
+                                                    <p className="text-xs text-rose-500 mt-0.5">{r.notes}</p>
+                                                )}
+                                            </div>
+                                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${s.cls}`}>
+                                                {s.text}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </>

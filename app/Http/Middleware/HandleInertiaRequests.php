@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CurrencyRate;
 use App\Models\UserBalance;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
@@ -42,8 +43,25 @@ class HandleInertiaRequests extends Middleware
         $balance = $user
             ? (UserBalance::where('user_id', $user->id)->value('balance') ?? 0)
             : 0;
+        $currencyRates = CurrencyRate::query()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get(['currency_code', 'rate_to_base'])
+            ->unique('currency_code')
+            ->mapWithKeys(fn ($rate) => [
+                strtoupper((string) $rate->currency_code) => (float) $rate->rate_to_base,
+            ])
+            ->toArray();
+
+        if (!isset($currencyRates['UZS'])) {
+            $currencyRates['UZS'] = 1.0;
+        }
 
         return array_merge(parent::share($request), [
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -57,6 +75,7 @@ class HandleInertiaRequests extends Middleware
 
                 ] : null,
             ],
+            'currency_rates' => $currencyRates,
             'user' => $user ? [
                 'id' => $user->id,
                 'username' => $user->username,

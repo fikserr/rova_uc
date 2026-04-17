@@ -6,13 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\UserBalance;
+use App\Services\AdminOrderNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ClickController extends Controller
 {
     public function prepare(Request $request)
     {
+        if (!$this->verifySignature($request, false)) {
+            return response()->json(['error' => -1, 'error_note' => 'Invalid sign']);
+        }
+
         $payload = $this->parseMerchantTransId((string) $request->merchant_trans_id);
         $merchantPrepareId = $payload['order_id'] > 0
             ? $payload['order_id']
@@ -29,6 +35,10 @@ class ClickController extends Controller
 
     public function complete(Request $request)
     {
+        if (!$this->verifySignature($request, true)) {
+            return response()->json(['error' => -1, 'error_note' => 'Invalid sign']);
+        }
+
         $merchantTransId = (string) $request->merchant_trans_id;
         $amount = (float) $request->amount;
         $clickTransId = (string) $request->click_trans_id;
@@ -56,51 +66,68 @@ class ClickController extends Controller
             ]);
         }
 
-        Payment::create([
-            'user_id' => $user->id,
-            'amount' => $amount,
-            'currency' => 'UZS',
-            'provider' => 'click',
-            'click_trans_id' => $clickTransId,
-            'status' => 'paid',
-            'created_at' => now(),
-        ]);
+        $notifyAdmin = false;
 
-        if ($orderType === 'uc' && $orderId > 0) {
-            DB::table('uc_orders')
-                ->where('id', $orderId)
-                ->where('user_id', $user->id)
-                ->update(['status' => 'paid']);
-        }
+        DB::transaction(function () use ($user, $amount, $clickTransId, $merchantTransId, $orderType, $orderId, &$notifyAdmin) {
+            Payment::create([
+                'user_id' => $user->id,
+                'amount' => $amount,
+                'currency' => 'UZS',
+                'provider' => 'click',
+                'click_trans_id' => $clickTransId,
+                'status' => 'paid',
+                'created_at' => now(),
+            ]);
 
-        if ($orderType === 'ml' && $orderId > 0) {
-            DB::table('ml_orders')
-                ->where('id', $orderId)
-                ->where('user_id', $user->id)
-                ->update(['status' => 'paid']);
-        }
-
-        if ($orderType === 'service' && $orderId > 0) {
-            DB::table('service_orders')
-                ->where('id', $orderId)
-                ->where('user_id', $user->id)
-                ->update(['status' => 'paid']);
-        }
-
-        if ($orderType === 'topup') {
-            $balance = UserBalance::where('user_id', $user->id)->first();
-
-            if (!$balance) {
-                $balance = UserBalance::create([
-                    'user_id' => $user->id,
-                    'balance' => 0,
-                    'updated_at' => now(),
-                ]);
+            if ($orderType === 'uc' && $orderId > 0) {
+                DB::table('uc_orders')
+                    ->where('id', $orderId)
+                    ->where('user_id', $user->id)
+                    ->update(['status' => 'paid']);
+                $notifyAdmin = true;
             }
 
-            $balance->balance += $amount;
-            $balance->updated_at = now();
-            $balance->save();
+            if ($orderType === 'ml' && $orderId > 0) {
+                DB::table('ml_orders')
+                    ->where('id', $orderId)
+                    ->where('user_id', $user->id)
+                    ->update(['status' => 'paid']);
+                $notifyAdmin = true;
+            }
+
+            if ($orderType === 'service' && $orderId > 0) {
+                DB::table('service_orders')
+                    ->where('id', $orderId)
+                    ->where('user_id', $user->id)
+                    ->update(['status' => 'paid']);
+                $notifyAdmin = true;
+            }
+
+            if ($orderType === 'topup') {
+                $balanceRow = DB::table('user_balances')
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($balanceRow) {
+                    DB::table('user_balances')
+                        ->where('user_id', $user->id)
+                        ->update([
+                            'balance'    => (float) $balanceRow->balance + $amount,
+                            'updated_at' => now(),
+                        ]);
+                } else {
+                    DB::table('user_balances')->insert([
+                        'user_id'    => $user->id,
+                        'balance'    => $amount,
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        });
+
+        if ($notifyAdmin) {
+            AdminOrderNotificationService::notifyNewOrder($orderType, $orderId);
         }
 
         return response()->json([
@@ -110,6 +137,36 @@ class ClickController extends Controller
             'error' => 0,
             'error_note' => 'Success',
         ]);
+    }
+
+    private function verifySignature(Request $request, bool $isComplete): bool
+    {
+        $secretKey = config('services.click.secret_key');
+
+        // Skip verification if secret not configured (local dev)
+        if (!$secretKey) {
+            Log::warning('Click signature verification skipped: CLICK_SECRET_KEY not set');
+            return true;
+        }
+
+        $parts = [
+            $request->click_trans_id,
+            $request->service_id,
+            $secretKey,
+            $request->merchant_trans_id,
+        ];
+
+        if ($isComplete) {
+            $parts[] = $request->merchant_prepare_id;
+        }
+
+        $parts[] = $request->amount;
+        $parts[] = $request->action;
+        $parts[] = $request->sign_time;
+
+        $expected = md5(implode('', $parts));
+
+        return hash_equals($expected, (string) $request->sign_string);
     }
 
     private function parseMerchantTransId(string $merchantTransId): array

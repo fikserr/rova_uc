@@ -1,5 +1,6 @@
 import { Head, router, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { IoCopyOutline } from "react-icons/io5";
 
 const statusClass = {
@@ -19,9 +20,31 @@ function formatDate(value) {
 }
 
 export default function ServiceOrders() {
-    const { orders = [] } = usePage().props;
+    const { orders: incomingOrders = [] } = usePage().props;
+    const [orders, setOrders] = useState(incomingOrders);
     const [copiedRow, setCopiedRow] = useState(null);
     const [markedRaw, setMarkedRaw] = useState(null);
+
+    useEffect(() => {
+        setOrders(incomingOrders);
+    }, [incomingOrders]);
+
+    useEffect(() => {
+        const refreshOrders = async () => {
+            try {
+                const res = await axios.get("/service-orders/data");
+                setOrders(res.data);
+            } catch (_) {}
+        };
+
+        const intervalId = setInterval(refreshOrders, 3000);
+        window.addEventListener("focus", refreshOrders);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener("focus", refreshOrders);
+        };
+    }, []);
 
     const handleCopy = async (userId, rowId) => {
         if (!userId) return;
@@ -34,20 +57,18 @@ export default function ServiceOrders() {
         setMarkedRaw((prev) => (prev === id ? null : id));
     };
 
-    const setStatus = (orderId, status) => {
+    const setStatus = (orderId, status, description = "") => {
         router.post(
             "/orders/status",
             {
                 order_type: "service",
                 order_id: orderId,
                 status,
+                description,
             },
             { preserveScroll: true },
         );
     };
-
-    console.log(orders);
-
 
     return (
         <div className="space-y-6 p-0  ">
@@ -108,11 +129,10 @@ export default function ServiceOrders() {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div
-                                        className={`selection:bg-amber-400 flex items-center gap-2 dark:text-slate-100 ${
-                                            copiedRow === o.id
-                                                ? "text-green-500 font-medium"
-                                                : ""
-                                        }`}
+                                        className={`selection:bg-amber-400 flex items-center gap-2 dark:text-slate-100 ${copiedRow === o.id
+                                            ? "text-green-500 font-medium"
+                                            : ""
+                                            }`}
                                     >
                                         {copiedRow === o.id
                                             ? "Copied!"
@@ -167,9 +187,11 @@ export default function ServiceOrders() {
                                                 o.status !== "paid" ||
                                                 o.status === "canceled"
                                             }
-                                            onClick={() =>
-                                                setStatus(o.id, "canceled")
-                                            }
+                                            onClick={() => {
+                                                const reason = prompt("Bekor qilish sababi:");
+                                                if (!reason || !reason.trim()) return;
+                                                setStatus(o.id, "canceled", reason.trim());
+                                            }}
                                             className="px-3 py-1.5 text-xs rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:bg-black/20 disabled:cursor-not-allowed"
                                         >
                                             Bekor
@@ -193,11 +215,10 @@ export default function ServiceOrders() {
                     return (
                         <div
                             key={o.id}
-                            className={`bg-white dark:bg-slate-900 rounded-xl border transition-all dark:border-slate-800 duration-300  overflow-hidden dark:text-slate-100 ${
-                                isExpanded
-                                    ? "border-blue-500 shadow-md ring-1 ring-blue-500/10"
-                                    : "border-gray-200 shadow-sm"
-                            }`}
+                            className={`bg-white dark:bg-slate-900 rounded-xl border transition-all dark:border-slate-800 duration-300  overflow-hidden dark:text-slate-100 ${isExpanded
+                                ? "border-blue-500 shadow-md ring-1 ring-blue-500/10"
+                                : "border-gray-200 shadow-sm"
+                                }`}
                         >
                             {/* --- HEADER: Always Visible --- */}
                             <div
@@ -243,11 +264,10 @@ export default function ServiceOrders() {
 
                             {/* --- EXPANDABLE SECTION --- */}
                             <div
-                                className={`transition-all duration-300  ease-in-out ${
-                                    isExpanded
-                                        ? "max-h-250 opacity-100"
-                                        : "max-h-0 opacity-0 pointer-events-none"
-                                }`}
+                                className={`transition-all duration-300  ease-in-out ${isExpanded
+                                    ? "max-h-250 opacity-100"
+                                    : "max-h-0 opacity-0 pointer-events-none"
+                                    }`}
                             >
                                 <div className="px-4 pb-4 border-t border-gray-100 dark:border-slate-700 pt-4 dark:bg-slate-900">
                                     {/* Original Content Grid */}
@@ -362,7 +382,9 @@ export default function ServiceOrders() {
                                             }
                                             onClick={(e) => {
                                                 e.stopPropagation(); // Prevent toggle
-                                                setStatus(o.id, "canceled");
+                                                const reason = prompt("Bekor qilish sababi:");
+                                                if (!reason || !reason.trim()) return;
+                                                setStatus(o.id, "canceled", reason.trim());
                                             }}
                                             className="px-3 py-1.5 text-xs rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:bg-black/20 disabled:cursor-not-allowed"
                                         >

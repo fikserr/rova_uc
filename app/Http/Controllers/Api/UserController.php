@@ -122,15 +122,30 @@ class UserController extends Controller
     public function savePhone(Request $request)
     {
         $request->validate([
-            'telegram_id' => 'required|integer',
-            'phone_number' => 'required|string'
+            'telegram_id'  => 'required|integer',
+            'phone_number' => 'required|string|max:20',
         ]);
 
         DB::transaction(function () use ($request) {
             $user = User::findOrFail($request->telegram_id);
 
+            // Prevent the same phone being registered by multiple accounts (referral fraud)
+            $phoneExists = DB::table('users')
+                ->where('phone_number', $request->phone_number)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($phoneExists) {
+                return; // Silently ignore duplicate phones — don't reward referral
+            }
+
+            // Skip if phone already set
+            if ($user->phone_number) {
+                return;
+            }
+
             $user->update([
-                'phone_number' => $request->phone_number
+                'phone_number' => $request->phone_number,
             ]);
 
             $referral = DB::table('referrals')

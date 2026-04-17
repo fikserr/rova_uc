@@ -2,16 +2,22 @@ import { Link, usePage } from "@inertiajs/react";
 import { FaChartLine, FaCog, FaDollarSign, FaLayerGroup } from "react-icons/fa";
 import { IoDiamondOutline } from "react-icons/io5";
 import {
+    LuBell,
     LuBox,
     LuCalendarCheck,
     LuLayoutDashboard,
+    LuReceipt,
     LuShoppingCart,
     LuStar,
     LuUser,
 } from "react-icons/lu";
 
 export function Sidebar({ isOpen = true, onClose }) {
-    const { url } = usePage();
+    const { url, props } = usePage();
+    const authUser = props?.auth?.user ?? null;
+    const displayName = authUser?.username || "Admin";
+    const subText = authUser?.phone_number || "";
+    const avatarLetter = String(displayName).trim().charAt(0).toUpperCase() || "A";
 
     const menuItems = [
         {
@@ -37,6 +43,8 @@ export function Sidebar({ isOpen = true, onClose }) {
         { href: "/currencies", label: "Curreny Rates", icon: FaDollarSign },
         { href: "/spin-sectors", label: "Spin management", icon: FaCog },
         { href: "/tasks", label: "Tasks", icon: LuCalendarCheck },
+        { href: "/broadcast-notifications", label: "Broadcast", icon: LuBell },
+        { href: "/manual-topups", label: "Manual Topuplar", icon: LuReceipt },
     ];
 
     return (
@@ -129,15 +137,17 @@ export function Sidebar({ isOpen = true, onClose }) {
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3 px-4 py-3">
                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                            A
+                            {avatarLetter}
                         </div>
                         <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                Admin User
+                                {displayName}
                             </p>
-                            <p className="text-xs text-gray-500">
-                                admin@ucstore.com
-                            </p>
+                            {subText ? (
+                                <p className="text-xs text-gray-500">
+                                    {subText}
+                                </p>
+                            ) : null}
                         </div>
                     </div>
                 </div>

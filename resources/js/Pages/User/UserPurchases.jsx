@@ -1,10 +1,93 @@
-import { Head, usePage } from "@inertiajs/react";
-import { CheckCircle, Clock, Filter, Package, Search, ShoppingBag } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Head, router, usePage } from "@inertiajs/react";
+import { CheckCircle, Clock, Filter, Package, Search, ShoppingBag, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+const STATUS_STEPS = [
+    { key: "pending",   label: "Kutilmoqda" },
+    { key: "paid",      label: "To'langan"  },
+    { key: "delivered", label: "Bajarildi"  },
+];
+
+function StatusTracker({ status }) {
+    if (status === "canceled") {
+        return (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
+                <XCircle className="size-4 text-rose-500 shrink-0" />
+                <span className="text-xs font-semibold text-rose-500">Buyurtma bekor qilingan</span>
+            </div>
+        );
+    }
+
+    const currentIdx = STATUS_STEPS.findIndex((s) => s.key === status);
+
+    return (
+        <div className="flex items-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
+            {STATUS_STEPS.map((step, idx) => (
+                <div key={step.key} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center">
+                        <div
+                            className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                                idx < currentIdx
+                                    ? "bg-emerald-500 text-white"
+                                    : idx === currentIdx
+                                    ? "bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900"
+                                    : "bg-slate-200 text-slate-400 dark:bg-slate-600 dark:text-slate-400"
+                            }`}
+                        >
+                            {idx < currentIdx ? (
+                                <CheckCircle className="size-4" />
+                            ) : (
+                                idx + 1
+                            )}
+                        </div>
+                        <span
+                            className={`text-[10px] mt-1 whitespace-nowrap font-medium ${
+                                idx <= currentIdx
+                                    ? "text-blue-600 dark:text-blue-400"
+                                    : "text-slate-400"
+                            }`}
+                        >
+                            {step.label}
+                        </span>
+                    </div>
+                    {idx < STATUS_STEPS.length - 1 && (
+                        <div
+                            className={`flex-1 h-0.5 mb-4 mx-1 transition-colors ${
+                                idx < currentIdx
+                                    ? "bg-emerald-400"
+                                    : "bg-slate-200 dark:bg-slate-600"
+                            }`}
+                        />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
 
 function UserPurchases() {
     const { purchases = [], stats = {} } = usePage().props;
     const [filterStatus, setFilterStatus] = useState("all");
+
+    useEffect(() => {
+        const refreshPurchases = () => {
+            router.reload({
+                only: ["purchases", "stats", "flash"],
+                preserveScroll: true,
+                preserveState: true,
+                showProgress: false,
+            });
+        };
+
+        refreshPurchases();
+        const intervalId = setInterval(refreshPurchases, 2000);
+        window.addEventListener("focus", refreshPurchases);
+
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener("focus", refreshPurchases);
+        };
+    }, []);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -158,16 +241,18 @@ function UserPurchases() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-100 dark:border-slate-300">
+                            <StatusTracker status={purchase.status} />
+
+                            <div className="pt-3 mt-1 space-y-2">
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-slate-500 dark:text-slate-300">Buyurtma ID:</span>
                                     <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{purchase.id}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-sm mt-2">
+                                <div className="flex items-center justify-between text-sm">
                                     <span className="text-slate-500 dark:text-slate-300">Hisob:</span>
                                     <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{purchase.target ?? "-"}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-sm mt-2">
+                                <div className="flex items-center justify-between text-sm">
                                     <span className="text-slate-500 dark:text-slate-300">Buyurtma sanasi:</span>
                                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-100">
                                         <Clock className="size-3" />
@@ -194,4 +279,3 @@ function UserPurchases() {
 }
 
 export default UserPurchases;
-

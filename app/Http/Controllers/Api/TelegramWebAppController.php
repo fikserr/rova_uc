@@ -87,6 +87,7 @@ class TelegramWebAppController extends Controller
             }
 
             Auth::login($user, false);
+            $request->session()->regenerate();
             return response()->json([
                 'status' => 'ok',
                 'user' => $this->transformUser($user),

@@ -1,5 +1,5 @@
 import { toggleTheme } from "@/Hook/theme";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
     Bell,
     Calendar,
@@ -65,7 +65,8 @@ function UserProfile() {
             id: "notifications",
             label: "Bildirishnomalar",
             icon: Bell,
-            description: "Push bildirishnomalar",
+            description: "Yangi xabarlar va yangiliklar",
+            link: "/user-notifications",
         },
         {
             id: "language",
@@ -94,6 +95,9 @@ function UserProfile() {
     const year = createdDate.getFullYear();
     const formattedDate = `${day}.${month}.${year}`;
     const displayName = user?.username || String(user?.id || "user");
+    const handleLogout = () => {
+        router.post("/logout");
+    };
 
     return (
         <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 bg-linear-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 from-slate-50 via-blue-50 to-indigo-50 transition-all">
@@ -255,6 +259,37 @@ function UserProfile() {
 
                             {settingsOptions.map((opt) => {
                                 const Icon = opt.icon;
+                                if (opt.id === "logout") {
+                                    return (
+                                        <button
+                                            type="button"
+                                            className="w-full"
+                                            key={opt.id}
+                                            onClick={handleLogout}
+                                        >
+                                            <div
+                                                className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border dark:text-white ${
+                                                    opt.danger
+                                                        ? "bg-red-50 border-red-200 dark:bg-red-900 dark:border-red-400"
+                                                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
+                                                }`}
+                                            >
+                                                <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600">
+                                                    <Icon className="size-5 text-white" />
+                                                </div>
+                                                <div className="text-left flex flex-col justify-center">
+                                                    <div className="font-semibold">
+                                                        {opt.label}
+                                                    </div>
+                                                    <div className="text-xs opacity-70">
+                                                        {opt.description}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                }
+
                                 return (
                                     <Link
                                         href={opt.link || "#"}

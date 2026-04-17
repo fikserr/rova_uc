@@ -35,7 +35,13 @@ return [
         ],
     ],
     'telegram' => [
-    'bot_token' => env('TELEGRAM_BOT_TOKEN'),
-],
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    ],
+
+    'click' => [
+        'service_id'  => env('CLICK_SERVICE_ID'),
+        'merchant_id' => env('CLICK_MERCHANT_ID'),
+        'secret_key'  => env('CLICK_SECRET_KEY'),
+    ],
 
 ];

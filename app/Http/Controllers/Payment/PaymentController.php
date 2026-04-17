@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Services\AdminOrderNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,20 +14,19 @@ class PaymentController extends Controller
     public function create(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'telegram_id' => 'nullable|integer',
-            'amount' => 'nullable|numeric|min:0.01',
-            'order_type' => 'nullable|in:uc,ml,service,topup',
-            'product_id' => 'nullable|integer',
-            'ml_account_id' => 'nullable|string|max:64',
-            'ml_server_id' => 'nullable|string|max:64',
-            'pubg_player_id' => 'nullable|string|max:64',
-            'pubg_name' => 'nullable|string|max:64',
-            'service_id' => 'nullable|integer',
-            'target_telegram_username' => 'nullable|string|max:64',
-            'payment_method' => 'nullable|in:balance,click,auto',
+            'amount'                    => 'nullable|numeric|min:1000|max:50000000',
+            'order_type'                => 'nullable|in:uc,ml,service,topup',
+            'product_id'                => 'nullable|integer',
+            'ml_account_id'             => 'nullable|string|max:64',
+            'ml_server_id'              => 'nullable|string|max:64',
+            'pubg_player_id'            => 'nullable|string|max:64',
+            'pubg_name'                 => 'nullable|string|max:64',
+            'service_id'                => 'nullable|integer',
+            'target_telegram_username'  => 'nullable|string|max:64',
+            'payment_method'            => 'nullable|in:balance,click,auto',
         ]);
 
-        $userId = $validated['telegram_id'] ?? Auth::id();
+        $userId = Auth::id();
 
         if (!$userId) {
             return response()->json([
@@ -404,6 +404,10 @@ class PaymentController extends Controller
             return response()->json([
                 'message' => $result['error'],
             ], 422);
+        }
+
+        if ($orderType !== 'topup' && $result['order_id'] > 0) {
+            AdminOrderNotificationService::notifyNewOrder($orderType, $result['order_id']);
         }
 
         return response()->json([
