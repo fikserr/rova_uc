@@ -91,7 +91,7 @@ function ServiceCard({
     return (
         <Link
             href={href || "#"}
-            className="group relative rounded-3xl overflow-hidden bg-white/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 block
+            className="group relative rounded-2xl overflow-hidden bg-white/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 block
             dark:bg-slate-800 dark:shadow-none dark:ring-1 dark:ring-white/10"
         >
             {/* Header */}
@@ -127,9 +127,9 @@ function ServiceCard({
             </div>
 
             {/* Content */}
-            <div className="md:p-4 p-3 sm:p-5 bg-white dark:bg-slate-800">
+            <div className="md:p-4 p-2 sm:p-5 bg-white dark:bg-slate-800">
                 <h3
-                    className="font-bold text-[9px] md:text-lg mb-1 transition
+                    className="font-bold text-[6px] md:text-lg mb-1 transition
                             group-hover:text-blue-500
                             dark:text-slate-100 dark:group-hover:text-blue-400 "
                 >
@@ -266,8 +266,8 @@ function UserServices() {
                     </Swiper>
                 </div>
                 {/* Grid */}
-                <div className="flex flex-col gap-6 md:gap-10 font-semibold font-mono">
-                    <h1 className="text-3xl text-black dark:text-white">
+                <div className="flex flex-col gap-4 md:gap-10 font-semibold font-mono">
+                    <h1 className="text-xl 2xl:text-3xl text-black dark:text-white">
                         Xizmatlar
                     </h1>
                     <div className="w-full grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 sm:px-4 md:px-0 place-items-center">
