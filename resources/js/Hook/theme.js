@@ -1,41 +1,24 @@
-/**
- * Initialize theme before React mounts
- * Priority:
- * 1. localStorage
- * 2. system preference
- * 3. fallback = light
- */
 export function initTheme() {
-    const storedTheme = localStorage.getItem("theme");
+    const stored = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+    ).matches;
+    const isDark = stored === "dark" || (!stored && prefersDark);
 
-    let theme = "light";
-
-    if (storedTheme === "dark" || storedTheme === "light") {
-        theme = storedTheme;
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        theme = "dark";
-    }
-
-    document.documentElement.setAttribute("data-theme", theme);
+    // ✅ Use class, not data-theme attribute
+    document.documentElement.classList.toggle("dark", isDark);
 }
 
-/**
- * Toggle between light / dark
- * Persists to localStorage
- */
 export function toggleTheme() {
     const html = document.documentElement;
-    const current = html.getAttribute("data-theme");
+    const isDark = html.classList.contains("dark");
 
-    const next = current === "dark" ? "light" : "dark";
-
-    html.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
+    html.classList.toggle("dark", !isDark);
+    localStorage.setItem("theme", isDark ? "light" : "dark");
 }
 
-/**
- * Optional helper
- */
 export function getTheme() {
-    return document.documentElement.getAttribute("data-theme");
+    return document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light";
 }

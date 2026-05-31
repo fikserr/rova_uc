@@ -8,6 +8,7 @@ import {
     Globe,
     Lock,
     LogOut,
+    MessageCircle,
     Moon,
     Settings,
     ShoppingBag,
@@ -18,12 +19,24 @@ import {
     X,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+const LANGUAGES = [
+    { code: "en", label: "English", flag: "🇬🇧" },
+    { code: "uz", label: "O'zbek", flag: "🇺🇿" },
+    { code: "ru", label: "Русский", flag: "🇷🇺" },
+];
 
 function UserProfile() {
     const [copiedReferral, setCopiedReferral] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const { user, referral , stats = {} } = usePage().props;
+    const { user, referral, stats = {} } = usePage().props;
+    const { t, i18n } = useTranslation();
 
+    const changeLanguage = (code) => {
+        i18n.changeLanguage(code);
+        localStorage.setItem("lang", code);
+    };
 
     const referralLink = referral?.link || "https://t.me/yourbot?start=ref";
     const referralFriendsCount = Number(referral?.friends_count ?? 0);
@@ -39,21 +52,21 @@ function UserProfile() {
     const Userstats = [
         {
             id: "purchases",
-            label: "Xaridlar",
+            label: t("profile.stats.purchases"),
             value: String(Number(stats.total_purchases ?? 0)),
             icon: ShoppingBag,
             color: "from-blue-600 to-indigo-600",
         },
         {
             id: "spent",
-            label: "Jami sarflangan",
+            label: t("profile.stats.spent"),
             value: `${Number(stats.total_spent ?? 0).toLocaleString("fr-FR")} UZS`,
             icon: Wallet,
             color: "from-emerald-500 to-teal-600",
         },
         {
             id: "referrals",
-            label: "Taklif qilganlar",
+            label: t("profile.stats.referrals"),
             value: String(referralFriendsCount),
             icon: Users,
             color: "from-amber-500 to-orange-600",
@@ -63,28 +76,31 @@ function UserProfile() {
     const settingsOptions = [
         {
             id: "notifications",
-            label: "Bildirishnomalar",
+            label: t("settings.notifications"),
             icon: Bell,
-            description: "Yangi xabarlar va yangiliklar",
+            description: t("settings.notifications_desc"),
             link: "/user-notifications",
         },
         {
-            id: "language",
-            label: "Til",
-            icon: Globe,
-            description: "O'zbek tili",
-        },
-        {
             id: "security",
-            label: "Parol va xavfsizlik",
+            label: t("settings.security"),
             icon: Lock,
+            description: t("settings.security_desc"),
             link: "/user-profile/security",
         },
         {
+            id: "support",
+            label: t("settings.support"),
+            icon: MessageCircle,
+            description: t("settings.support_desc"),
+            link: "https://t.me/VallerUz",
+            external: true,
+        },
+        {
             id: "logout",
-            label: "Chiqish",
+            label: t("settings.logout"),
             icon: LogOut,
-            description: "Hisobdan chiqish",
+            description: t("settings.logout_desc"),
             danger: true,
         },
     ];
@@ -95,6 +111,7 @@ function UserProfile() {
     const year = createdDate.getFullYear();
     const formattedDate = `${day}.${month}.${year}`;
     const displayName = user?.username || String(user?.id || "user");
+
     const handleLogout = () => {
         router.post("/logout");
     };
@@ -102,10 +119,11 @@ function UserProfile() {
     return (
         <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 bg-linear-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 from-slate-50 via-blue-50 to-indigo-50 transition-all">
             <Head>
-                <title>User Profile</title>
+                <title>{t("profile.title")}</title>
             </Head>
 
             <div className="max-w-4xl mx-auto">
+                {/* Profile Header */}
                 <div className="bg-linear-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-3xl p-5 sm:p-8 mb-6 shadow-xl transition-colors duration-300">
                     <div className="flex items-center gap-4 mb-5">
                         <div className="bg-white/20 p-3 sm:p-4 rounded-2xl border-4 border-white/30">
@@ -119,7 +137,9 @@ function UserProfile() {
                             </h1>
                             <div className="flex items-center gap-2 text-white/90 md:text-sm text-xs">
                                 <Calendar className="size-4" />
-                                <span>A'zo: {formattedDate}</span>
+                                <span>
+                                    {t("profile.member_since")}: {formattedDate}
+                                </span>
                             </div>
                         </div>
                         <button
@@ -130,9 +150,12 @@ function UserProfile() {
                         </button>
                     </div>
 
+                    {/* Balance */}
                     <div className="bg-white/10 rounded-2xl p-4 border border-white/20 flex items-center justify-between">
                         <div>
-                            <p className="text-white/80 text-sm">Hisobingiz</p>
+                            <p className="text-white/80 text-sm">
+                                {t("profile.balance")}
+                            </p>
                             <p className="text-xl md:text-3xl font-bold text-white">
                                 {Number(user?.balance ?? 0).toLocaleString(
                                     "fr-FR",
@@ -142,12 +165,13 @@ function UserProfile() {
                         </div>
                         <Link href="/user-profile/user-balance">
                             <button className="bg-white text-blue-600 px-5 py-2 rounded-xl font-semibold">
-                                To'ldirish
+                                {t("profile.top_up")}
                             </button>
                         </Link>
                     </div>
                 </div>
 
+                {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                     {Userstats.map((stat) => {
                         const Icon = stat.icon;
@@ -172,6 +196,7 @@ function UserProfile() {
                     })}
                 </div>
 
+                {/* Referral */}
                 <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-5 sm:p-8 mb-6 shadow-xl">
                     <div className="flex gap-4 mb-4">
                         <div className="bg-white/20 p-3 rounded-xl">
@@ -179,10 +204,10 @@ function UserProfile() {
                         </div>
                         <div>
                             <h3 className="text-xl sm:text-2xl font-bold text-white">
-                                Do'stlarni taklif qiling
+                                {t("referral.title")}
                             </h3>
                             <p className="text-white/90 text-sm">
-                                Har bir do'st uchun bonus balansga tushadi
+                                {t("referral.description")}
                             </p>
                         </div>
                     </div>
@@ -211,7 +236,7 @@ function UserProfile() {
                                 {referralFriendsCount}
                             </div>
                             <div className="text-xs text-white/80">
-                                Do'stlar
+                                {t("referral.friends")}
                             </div>
                         </div>
                         <div className="bg-white/10 rounded-xl p-3 text-center">
@@ -220,19 +245,20 @@ function UserProfile() {
                                 {referralCurrency}
                             </div>
                             <div className="text-xs text-white/80">
-                                Ishlab topilgan
+                                {t("referral.earned")}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {/* Settings Modal */}
             {showSettings && (
                 <div className="fixed inset-0 bg-black/50 z-9999 flex items-center justify-center">
-                    <div className="w-full md:max-w-md max-w-xs bg-white dark:bg-zinc-900 rounded-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b dark:border-zinc-400 sticky top-0 bg-white dark:bg-zinc-900">
+                    <div className="border-2 border-blue-400 w-full md:max-w-md max-w-90 bg-white dark:bg-zinc-900 rounded-3xl sm:rounded-3xl h-max overflow-y-auto shadow-2xl">
+                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b border-zinc-400 dark:border-zinc-400 sticky top-0 bg-white dark:bg-zinc-900">
                             <h2 className="text-lg font-bold dark:text-white">
-                                Sozlamalar
+                                {t("settings.title")}
                             </h2>
                             <button
                                 onClick={() => setShowSettings(false)}
@@ -243,11 +269,14 @@ function UserProfile() {
                         </div>
 
                         <div className="p-4 space-y-4">
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border dark:border-zinc-700 dark:text-white">
+                            {/* Theme Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border-zinc-300 border dark:border-zinc-700 dark:text-white">
                                 <div className="flex items-center gap-3">
                                     <Moon className="dark:hidden" />
                                     <Sun className="hidden dark:block" />
-                                    <span className="font-semibold">Theme</span>
+                                    <span className="font-semibold">
+                                        {t("settings.theme")}
+                                    </span>
                                 </div>
                                 <button
                                     onClick={toggleTheme}
@@ -257,6 +286,34 @@ function UserProfile() {
                                 </button>
                             </div>
 
+                            {/* Language Switcher */}
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 dark:text-white">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <Globe className="size-5" />
+                                    <span className="font-semibold">
+                                        {t("settings.language")}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {LANGUAGES.map((lang) => (
+                                        <button
+                                            key={lang.code}
+                                            onClick={() =>
+                                                changeLanguage(lang.code)
+                                            }
+                                            className={`py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                                i18n.language === lang.code
+                                                    ? "bg-blue-600 text-white shadow-md"
+                                                    : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-white opacity-70 hover:opacity-100"
+                                            }`}
+                                        >
+                                            <span>{lang.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Other Settings */}
                             {settingsOptions.map((opt) => {
                                 const Icon = opt.icon;
                                 if (opt.id === "logout") {
@@ -268,7 +325,7 @@ function UserProfile() {
                                             onClick={handleLogout}
                                         >
                                             <div
-                                                className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border dark:text-white ${
+                                                className={`w-full flex gap-4 p-4 mt-3 cursor-pointer rounded-2xl border dark:text-white ${
                                                     opt.danger
                                                         ? "bg-red-50 border-red-200 dark:bg-red-900 dark:border-red-400"
                                                         : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
@@ -289,15 +346,23 @@ function UserProfile() {
                                         </button>
                                     );
                                 }
+                                const Wrapper = opt.external ? "a" : Link;
+                                const wrapperProps = opt.external
+                                    ? {
+                                          href: opt.link,
+                                          target: "_blank",
+                                          rel: "noopener noreferrer",
+                                          className: "w-full",
+                                      }
+                                    : {
+                                          href: opt.link || "#",
+                                          className: "w-full",
+                                      };
 
                                 return (
-                                    <Link
-                                        href={opt.link || "#"}
-                                        className="w-full"
-                                        key={opt.id}
-                                    >
+                                    <Wrapper key={opt.id} {...wrapperProps}>
                                         <button
-                                            className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border dark:text-white ${
+                                            className={`w-full flex gap-4 mt-3 p-4 cursor-pointer rounded-2xl border dark:text-white ${
                                                 opt.danger
                                                     ? "bg-red-50 border-red-200 dark:bg-red-900 dark:border-red-400"
                                                     : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
@@ -315,7 +380,7 @@ function UserProfile() {
                                                 </div>
                                             </div>
                                         </button>
-                                    </Link>
+                                    </Wrapper>
                                 );
                             })}
                         </div>

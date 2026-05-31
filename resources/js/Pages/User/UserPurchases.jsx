@@ -1,19 +1,32 @@
 import { Head, router, usePage } from "@inertiajs/react";
-import { CheckCircle, Clock, Filter, Package, Search, ShoppingBag, XCircle } from "lucide-react";
+import {
+    CheckCircle,
+    Clock,
+    Filter,
+    Package,
+    Search,
+    ShoppingBag,
+    XCircle,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
-const STATUS_STEPS = [
-    { key: "pending",   label: "Kutilmoqda" },
-    { key: "paid",      label: "To'langan"  },
-    { key: "delivered", label: "Bajarildi"  },
-];
+import { useTranslation } from "react-i18next";
 
 function StatusTracker({ status }) {
+    const { t } = useTranslation();
+
+    const STATUS_STEPS = [
+        { key: "pending", label: t("purchases.status.pending") },
+        { key: "paid", label: t("purchases.status.paid") },
+        { key: "delivered", label: t("purchases.status.delivered") },
+    ];
+
     if (status === "canceled") {
         return (
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
                 <XCircle className="size-4 text-rose-500 shrink-0" />
-                <span className="text-xs font-semibold text-rose-500">Buyurtma bekor qilingan</span>
+                <span className="text-xs font-semibold text-rose-500">
+                    {t("purchases.status.canceled_label")}
+                </span>
             </div>
         );
     }
@@ -23,15 +36,18 @@ function StatusTracker({ status }) {
     return (
         <div className="flex items-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
             {STATUS_STEPS.map((step, idx) => (
-                <div key={step.key} className="flex items-center flex-1 last:flex-none">
+                <div
+                    key={step.key}
+                    className="flex items-center flex-1 last:flex-none"
+                >
                     <div className="flex flex-col items-center">
                         <div
                             className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                                 idx < currentIdx
                                     ? "bg-emerald-500 text-white"
                                     : idx === currentIdx
-                                    ? "bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900"
-                                    : "bg-slate-200 text-slate-400 dark:bg-slate-600 dark:text-slate-400"
+                                      ? "bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900"
+                                      : "bg-slate-200 text-slate-400 dark:bg-slate-600 dark:text-slate-400"
                             }`}
                         >
                             {idx < currentIdx ? (
@@ -66,6 +82,7 @@ function StatusTracker({ status }) {
 }
 
 function UserPurchases() {
+    const { t } = useTranslation();
     const { purchases = [], stats = {} } = usePage().props;
     const [filterStatus, setFilterStatus] = useState("all");
 
@@ -82,7 +99,6 @@ function UserPurchases() {
         refreshPurchases();
         const intervalId = setInterval(refreshPurchases, 2000);
         window.addEventListener("focus", refreshPurchases);
-
         return () => {
             clearInterval(intervalId);
             window.removeEventListener("focus", refreshPurchases);
@@ -93,37 +109,34 @@ function UserPurchases() {
         switch (status) {
             case "delivered":
             case "paid":
-                return "bg-emerald-100 text-emerald-700";
+                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "pending":
-                return "bg-amber-100 text-amber-700";
+                return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
             case "canceled":
-                return "bg-rose-100 text-rose-700";
+                return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400";
             default:
-                return "bg-slate-100 text-slate-700";
+                return "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
         }
     };
 
     const getStatusText = (status) => {
         switch (status) {
             case "delivered":
-                return "Bajarildi";
+                return t("purchases.status.delivered");
             case "paid":
-                return "To'langan";
+                return t("purchases.status.paid");
             case "pending":
-                return "Kutilmoqda";
+                return t("purchases.status.pending");
             case "canceled":
-                return "Bekor qilingan";
+                return t("purchases.status.canceled");
             default:
                 return status;
         }
     };
 
     const filteredPurchases = useMemo(() => {
-        if (filterStatus === "all") {
-            return purchases;
-        }
-
-        return purchases.filter((purchase) => purchase.status === filterStatus);
+        if (filterStatus === "all") return purchases;
+        return purchases.filter((p) => p.status === filterStatus);
     }, [purchases, filterStatus]);
 
     const rotateFilter = () => {
@@ -138,32 +151,39 @@ function UserPurchases() {
 
     const formatDateTime = (value) => {
         if (!value) return "-";
-
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return String(value);
-
         return date.toLocaleString("uz-UZ");
     };
 
     return (
         <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 px-4 py-6 pb-24 lg:pb-8">
-            <Head title="Mening Xaridlarim" />
+            <Head title={t("purchases.page_title")} />
+
             <div className="max-w-4xl mx-auto">
+                {/* Title */}
                 <div className="mb-6">
                     <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:text-white">
-                        Mening xaridlarim
+                        {t("purchases.title")}
                     </h1>
-                    <p className="text-slate-600 dark:text-slate-400">Barcha buyurtmalaringiz tarixi</p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                        {t("purchases.subtitle")}
+                    </p>
                 </div>
 
+                {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
                     <div className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
                         <div className="flex items-center justify-center size-10 sm:size-12 bg-white/20 rounded-xl mb-3 mx-auto">
                             <ShoppingBag className="size-5 sm:size-6" />
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl sm:text-3xl font-bold mb-1">{stats.total ?? 0}</div>
-                            <div className="text-xs sm:text-sm text-blue-100">Jami xarid</div>
+                            <div className="text-2xl sm:text-3xl font-bold mb-1">
+                                {stats.total ?? 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-blue-100">
+                                {t("purchases.stats.total")}
+                            </div>
                         </div>
                     </div>
 
@@ -172,8 +192,12 @@ function UserPurchases() {
                             <CheckCircle className="size-5 sm:size-6" />
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl sm:text-3xl font-bold mb-1">{stats.completed ?? 0}</div>
-                            <div className="text-xs sm:text-sm text-emerald-100">Bajarilgan</div>
+                            <div className="text-2xl sm:text-3xl font-bold mb-1">
+                                {stats.completed ?? 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-emerald-100">
+                                {t("purchases.stats.completed")}
+                            </div>
                         </div>
                     </div>
 
@@ -183,20 +207,26 @@ function UserPurchases() {
                         </div>
                         <div className="text-center">
                             <div className="text-2xl sm:text-3xl font-bold mb-1">
-                                {Number(stats.total_spent ?? 0).toLocaleString("fr-FR")}
+                                {Number(stats.total_spent ?? 0).toLocaleString(
+                                    "fr-FR",
+                                )}
                             </div>
-                            <div className="text-xs sm:text-sm text-violet-100">{stats.currency ?? "UZS"} sarflangan</div>
+                            <div className="text-xs sm:text-sm text-violet-100">
+                                {stats.currency ?? "UZS"}{" "}
+                                {t("purchases.stats.spent")}
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Search + Filter bar */}
                 <div className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md p-4 mb-6 border border-slate-100 dark:border-slate-900">
                     <div className="flex items-center gap-3">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Qidiruv keyin qo'shiladi"
+                                placeholder={t("purchases.search_placeholder")}
                                 disabled
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-0 opacity-60 cursor-not-allowed dark:bg-slate-700 dark:text-white"
                             />
@@ -211,6 +241,7 @@ function UserPurchases() {
                     </div>
                 </div>
 
+                {/* Purchase cards */}
                 <div className="space-y-4">
                     {filteredPurchases.map((purchase) => (
                         <div
@@ -223,18 +254,23 @@ function UserPurchases() {
                                         <ShoppingBag className="size-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1 dark:text-white">{purchase.title}</h3>
-                                        <p className="text-slate-600 text-sm mb-2 dark:text-slate-300">{purchase.amount}</p>
+                                        <h3 className="text-lg font-bold text-slate-900 mb-1 dark:text-white">
+                                            {purchase.title}
+                                        </h3>
+                                        <p className="text-slate-600 text-sm mb-2 dark:text-slate-300">
+                                            {purchase.amount}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-xl font-bold text-slate-900 mb-2 dark:text-white">
-                                        {Number(purchase.price ?? 0).toLocaleString("fr-FR")} {purchase.currency ?? "UZS"}
+                                        {Number(
+                                            purchase.price ?? 0,
+                                        ).toLocaleString("fr-FR")}{" "}
+                                        {purchase.currency ?? "UZS"}
                                     </div>
                                     <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                                            purchase.status,
-                                        )}`}
+                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(purchase.status)}`}
                                     >
                                         {getStatusText(purchase.status)}
                                     </span>
@@ -245,18 +281,32 @@ function UserPurchases() {
 
                             <div className="pt-3 mt-1 space-y-2">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">Buyurtma ID:</span>
-                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{purchase.id}</span>
+                                    <span className="text-slate-500 dark:text-slate-300">
+                                        {t("purchases.order_id")}:
+                                    </span>
+                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                                        {purchase.id}
+                                    </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">Hisob:</span>
-                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{purchase.target ?? "-"}</span>
+                                    <span className="text-slate-500 dark:text-slate-300">
+                                        {t("purchases.account")}:
+                                    </span>
+                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                                        {purchase.target ?? "-"}
+                                    </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">Buyurtma sanasi:</span>
+                                    <span className="text-slate-500 dark:text-slate-300">
+                                        {t("purchases.order_date")}:
+                                    </span>
                                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-100">
                                         <Clock className="size-3" />
-                                        <span>{formatDateTime(purchase.created_at)}</span>
+                                        <span>
+                                            {formatDateTime(
+                                                purchase.created_at,
+                                            )}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -264,13 +314,18 @@ function UserPurchases() {
                     ))}
                 </div>
 
+                {/* Empty state */}
                 {filteredPurchases.length === 0 && (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-12 text-center border border-slate-100">
-                        <div className="bg-slate-100 size-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-3xl shadow-xl p-12 text-center border border-slate-100 dark:border-slate-700">
+                        <div className="bg-slate-100 dark:bg-slate-700 size-20 rounded-full flex items-center justify-center mx-auto mb-4">
                             <ShoppingBag className="size-10 text-slate-400" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">Xarid topilmadi</h3>
-                        <p className="text-slate-600">Xaridlaringiz shu sahifada ko'rinadi</p>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                            {t("purchases.empty_title")}
+                        </h3>
+                        <p className="text-slate-600 dark:text-slate-400">
+                            {t("purchases.empty_desc")}
+                        </p>
                     </div>
                 )}
             </div>

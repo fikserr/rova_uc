@@ -1,76 +1,124 @@
+import { Link } from "@inertiajs/react";
+import { Diamond, Gamepad2, Plus, Zap } from "lucide-react";
+
+const TABS = [
+    {
+        page: "uc",
+        name: "UC Products",
+        href: "/products-uc",
+        icon: Gamepad2,
+        active: "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/30",
+        inactive:
+            "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white",
+        addBtn: "bg-blue-600 hover:bg-blue-700 shadow-blue-200 dark:shadow-blue-900/30",
+    },
+    {
+        page: "diamonds",
+        name: "Diamond Products",
+        href: "/products-ml",
+        icon: Diamond,
+        active: "bg-purple-600 text-white shadow-md shadow-purple-200 dark:shadow-purple-900/30",
+        inactive:
+            "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white",
+        addBtn: "bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-purple-900/30",
+    },
+    {
+        page: "services",
+        name: "Services",
+        href: "/products-services",
+        icon: Zap,
+        active: "bg-amber-500 text-white shadow-md shadow-amber-200 dark:shadow-amber-900/30",
+        inactive:
+            "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white",
+        addBtn: "bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-amber-900/30",
+    },
+];
+
 function TopBar({ pageFor, setEditing, setFormOpen, reset }) {
-    const sevices = [
-        { page: "uc", name: "UC Products", bgColor: "bg-[#155DFC] text-white" },
-        { page: "diamonds", name: "Diamond Products", bgColor: "bg-purple-600 text-white" },
-        { page: "services", name: "Telegram Services", bgColor: "bg-yellow-500 text-white" },
-    ];
+    const current = TABS.find((t) => t.page === pageFor) ?? TABS[0];
+    const Icon = current.icon;
 
     return (
-        <div className="w-full space-y-6">
-            {/* Title */}
-            <div>
-                <h2 className="text-xl md:text-3xl font-bold text-gray-900">
-                    Products Management
-                </h2>
-                <p className="text-gray-500 mt-1 text-sm md:text-base">
-                    Manage game currency and Telegram services
-                </p>
-            </div>
+        <div className="w-full space-y-5">
+            {/* Title row */}
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white leading-tight">
+                        Products Management
+                    </h2>
+                    <p className="text-slate-400 dark:text-slate-500 mt-1 text-sm">
+                        Manage game currency and Telegram services
+                    </p>
+                </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 md:gap-4">
-                <a
-                    href="/products-uc"
-                    className={`px-3 md:px-5 py-2 md:py-3 rounded-lg text-sm md:text-base font-medium transition-all ${
-                        pageFor === "uc"
-                            ? "bg-[#155DFC] text-white"
-                            : "bg-white hover:bg-blue-700 hover:text-white"
-                    }`}
-                >
-                    UC
-                </a>
-
-                <a
-                    href="/products-ml"
-                    className={`px-3 md:px-5 py-2 md:py-3 rounded-lg text-sm md:text-base font-medium transition-all ${
-                        pageFor === "diamonds"
-                            ? "bg-purple-600 text-white"
-                            : "bg-white hover:bg-purple-600 hover:text-white"
-                    }`}
-                >
-                    Diamond
-                </a>
-
-                <a
-                    href="/products-services"
-                    className={`px-3 md:px-5 py-2 md:py-3 rounded-lg text-sm md:text-base font-medium transition-all ${
-                        pageFor === "services"
-                            ? "bg-yellow-500 text-white"
-                            : "bg-white hover:bg-yellow-600 hover:text-white"
-                    }`}
-                >
-                    Services
-                </a>
-            </div>
-
-            {/* Page title + action */}
-            <div className="flex items-center justify-between gap-2">
-                <h1 className="text-lg md:text-2xl font-bold capitalize truncate">
-                    🎮 {pageFor} Products
-                </h1>
-
+                {/* Add button */}
                 <button
-                    className={`px-3 md:px-4 py-2 text-sm md:text-base rounded-lg cursor-pointer ${
-                        sevices.find(s => s.page === pageFor)?.bgColor
-                    }`}
+                    className={`flex items-center gap-2 px-4 h-10 rounded-xl text-white text-sm font-bold transition-all active:scale-95 shadow-sm shrink-0 ${current.addBtn}`}
                     onClick={() => {
                         setEditing(null);
                         setFormOpen(true);
                         reset();
                     }}
                 >
-                    + Add
+                    <Plus className="size-4" />
+                    <span className="hidden sm:inline">Add Product</span>
+                    <span className="sm:hidden">Add</span>
                 </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2">
+                {TABS.map((tab) => {
+                    const TabIcon = tab.icon;
+                    const isActive = tab.page === pageFor;
+                    return (
+                        <Link
+                            key={tab.page}
+                            href={tab.href}
+                            className={`flex items-center gap-2 px-4 h-9 rounded-xl text-sm font-semibold transition-all ${
+                                isActive ? tab.active : tab.inactive
+                            }`}
+                        >
+                            <TabIcon className="size-3.5 shrink-0" />
+                            <span className="hidden sm:inline">{tab.name}</span>
+                            <span className="sm:hidden">
+                                {tab.page === "uc"
+                                    ? "UC"
+                                    : tab.page === "diamonds"
+                                      ? "ML"
+                                      : "SRV"}
+                            </span>
+                        </Link>
+                    );
+                })}
+            </div>
+
+            {/* Page subtitle bar */}
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 shadow-sm">
+                <div
+                    className={`size-8 rounded-xl flex items-center justify-center text-white shrink-0
+                    ${
+                        pageFor === "uc"
+                            ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                            : pageFor === "diamonds"
+                              ? "bg-gradient-to-br from-purple-500 to-violet-600"
+                              : "bg-gradient-to-br from-amber-400 to-orange-500"
+                    }`}
+                >
+                    <Icon className="size-4" />
+                </div>
+                <div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight capitalize">
+                        {pageFor === "uc"
+                            ? "UC Products"
+                            : pageFor === "diamonds"
+                              ? "Diamond Products"
+                              : "Service Products"}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                        Active product listings
+                    </p>
+                </div>
             </div>
         </div>
     );

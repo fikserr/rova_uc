@@ -1,26 +1,41 @@
 import { Link, usePage } from "@inertiajs/react";
-import { Dices, ShieldCheck, ShoppingBag, UserCircle } from "lucide-react";
+import { ShieldCheck, ShoppingBag, UserCircle, Wallet } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Bar() {
     const { url } = usePage();
+    const { t } = useTranslation();
+    // bardan olib quyilgan funksiyalar
+    // {
+    //         id: "vazifalar",
+    //         label: "Vazifalar",
+    //         icon: ListTodo,
+    //         href: "/user-tasks",
+    //     },
+    // { id: "ruletka", label: "Ruletka", icon: Dices, href: "/user-spin" },
 
     const navItems = [
-        { id: "ruletka", label: "Ruletka", icon: Dices, href: "/user-spin" },
         {
             id: "xizmatlar",
-            label: "Xizmatlar",
+            label: `${t("bar.services")}`,
             icon: ShieldCheck,
             href: "/user-services",
         },
         {
             id: "xaridlarim",
-            label: "Xaridlarim",
+            label: `${t("bar.purchases")}`,
             icon: ShoppingBag,
             href: "/user-purchases",
         },
         {
+            id: "balnce_topup",
+            label: `${t("bar.balanceTopup")}`,
+            icon: Wallet,
+            href: "/user-profile/user-balance",
+        },
+        {
             id: "profil",
-            label: "Profil",
+            label: `${t("bar.profile")}`,
             icon: UserCircle,
             href: "/user-profile",
         },
@@ -34,7 +49,10 @@ function Bar() {
                 <div className="grid grid-cols-4 gap-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = url.startsWith(item.href);
+                        const isActive =
+                            url === item.href ||
+                            (item.href !== "/user-profile" &&
+                                url.startsWith(item.href + "/"));
 
                         return (
                             <Link

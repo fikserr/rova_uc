@@ -1,16 +1,19 @@
 import "../css/app.css";
 import "./bootstrap";
+import "./i18n/index.js"; // ← ADD THIS LINE
+import { initTheme } from "./Hook/theme";
+initTheme();
 
 import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
+import TelegramAuthBootstrap from "./Components/TelegramAuthBootstrap";
 import AdminLayout from "./Pages/Layout/AdminLayout";
 import UserLayout from "./Pages/Layout/UserLayout";
-import TelegramAuthBootstrap from "./Components/TelegramAuthBootstrap";
 
 import axios from "axios";
 
-import { Ziggy } from "./ziggy";
 import { route } from "ziggy-js";
+import { Ziggy } from "./ziggy";
 
 if (typeof window !== "undefined") {
     Ziggy.url = window.location.origin;
@@ -37,7 +40,10 @@ createInertiaApp({
         const isAuthPage = name.startsWith("Auth/");
 
         const WrappedPage = (props) => (
-            <TelegramAuthBootstrap isAuthPage={isAuthPage} user={props?.auth?.user}>
+            <TelegramAuthBootstrap
+                isAuthPage={isAuthPage}
+                user={props?.auth?.user}
+            >
                 <Component {...props} />
             </TelegramAuthBootstrap>
         );
