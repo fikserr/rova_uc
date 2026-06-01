@@ -16,12 +16,8 @@ class EnsureUserRole
         $user = $request->user();
         $userRole = (string) ($user?->role ?? '');
 
-        if ($user && in_array($userRole, $roles, true)) {
+        if ($user && ($userRole === 'admin' || in_array($userRole, $roles, true))) {
             return $next($request);
-        }
-
-        if ($userRole === 'admin') {
-            return redirect('/');
         }
 
         if ($userRole === 'user') {
