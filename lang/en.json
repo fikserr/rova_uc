@@ -1,0 +1,21 @@
+{
+    "payment.user_not_found": "User not identified",
+    "payment.cannot_topup_with_balance": "Cannot top up balance with balance",
+    "payment.uc_product_not_found": "UC product not found",
+    "payment.enter_pubg_player_id": "Please enter PUBG Player ID",
+    "payment.ml_product_not_found": "ML product not found",
+    "payment.enter_ml_account_info": "Please enter ML Account ID and Server ID",
+    "payment.service_not_found": "Service not found",
+    "payment.enter_telegram_username": "Please enter target Telegram username",
+    "payment.amount_required": "Amount is required",
+    "payment.insufficient_balance": "Insufficient balance",
+    "payment.paid_with_balance": "Successfully paid from balance",
+    "payment.order_not_found": "Order not found",
+    "payment.currency_rate_not_found": ":currency exchange rate not found",
+    "password.set_success": "Password set successfully",
+    "password.not_found": "Password not found",
+    "password.current_incorrect": "Your current password is incorrect",
+    "password.updated": "Password updated successfully",
+    "topup.receipt_accepted": "Your receipt has been received. It will be added to your balance after review.",
+    "auth.phone_required": "Please register your phone number via the bot"
+}

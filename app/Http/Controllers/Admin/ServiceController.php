@@ -47,7 +47,7 @@ class ServiceController extends Controller
         }
 
         return Inertia::render('User/UserTgStars', [
-            'services' => Service::orderByDesc('id')->get(),
+            'services' => Service::where('is_active', true)->where('service_type', 'stars')->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
         ]);
     }
@@ -69,7 +69,7 @@ class ServiceController extends Controller
         }
 
         return Inertia::render('User/UserTgPremium', [
-            'services' => Service::orderByDesc('id')->get(),
+            'services' => Service::where('is_active', true)->where('service_type', 'premium')->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
         ]);
     }

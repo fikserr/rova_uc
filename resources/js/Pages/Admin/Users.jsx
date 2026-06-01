@@ -1,434 +1,612 @@
-import { Head } from "@inertiajs/react";
-import { Ban, Eye, Search } from "lucide-react";
-import { useState } from "react";
-function Users({ users }) {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [expandedUserId, setExpandedUserId] = useState(null);
+import { Head, router, usePage } from "@inertiajs/react";
+import axios from "axios";
+import {
+    Ban,
+    Check,
+    ChevronDown,
+    ChevronUp,
+    CreditCard,
+    ExternalLink,
+    Minus,
+    Pencil,
+    Plus,
+    Search,
+    Shield,
+    ShieldCheck,
+    ShieldOff,
+    User,
+    Wrench,
+    X,
+} from "lucide-react";
+import { useRef, useState } from "react";
 
-    const handleToggleActive = (userId) => {
-        setUsers(
-            users.map((user) =>
-                user.id === userId
-                    ? { ...user, isActive: !user.isActive }
-                    : user,
-            ),
-        );
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const ROLES = [
+    { value: "user",   label: "User",   icon: User,   color: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300" },
+    { value: "worker", label: "Worker", icon: Wrench, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" },
+    { value: "admin",  label: "Admin",  icon: Shield, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400" },
+];
+
+function roleMeta(role) {
+    return ROLES.find(r => r.value === role) ?? ROLES[0];
+}
+
+// ── Balance Modal ─────────────────────────────────────────────────────────────
+
+function BalanceModal({ user, onClose, onDone }) {
+    const [amount, setAmount]     = useState("");
+    const [sign, setSign]         = useState("+");   // + | -
+    const [loading, setLoading]   = useState(false);
+    const [err, setErr]           = useState("");
+
+    const submit = async () => {
+        const num = parseFloat(amount);
+        if (!num || num <= 0) { setErr("Miqdor kiriting"); return; }
+        setLoading(true); setErr("");
+        try {
+            await axios.post(`/users/${user.id}/balance`, {
+                amount: sign === "+" ? num : -num,
+            });
+            onDone();
+            onClose();
+        } catch (e) {
+            setErr(e.response?.data?.message ?? "Xatolik yuz berdi.");
+        } finally { setLoading(false); }
     };
-    console.log(users);
 
-    const filteredUsers = users.filter(
-        (user) =>
-            (user.username || "")
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            (user.phone_number || "").includes(searchTerm),
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <p className="font-bold text-slate-800 dark:text-white">Balans o'zgartirish</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">@{user.username}</p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        <X className="size-5" />
+                    </button>
+                </div>
+                <div className="p-5 space-y-4">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                        <CreditCard className="size-4 text-slate-400" />
+                        <div>
+                            <p className="text-xs text-slate-500">Joriy balans</p>
+                            <p className="font-bold text-slate-800 dark:text-white">
+                                {Number(user.balance || 0).toLocaleString("fr-FR")} UZS
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {["+", "-"].map(s => (
+                            <button
+                                key={s}
+                                onClick={() => setSign(s)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                    sign === s
+                                        ? s === "+"
+                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-2 ring-emerald-300 dark:ring-emerald-700"
+                                            : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 ring-2 ring-rose-300 dark:ring-rose-700"
+                                        : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                }`}
+                            >
+                                {s === "+" ? <Plus className="size-4" /> : <Minus className="size-4" />}
+                                {s === "+" ? "Qo'shish" : "Ayirish"}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="relative">
+                        <input
+                            type="number"
+                            min="1"
+                            placeholder="Miqdor (UZS)"
+                            value={amount}
+                            onChange={e => setAmount(e.target.value)}
+                            className="w-full px-4 py-3 pr-14 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                            autoFocus
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">UZS</span>
+                    </div>
+
+                    {err && <p className="text-xs text-rose-500">{err}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                        <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            Bekor
+                        </button>
+                        <button
+                            onClick={submit}
+                            disabled={loading || !amount}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 active:scale-95 ${
+                                sign === "+" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                            }`}
+                        >
+                            {loading ? "..." : sign === "+" ? "Qo'shish" : "Ayirish"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
+}
 
-    console.log(users);
+// ── Inline Balance Editor ─────────────────────────────────────────────────────
+
+function InlineBalanceEditor({ user, onDone }) {
+    const [editing, setEditing] = useState(false);
+    const [sign, setSign]       = useState("+");
+    const [amount, setAmount]   = useState("");
+    const [loading, setLoading] = useState(false);
+    const [err, setErr]         = useState("");
+    const inputRef              = useRef(null);
+
+    const open = () => { setEditing(true); setAmount(""); setSign("+"); setErr(""); setTimeout(() => inputRef.current?.focus(), 50); };
+    const close = () => { setEditing(false); setAmount(""); setErr(""); };
+
+    const save = async () => {
+        const num = parseFloat(amount);
+        if (!num || num <= 0) { setErr("Miqdor kiriting"); return; }
+        setLoading(true);
+        try {
+            await axios.post(`/users/${user.id}/balance`, { amount: sign === "+" ? num : -num });
+            onDone();
+            close();
+        } catch (e) {
+            setErr(e.response?.data?.message ?? "Xatolik");
+        } finally { setLoading(false); }
+    };
+
+    const handleKey = (e) => {
+        if (e.key === "Enter") save();
+        if (e.key === "Escape") close();
+    };
+
+    if (!editing) {
+        return (
+            <button
+                onClick={open}
+                className="group flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                title="Balansni o'zgartirish"
+            >
+                {Number(user.balance || 0).toLocaleString("fr-FR")}
+                <Pencil className="size-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+            </button>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-1 min-w-[180px]">
+            <div className="flex items-center gap-1">
+                {/* +/- toggle */}
+                <button
+                    onClick={() => setSign(s => s === "+" ? "-" : "+")}
+                    className={`shrink-0 size-7 rounded-lg flex items-center justify-center font-bold text-sm transition-colors ${
+                        sign === "+"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                    }`}
+                >
+                    {sign === "+" ? <Plus className="size-3.5" /> : <Minus className="size-3.5" />}
+                </button>
+
+                {/* Amount input */}
+                <input
+                    ref={inputRef}
+                    type="number"
+                    min="1"
+                    placeholder="Miqdor"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    onKeyDown={handleKey}
+                    className="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                />
+
+                {/* Save */}
+                <button
+                    onClick={save}
+                    disabled={loading || !amount}
+                    className="shrink-0 size-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center disabled:opacity-50 transition-colors"
+                >
+                    {loading ? <span className="size-3 border border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="size-3.5" />}
+                </button>
+
+                {/* Cancel */}
+                <button
+                    onClick={close}
+                    className="shrink-0 size-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors"
+                >
+                    <X className="size-3.5" />
+                </button>
+            </div>
+            {err && <p className="text-[10px] text-rose-500">{err}</p>}
+        </div>
+    );
+}
+
+// ── Role Dropdown ─────────────────────────────────────────────────────────────
+
+function RoleDropdown({ user, onDone }) {
+    const [open, setOpen]       = useState(false);
+    const [loading, setLoading] = useState(false);
+    const meta = roleMeta(user.role);
+    const Icon = meta.icon;
+
+    const changeRole = async (role) => {
+        if (role === user.role) { setOpen(false); return; }
+        setLoading(true);
+        try {
+            await axios.put(`/users/${user.id}/role`, { role });
+            onDone();
+        } catch (e) {
+            alert(e.response?.data?.message ?? "Xatolik.");
+        } finally { setLoading(false); setOpen(false); }
+    };
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setOpen(o => !o)}
+                disabled={loading}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${meta.color} ${loading ? "opacity-50" : "hover:opacity-80"}`}
+            >
+                <Icon className="size-3" />
+                {meta.label}
+                <ChevronDown className="size-3" />
+            </button>
+
+            {open && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden min-w-[120px]">
+                        {ROLES.map(r => {
+                            const RIcon = r.icon;
+                            return (
+                                <button
+                                    key={r.value}
+                                    onClick={() => changeRole(r.value)}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                                        r.value === user.role ? "opacity-50 cursor-default" : ""
+                                    }`}
+                                >
+                                    <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${r.color}`}>
+                                        <RIcon className="size-3" />
+                                        {r.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+// ── Block Button ──────────────────────────────────────────────────────────────
+
+function BlockButton({ user, onDone }) {
+    const [loading, setLoading] = useState(false);
+
+    const toggle = async () => {
+        const action = user.is_blocked ? "blokdan chiqarish" : "bloklash";
+        if (!confirm(`@${user.username || user.id} ni ${action}ni tasdiqlaysizmi?`)) return;
+        setLoading(true);
+        try {
+            await axios.post(`/users/${user.id}/toggle-block`);
+            onDone();
+        } catch (e) {
+            alert(e.response?.data?.message ?? "Xatolik yuz berdi.");
+        } finally { setLoading(false); }
+    };
+
+    if (loading) {
+        return (
+            <span className="size-7 flex items-center justify-center">
+                <span className="size-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+            </span>
+        );
+    }
+
+    return user.is_blocked ? (
+        <button
+            onClick={toggle}
+            title="Blokdan chiqarish"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors"
+        >
+            <ShieldOff className="size-3.5" />
+            Bloklangan
+        </button>
+    ) : (
+        <button
+            onClick={toggle}
+            title="Bloklash"
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20 dark:hover:text-rose-400 transition-colors"
+        >
+            <ShieldOff className="size-4" />
+        </button>
+    );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
+export default function Users({ users: initialUsers }) {
+    const { auth } = usePage().props;
+    const myId = auth?.user?.id;
+
+    const [users, setUsers]           = useState(initialUsers);
+    const [search, setSearch]         = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [expandedId, setExpandedId] = useState(null);
+
+    const reload = () => router.reload({ only: ["users"], preserveScroll: true });
+
+    const filtered = users.filter(u => {
+        const matchSearch =
+            (u.username || "").toLowerCase().includes(search.toLowerCase()) ||
+            (u.phone_number || "").includes(search);
+        const matchRole = roleFilter === "all" || u.role === roleFilter;
+        return matchSearch && matchRole;
+    });
+
+    const stats = {
+        total:   users.length,
+        active:  users.filter(u => u.isActive).length,
+        workers: users.filter(u => u.role === "worker").length,
+        balance: users.reduce((s, u) => s + Number(u.balance || 0), 0),
+        spent:   users.reduce((s, u) => s + Number(u.totalSpent || 0), 0),
+    };
 
     return (
         <div className="p-4 sm:p-6 lg:p-0 transition-colors duration-300">
-            <Head>
-                <title>Users Management</title>
-                <meta name="description" content="User management administration panel" />
-            </Head>
-            <div className="mb-6 md:mb-8">
+            <Head title="Users Management" />
+
+            {/* Header */}
+            <div className="mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
                     Users Management
                 </h2>
-                <p className="text-gray-500 mt-1">
-                    Manage your customers and their accounts
+                <p className="text-gray-500 dark:text-slate-400 mt-1 text-sm">
+                    Foydalanuvchilarni boshqarish, rol va balans o'zgartirish
                 </p>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6">
-                <div className="bg-white dark:bg-slate-900 dark:border-slate-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                    <p className="text-sm text-gray-500">Total Users</p>
-                    <p className="text-2xl sm:text-xl md:text-2xl font-bold text-gray-900 mt-1 dark:text-slate-100">
-                        {users.length}
-                    </p>
-                </div>
-                <div className="bg-white dark:bg-slate-900 dark:border-slate-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                    <p className="text-sm text-gray-500">Active Users</p>
-                    <p className="text-xl md:text-2xl font-bold text-green-600 mt-1">
-                        {users.filter((u) => u.isActive).length}
-                    </p>
-                </div>
-                <div className="bg-white dark:bg-slate-900 dark:border-slate-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                    <p className="text-sm text-gray-500">Total Balance (UZS)</p>
-                    <p className="text-xl md:text-2xl font-bold text-blue-600 mt-1">
-                        {users
-                            .reduce((sum, u) => sum + Number(u.balance || 0), 0)
-                            .toLocaleString("fr-FR")}{" "}
-                        UZS
-                    </p>
-                </div>
-                <div className="bg-white dark:bg-slate-900 dark:border-slate-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                    <p className="text-sm text-gray-500">Total Spent (UZS)</p>
-                    <p className="text-xl md:text-2xl font-bold text-purple-600 mt-1">
-                        {users
-                            .reduce(
-                                (sum, u) => sum + Number(u.totalSpent || 0),
-                                0,
-                            )
-                            .toLocaleString("fr-FR")}{" "}
-                        UZS
-                    </p>
-                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+                {[
+                    { label: "Jami", value: stats.total, color: "text-slate-800 dark:text-white" },
+                    { label: "Faol", value: stats.active, color: "text-emerald-600" },
+                    { label: "Worker", value: stats.workers, color: "text-amber-600" },
+                    { label: "Jami balans", value: stats.balance.toLocaleString("fr-FR") + " UZS", color: "text-blue-600" },
+                    { label: "Jami sarflangan", value: stats.spent.toLocaleString("fr-FR") + " UZS", color: "text-purple-600" },
+                ].map(s => (
+                    <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{s.label}</p>
+                        <p className={`text-lg font-bold truncate ${s.color}`}>{s.value}</p>
+                    </div>
+                ))}
             </div>
 
-            {/* Search */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 rounded-lg p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 mb-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            {/* Filters */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 mb-4 shadow-sm flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
                     <input
                         type="text"
-                        placeholder="Search by Username or Phone Number..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:placeholder:text-slate-200"
+                        placeholder="Username yoki telefon raqami..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400"
                     />
                 </div>
-            </div>
-
-            {/* Users Table */}
-            <div className="hidden xl:block bg-white rounded-lg shadow-sm border border-gray-200 dark:border-slate-900 dark:bg-gray-950 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 dark:bg-slate-900">
-                            <tr>
-                                <th className="px-0 md:px-6 py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    User ID
-                                </th>
-                                <th className="px-3 md:px-6  py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Username
-                                </th>
-                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Phone
-                                </th>
-                                <th className="px-3 md:px-6  py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Balance (UZS)
-                                </th>
-                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Orders
-                                </th>
-                                <th className="px-3 md:px-6  py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Spent
-                                </th>
-                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Join Date
-                                </th>
-                                <th className="px-3 md:px-6  py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs xl:text-[10px]  font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                            {filteredUsers.map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-slate-600/50 cursor-pointer">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-[10px] font-mono text-gray-900 dark:text-slate-200">
-                                        {user.id}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs font-medium text-gray-900 dark:text-slate-200">
-                                        {user.username.length > 14
-                                            ? `${user.username.substring(0, 14)}...`
-                                            : user.username}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs text-gray-500 dark:text-slate-400">
-                                        {user.phone_number}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs text-blue-600 font-bold">
-                                        {Number(
-                                            user.balance || 0,
-                                        ).toLocaleString("fr-FR")}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs text-gray-900 font-bold dark:text-slate-100">
-                                        {user.totalOrders}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs text-purple-500 font-bold">
-                                        {Number(
-                                            user.totalSpent || 0,
-                                        ).toLocaleString("fr-FR")}{" "}
-                                        UZS
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm xl:text-xs text-gray-500 dark:text-slate-400">
-                                        {new Date(
-                                            user.created_at,
-                                        ).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                user.isActive
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            {user.isActive
-                                                ? "Active"
-                                                : "Offline"}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div className="flex gap-2">
-                                            <button
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="View Details"
-                                            >
-                                                <Eye
-                                                    onClick={() =>
-                                                        window.open(
-                                                            `https://telegram.me/${user.username}`,
-                                                            "_blank",
-                                                        )
-                                                    }
-                                                    className="w-4 h-4"
-                                                />
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleToggleActive(user.id)
-                                                }
-                                                className={
-                                                    user.isActive
-                                                        ? "text-red-600 hover:text-red-800"
-                                                        : "text-green-600 hover:text-green-800"
-                                                }
-                                                title={
-                                                    user.isActive
-                                                        ? "Block User"
-                                                        : "Unblock User"
-                                                }
-                                            >
-                                                <Ban className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="flex gap-2 shrink-0">
+                    {["all", "user", "worker", "admin"].map(r => (
+                        <button
+                            key={r}
+                            onClick={() => setRoleFilter(r)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                roleFilter === r
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            }`}
+                        >
+                            {r === "all" ? "Barchasi" : r.charAt(0).toUpperCase() + r.slice(1)}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Users Cards (Mobile) */}
+            {/* Desktop Table */}
+            <div className="hidden xl:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <table className="w-full">
+                    <thead className="bg-slate-50 dark:bg-slate-800/60">
+                        <tr>
+                            {["User ID", "Username", "Telefon", "Balans (bosib o'zgartiring)", "Buyurtmalar", "Jami sarflangan", "Sana", "Rol", "Status", "TG"].map(h => (
+                                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {filtered.map(user => (
+                            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
+                                    {user.id}
+                                </td>
+                                <td className="px-4 py-3 font-semibold text-sm text-slate-800 dark:text-white">
+                                    {user.username
+                                        ? (user.username.length > 14
+                                            ? user.username.slice(0, 14) + "…"
+                                            : user.username)
+                                        : "—"}
+                                </td>
+                                <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                                    {user.phone_number || "—"}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <InlineBalanceEditor user={user} onDone={reload} />
+                                </td>
+                                <td className="px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+                                    {user.totalOrders}
+                                </td>
+                                <td className="px-4 py-3 text-sm font-bold text-purple-600">
+                                    {Number(user.totalSpent || 0).toLocaleString("fr-FR")} UZS
+                                </td>
+                                <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                                    {user.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU") : "—"}
+                                </td>
+                                <td className="px-4 py-3">
+                                    {user.id === myId
+                                        ? <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${roleMeta(user.role).color}`}>
+                                            {(() => { const I = roleMeta(user.role).icon; return <I className="size-3" />; })()}
+                                            {roleMeta(user.role).label}
+                                          </span>
+                                        : <RoleDropdown user={user} onDone={reload} />
+                                    }
+                                </td>
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                            user.is_blocked
+                                                ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                                                : user.isActive
+                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                    : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                                        }`}>
+                                            {user.is_blocked ? "Bloklangan" : user.isActive ? "Faol" : "Offline"}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-1">
+                                        {user.username && (
+                                            <a
+                                                href={`https://t.me/${user.username}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors inline-flex"
+                                                title="Telegram da ko'rish"
+                                            >
+                                                <ExternalLink className="size-4" />
+                                            </a>
+                                        )}
+                                        {user.id !== myId && (
+                                            <BlockButton user={user} onDone={reload} />
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={10} className="px-4 py-10 text-center text-sm text-slate-400">
+                                    Foydalanuvchi topilmadi
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile Cards */}
             <div className="xl:hidden space-y-3">
-                {filteredUsers.map((user) => {
-                    const isExpanded = expandedUserId === user.id;
+                {filtered.map(user => {
+                    const isExpanded = expandedId === user.id;
+                    const meta = roleMeta(user.role);
+                    const RIcon = meta.icon;
 
                     return (
-                        <div
-                            key={user.id}
-                            className="bg-white dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-                        >
-                            {/* HEADER (always visible / clickable) */}
+                        <div key={user.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
                             <button
-                                onClick={() =>
-                                    setExpandedUserId(
-                                        isExpanded ? null : user.id,
-                                    )
-                                }
-                                className="w-full text-left p-4 flex items-center justify-between"
+                                onClick={() => setExpandedId(isExpanded ? null : user.id)}
+                                className="w-full text-left p-4 flex items-center justify-between gap-3"
                             >
-                                <div>
-                                    <p className="font-semibold text-gray-900 leading-tight dark:text-slate-100">
-                                        {user.username}
+                                <div className="min-w-0">
+                                    <p className="font-semibold text-slate-800 dark:text-white leading-tight truncate">
+                                        {user.username || "—"}
                                     </p>
-                                    <p className="text-xs text-gray-500 dark:text-slate-400">
-                                        {user.phone_number}
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                        {user.phone_number || "—"}
                                     </p>
                                 </div>
-
-                                <span
-                                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                        user.isActive
-                                            ? "bg-green-100 text-green-800"
-                                            : "bg-red-100 text-red-800"
-                                    }`}
-                                >
-                                    {user.isActive ? "Active" : "Offline"}
-                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {user.is_blocked && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                                            Bloklangan
+                                        </span>
+                                    )}
+                                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${meta.color}`}>
+                                        <RIcon className="size-3" />
+                                        {meta.label}
+                                    </span>
+                                    {isExpanded
+                                        ? <ChevronUp className="size-4 text-slate-400" />
+                                        : <ChevronDown className="size-4 text-slate-400" />
+                                    }
+                                </div>
                             </button>
 
-                            {/* EXPANDABLE CONTENT */}
                             {isExpanded && (
-                                <div className="px-4 pb-4">
-                                    <div className="border-t border-gray-100 dark:border-slate-500 my-3" />
-
-                                    {/* Stats */}
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <p className="text-gray-500 text-xs dark:text-slate-400">
-                                                Balance
-                                            </p>
-                                            <p className="font-semibold text-gray-900 dark:text-slate-200">
-                                                {user.balance} UZS
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-gray-500 text-xs dark:text-slate-400">
-                                                Orders
-                                            </p>
-                                            <p className="font-medium text-gray-900 dark:text-slate-200">
-                                                {user.totalOrders}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-gray-500 text-xs dark:text-slate-400">
-                                                Spent
-                                            </p>
-                                            <p className="font-medium text-gray-900 dark:text-slate-200">
-                                                {Number(
-                                                    user.totalSpent || 0,
-                                                ).toLocaleString("fr-FR")}{" "}
-                                                UZS
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-gray-500 text-xs dark:text-slate-400">
-                                                User ID
-                                            </p>
-                                            <p className="font-mono text-gray-900 text-xs dark:text-slate-200">
-                                                #{user.id}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-gray-500 text-xs dark:text-slate-400">
-                                                Joined
-                                            </p>
-                                            <p className="text-gray-900 text-xs dark:text-slate-200">
-                                                {new Date(
-                                                    user.created_at,
-                                                ).toLocaleDateString()}
-                                            </p>
-                                        </div>
+                                <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-700">
+                                    <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                                        {[
+                                            { label: "Balans", value: `${Number(user.balance || 0).toLocaleString("fr-FR")} UZS`, color: "text-blue-600 font-bold" },
+                                            { label: "Buyurtmalar", value: user.totalOrders },
+                                            { label: "Sarflangan", value: `${Number(user.totalSpent || 0).toLocaleString("fr-FR")} UZS`, color: "text-purple-600 font-bold" },
+                                            { label: "User ID", value: `#${user.id}`, mono: true },
+                                            { label: "Qo'shilgan", value: user.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU") : "—" },
+                                            { label: "Status", value: user.isActive ? "Faol" : "Offline", color: user.isActive ? "text-emerald-600" : "text-slate-400" },
+                                        ].map(({ label, value, color, mono }) => (
+                                            <div key={label}>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500">{label}</p>
+                                                <p className={`text-sm mt-0.5 ${mono ? "font-mono text-xs" : ""} ${color ?? "text-slate-800 dark:text-slate-200"}`}>{value}</p>
+                                            </div>
+                                        ))}
                                     </div>
 
-                                    {/* Actions */}
-                                    <div className="flex justify-end gap-4 mt-4 pt-3 border-t">
-                                        <button
-                                            className="text-blue-600 hover:text-blue-800"
-                                            title="View Details"
-                                        >
-                                            <Eye className="w-5 h-5" />
-                                        </button>
-
-                                        <button
-                                            onClick={() =>
-                                                handleToggleActive(user.id)
+                                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            {user.id !== myId
+                                                ? <RoleDropdown user={user} onDone={reload} />
+                                                : <span className="text-xs text-slate-400">O'z rolingiz</span>
                                             }
-                                            className={
-                                                user.isActive
-                                                    ? "text-red-600 hover:text-red-800"
-                                                    : "text-green-600 hover:text-green-800"
-                                            }
-                                            title={
-                                                user.isActive
-                                                    ? "Block User"
-                                                    : "Unblock User"
-                                            }
-                                        >
-                                            <Ban className="w-5 h-5" />
-                                        </button>
+                                            <div className="flex items-center gap-1">
+                                                {user.username && (
+                                                    <a
+                                                        href={`https://t.me/${user.username}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                                    >
+                                                        <ExternalLink className="size-4" />
+                                                    </a>
+                                                )}
+                                                {user.id !== myId && (
+                                                    <BlockButton user={user} onDone={reload} />
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1.5">Balansni o'zgartirish</p>
+                                            <InlineBalanceEditor user={user} onDone={reload} />
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
                     );
                 })}
+
+                {filtered.length === 0 && (
+                    <div className="text-center py-12 text-slate-400">
+                        <Ban className="size-10 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">Foydalanuvchi topilmadi</p>
+                    </div>
+                )}
             </div>
 
-            {/* User Details Modal */}
-            {selectedUser && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg p-4 md:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-                            User Details
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-500">User ID</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.id}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Username
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.username}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Phone Number
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.phoneNumber}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Role</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.role}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Balance</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.balance} UZS
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Total Orders
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.totalOrders}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Total Spent
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {Number(
-                                        selectedUser.totalSpent || 0,
-                                    ).toLocaleString("fr-FR")}{" "}
-                                    UZS
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Join Date
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {selectedUser.createdAt}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={() => setSelectedUser(null)}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
-export default Users;

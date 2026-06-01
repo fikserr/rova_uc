@@ -3,6 +3,7 @@ import axios from "axios";
 import {
     CheckCircle,
     Clock,
+    Copy,
     CreditCard,
     Receipt,
     Upload,
@@ -59,6 +60,8 @@ function UserBalance() {
     const [checkLoading, setCheckLoading] = useState(false);
     const [checkSuccess, setCheckSuccess] = useState(false);
     const [myRequests, setMyRequests] = useState([]);
+    const [paymentCards, setPaymentCards] = useState([]);
+    const [copiedId, setCopiedId] = useState(null);
     const fileInputRef = useRef(null);
 
     const quickAmounts = [10000, 30000, 50000, 100000, 200000, 500000];
@@ -69,6 +72,21 @@ function UserBalance() {
             .then((res) => setMyRequests(res.data))
             .catch(() => {});
     }, [checkSuccess]);
+
+    useEffect(() => {
+        axios
+            .get("/payment-cards/active")
+            .then((res) => setPaymentCards(res.data))
+            .catch(() => {});
+    }, []);
+
+    const copyCard = (card) => {
+        const raw = card.card_number.replace(/\s/g, "");
+        navigator.clipboard.writeText(raw).then(() => {
+            setCopiedId(card.id);
+            setTimeout(() => setCopiedId(null), 2000);
+        });
+    };
 
     const handleClickPay = async () => {
         if (!amount) return;
@@ -271,6 +289,59 @@ function UserBalance() {
                             <h3 className="font-bold text-slate-800 dark:text-white">
                                 {t("balance.manual_title")}
                             </h3>
+
+                            {/* Payment cards */}
+                            {paymentCards.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                        To'lov kartalari
+                                    </p>
+                                    {paymentCards.map((card) => (
+                                        <div
+                                            key={card.id}
+                                            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-mono text-sm font-bold text-slate-800 dark:text-white tracking-widest">
+                                                    {card.card_number}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    {card.card_holder && (
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400 uppercase truncate">
+                                                            {card.card_holder}
+                                                        </span>
+                                                    )}
+                                                    {card.bank_name && (
+                                                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                                            {card.bank_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => copyCard(card)}
+                                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
+                                                    copiedId === card.id
+                                                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                        : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                                                }`}
+                                            >
+                                                {copiedId === card.id ? (
+                                                    <>
+                                                        <CheckCircle className="size-3.5" />
+                                                        Nusxalandi
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy className="size-3.5" />
+                                                        Nusxa
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Steps */}
                             <ol className="space-y-2">

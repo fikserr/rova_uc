@@ -5,8 +5,10 @@ import {
     LuBell,
     LuBox,
     LuCalendarCheck,
+    LuCreditCard,
     LuLayoutDashboard,
     LuReceipt,
+    LuShieldCheck,
     LuShoppingCart,
     LuStar,
     LuUser,
@@ -15,38 +17,31 @@ import {
 export function Sidebar({ isOpen = true, onClose }) {
     const { url, props } = usePage();
     const authUser = props?.auth?.user ?? null;
+    const role = authUser?.role ?? "worker";
     const displayName = authUser?.username || "Admin";
-    const subText = authUser?.phone_number || "Administrator";
+    const subText = authUser?.phone_number || (role === "worker" ? "Worker" : "Administrator");
     const avatarLetter =
         String(displayName).trim().charAt(0).toUpperCase() || "A";
 
-    const menuItems = [
-        {
-            href: "/admin/dashboard",
-            label: "Dashboard",
-            icon: LuLayoutDashboard,
-        },
-        { href: "/uc-orders", label: "UC Orders", icon: LuShoppingCart },
-        { href: "/ml-orders", label: "Diamond Orders", icon: IoDiamondOutline },
-        { href: "/service-orders", label: "Service Orders", icon: LuStar },
-        {
-            href: "/profit-analytics",
-            label: "Profit Analytics",
-            icon: FaChartLine,
-        },
-        {
-            href: "/referral-settings",
-            label: "Referral Settings",
-            icon: FaLayerGroup,
-        },
-        { href: "/users", label: "Users", icon: LuUser },
-        { href: "/products-uc", label: "Products", icon: LuBox },
-        { href: "/currencies", label: "Currency Rates", icon: FaDollarSign },
-        { href: "/spin-sectors", label: "Spin Management", icon: FaCog },
-        { href: "/tasks", label: "Tasks", icon: LuCalendarCheck },
-        { href: "/broadcast-notifications", label: "Broadcast", icon: LuBell },
-        { href: "/manual-topups", label: "Manual Topuplar", icon: LuReceipt },
+    const allMenuItems = [
+        { href: "/admin/dashboard",          label: "Dashboard",         icon: LuLayoutDashboard, roles: ["admin"] },
+        { href: "/uc-orders",                label: "UC Orders",          icon: LuShoppingCart,    roles: ["admin","worker"] },
+        { href: "/ml-orders",                label: "Diamond Orders",     icon: IoDiamondOutline,  roles: ["admin","worker"] },
+        { href: "/service-orders",           label: "Service Orders",     icon: LuStar,            roles: ["admin","worker"] },
+        { href: "/manual-topups",            label: "Manual Topuplar",    icon: LuReceipt,         roles: ["admin","worker"] },
+        { href: "/profit-analytics",         label: "Profit Analytics",   icon: FaChartLine,       roles: ["admin"] },
+        { href: "/referral-settings",        label: "Referral Settings",  icon: FaLayerGroup,      roles: ["admin"] },
+        { href: "/users",                    label: "Users",              icon: LuUser,            roles: ["admin"] },
+        { href: "/products-uc",              label: "Products",           icon: LuBox,             roles: ["admin"] },
+        { href: "/currencies",               label: "Currency Rates",     icon: FaDollarSign,      roles: ["admin"] },
+        { href: "/spin-sectors",             label: "Spin Management",    icon: FaCog,             roles: ["admin"] },
+        { href: "/tasks",                    label: "Tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
+        { href: "/broadcast-notifications",  label: "Broadcast",          icon: LuBell,            roles: ["admin","worker"] },
+        { href: "/payment-cards",            label: "To'lov Kartalari",   icon: LuCreditCard,      roles: ["admin"] },
+        { href: "/admin/security",           label: "Xavfsizlik",         icon: LuShieldCheck,     roles: ["admin","worker"] },
     ];
+
+    const menuItems = allMenuItems.filter(item => item.roles.includes(role));
 
     return (
         <>

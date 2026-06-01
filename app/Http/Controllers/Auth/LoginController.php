@@ -26,6 +26,12 @@ class LoginController extends Controller
             ]);
         }
 
+        if ($user->is_blocked) {
+            return back()->withErrors([
+                'username' => 'Hisobingiz bloklangan. Admin bilan bog\'laning.',
+            ]);
+        }
+
         $password = $user->password;
 
         if (! $password || ! Hash::check($data['password'], $password->password)) {

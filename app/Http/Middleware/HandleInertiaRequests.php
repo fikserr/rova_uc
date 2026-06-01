@@ -64,15 +64,15 @@ class HandleInertiaRequests extends Middleware
             ],
             'auth' => [
                 'user' => $user ? [
-                    'id' => $user->id,
-                    'username' => $user->username,
-                    'phone_number' => $user->phone_number,
-                    'hasPassword' => $user->password()->exists(),
-                    'role' => $user->role,
-                    'balance' => $balance,
-                    'created_at' => $user->created_at ? Carbon::parse($user->created_at)->toDateTimeString() : null,
-
-
+                    'id'                => $user->id,
+                    'username'          => $user->username,
+                    'phone_number'      => $user->phone_number,
+                    'email'             => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'hasPassword'       => $user->password()->exists(),
+                    'role'              => $user->role,
+                    'balance'           => $balance,
+                    'created_at'        => $user->created_at ? Carbon::parse($user->created_at)->toDateTimeString() : null,
                 ] : null,
             ],
             'currency_rates' => $currencyRates,

@@ -31,11 +31,11 @@ class TelegramWebAppController extends Controller
 
         $user = $this->findRegisteredUser($userPayload);
         if (! $user) {
-            Log::warning('Telegram authenticate rejected: user not registered', [
+            Log::warning('Telegram authenticate rejected: user not registered or missing phone', [
                 'telegram_id' => $userPayload['id'] ?? null,
                 'username' => $userPayload['username'] ?? null,
             ]);
-            return response()->json(['message' => 'User is not registered via bot'], 403);
+            return response()->json(['message' => __('auth.phone_required')], 403);
         }
 
         return response()->json([
@@ -79,11 +79,15 @@ class TelegramWebAppController extends Controller
         try {
             $user = $this->findRegisteredUser($userPayload);
             if (! $user) {
-                Log::warning('Telegram sessionLogin rejected: user not registered', [
+                Log::warning('Telegram sessionLogin rejected: user not registered or missing phone', [
                     'telegram_id' => $userPayload['id'] ?? null,
                     'username' => $userPayload['username'] ?? null,
                 ]);
-                return response()->json(['message' => 'User is not registered via bot'], 403);
+                return response()->json(['message' => __('auth.phone_required')], 403);
+            }
+
+            if ($user->is_blocked) {
+                return response()->json(['message' => 'Hisobingiz bloklangan. Admin bilan bog\'laning.'], 403);
             }
 
             Auth::login($user, false);
@@ -107,11 +111,11 @@ class TelegramWebAppController extends Controller
 
         $user = $this->findRegisteredUser($userPayload);
         if (! $user) {
-            Log::warning('Telegram me rejected: user not registered', [
+            Log::warning('Telegram me rejected: user not registered or missing phone', [
                 'telegram_id' => $userPayload['id'] ?? null,
                 'username' => $userPayload['username'] ?? null,
             ]);
-            return response()->json(['message' => 'User is not registered via bot'], 403);
+            return response()->json(['message' => __('auth.phone_required')], 403);
         }
 
         return response()->json([
@@ -140,7 +144,7 @@ class TelegramWebAppController extends Controller
     private function findRegisteredUser(array $userPayload): ?User
     {
         $user = User::find($userPayload['id']);
-        if (! $user) {
+        if (! $user || empty($user->phone_number)) {
             return null;
         }
 

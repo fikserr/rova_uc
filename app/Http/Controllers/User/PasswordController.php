@@ -28,7 +28,7 @@ class PasswordController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        return redirect('/user-profile/security')->with('success', 'Parol muvaffaqiyatli o`rnatildi');
+        return redirect('/user-profile/security')->with('success', __('password.set_success'));
     }
 
     public function update(Request $request, $userId)
@@ -49,13 +49,13 @@ class PasswordController extends Controller
 
         if (! $password) {
             return redirect('/user-profile/security')->withErrors([
-                'current_password' => 'Password topilmadi',
+                'current_password' => __('password.not_found'),
             ]);
         }
 
         if (! Hash::check($data['current_password'], $password->password)) {
             return redirect('/user-profile/security')->withErrors([
-                'current_password' => "Eski parolingiz to'g'ri emas",
+                'current_password' => __('password.current_incorrect'),
             ]);
         }
 
@@ -63,6 +63,6 @@ class PasswordController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        return redirect('/user-profile/security')->with('success', 'Parol muvaffaqiyatli yangilandi');
+        return redirect('/user-profile/security')->with('success', __('password.updated'));
     }
 }

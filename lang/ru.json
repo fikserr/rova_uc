@@ -1,0 +1,21 @@
+{
+    "payment.user_not_found": "Пользователь не определён",
+    "payment.cannot_topup_with_balance": "Нельзя пополнить баланс с баланса",
+    "payment.uc_product_not_found": "Продукт UC не найден",
+    "payment.enter_pubg_player_id": "Введите PUBG Player ID",
+    "payment.ml_product_not_found": "Продукт ML не найден",
+    "payment.enter_ml_account_info": "Введите ML Account ID и Server ID",
+    "payment.service_not_found": "Сервис не найден",
+    "payment.enter_telegram_username": "Введите Telegram username получателя",
+    "payment.amount_required": "Сумма не указана",
+    "payment.insufficient_balance": "Недостаточно средств на балансе",
+    "payment.paid_with_balance": "Успешно оплачено с баланса",
+    "payment.order_not_found": "Заказ не найден",
+    "payment.currency_rate_not_found": "Курс :currency не найден",
+    "password.set_success": "Пароль успешно установлен",
+    "password.not_found": "Пароль не найден",
+    "password.current_incorrect": "Текущий пароль неверен",
+    "password.updated": "Пароль успешно обновлён",
+    "topup.receipt_accepted": "Ваш чек принят. После проверки средства будут зачислены на баланс.",
+    "auth.phone_required": "Зарегистрируйте номер телефона через бота"
+}

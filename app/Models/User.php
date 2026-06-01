@@ -17,7 +17,15 @@ class User extends Authenticatable
         'id',
         'username',
         'phone_number',
+        'email',
+        'email_verified_at',
         'role',
+        'is_blocked',
+    ];
+
+    protected $casts = [
+        'is_blocked'        => 'boolean',
+        'email_verified_at' => 'datetime',
     ];
 
     /**

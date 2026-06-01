@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminSecurityController;
 use App\Http\Controllers\Admin\CurrencyController;
+use App\Http\Controllers\Admin\PaymentCardController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BroadcastNotificationController;
 use App\Http\Controllers\Admin\ManualTopupController as AdminManualTopupController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Payment\ClickController;
 use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\User\EmailVerificationController;
 use App\Http\Controllers\User\ManualTopupController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\NotificationController;
@@ -57,6 +60,22 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
             ->name('admin.dashboard');
+
+        Route::get('/admin/security', [AdminSecurityController::class, 'index'])
+            ->name('admin.security');
+        Route::post('/admin/security/password', [AdminSecurityController::class, 'setPassword'])
+            ->name('admin.security.set');
+        Route::put('/admin/security/password', [AdminSecurityController::class, 'changePassword'])
+            ->name('admin.security.change');
+
+        Route::get('/payment-cards', [PaymentCardController::class, 'index'])
+            ->name('payment-cards.index');
+        Route::post('/payment-cards', [PaymentCardController::class, 'store'])
+            ->name('payment-cards.store');
+        Route::put('/payment-cards/{card}', [PaymentCardController::class, 'update'])
+            ->name('payment-cards.update');
+        Route::delete('/payment-cards/{card}', [PaymentCardController::class, 'destroy'])
+            ->name('payment-cards.destroy');
 
         Route::get('/tasks', function () {
             return Inertia::render('Admin/Tasks');
@@ -118,12 +137,23 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/users', [UserController::class, 'index'])
             ->name('users.index');
+        Route::put('/users/{userId}/role', [UserController::class, 'updateRole'])
+            ->name('users.role');
+        Route::post('/users/{userId}/balance', [UserController::class, 'adjustBalance'])
+            ->name('users.balance');
+        Route::post('/users/{userId}/toggle-block', [UserController::class, 'toggleBlock'])
+            ->name('users.toggle-block');
         Route::get('/profit-analytics', [ProfitAnalyticsController::class, 'index'])
             ->name('profit.analytics');
         Route::get('/referral-settings', [ReferralController::class, 'index'])
             ->name('referrals.index');
         Route::post('/referral-settings', [ReferralController::class, 'update'])
             ->name('referrals.update');
+
+    });
+
+    // Worker ham ko'ra oladigan sahifalar
+    Route::middleware(['role:worker'])->group(function () {
         Route::get('/uc-orders', [OrderController::class, 'ucOrders'])
             ->name('orders.uc');
         Route::get('/ml-orders', [OrderController::class, 'mlOrders'])
@@ -142,14 +172,12 @@ Route::middleware(['auth'])->group(function () {
             ->name('broadcast-notifications.index');
         Route::post('/broadcast-notifications', [BroadcastNotificationController::class, 'store'])
             ->name('broadcast-notifications.store');
-
         Route::get('/manual-topups', [AdminManualTopupController::class, 'index'])
             ->name('manual-topups.index');
         Route::post('/manual-topups/{id}/approve', [AdminManualTopupController::class, 'approve'])
             ->name('manual-topups.approve');
         Route::post('/manual-topups/{id}/reject', [AdminManualTopupController::class, 'reject'])
             ->name('manual-topups.reject');
-
     });
 
     Route::middleware(['role:user'])->group(function () {
@@ -179,6 +207,16 @@ Route::middleware(['auth'])->group(function () {
             ->name('manual-topup.store');
         Route::get('/manual-topup/my', [ManualTopupController::class, 'myRequests'])
             ->name('manual-topup.my');
+        Route::get('/payment-cards/active', [PaymentCardController::class, 'active'])
+            ->name('payment-cards.active');
+
+        Route::post('/email/send-code', [EmailVerificationController::class, 'sendCode'])
+            ->middleware('throttle:5,10')
+            ->name('email.send-code');
+        Route::post('/email/verify', [EmailVerificationController::class, 'verify'])
+            ->name('email.verify');
+        Route::delete('/email', [EmailVerificationController::class, 'remove'])
+            ->name('email.remove');
         Route::get('/user-profile/security', function () {
             return Inertia::render('User/UserSecurity');
         });

@@ -52,22 +52,86 @@ class UserController extends Controller
                 $stats = $orderStatsByUser->get($user->id);
 
                 return [
-                    'id' => $user->id,
-                    'username' => $user->username,
+                    'id'           => $user->id,
+                    'username'     => $user->username,
                     'phone_number' => $user->phone_number,
-                    'isActive' => isset($activeUserIds[(string) $user->id]),
-                    'balance' => $user->balance?->balance ?? 0,
-                    'totalOrders' => (int) ($stats->total_orders ?? 0),
-                    'totalSpent' => (float) ($stats->total_spent ?? 0),
-                    'role' => $user->role,
-                    'created_at' => $user->created_at,
+                    'isActive'     => isset($activeUserIds[(string) $user->id]),
+                    'is_blocked'   => (bool) $user->is_blocked,
+                    'balance'      => $user->balance?->balance ?? 0,
+                    'totalOrders'  => (int) ($stats->total_orders ?? 0),
+                    'totalSpent'   => (float) ($stats->total_spent ?? 0),
+                    'role'         => $user->role,
+                    'created_at'   => $user->created_at,
                 ];
             });
 
         return Inertia::render('Admin/Users', [
-            'users' => $users
+            'users' => $users,
         ]);
     }
+
+    public function toggleBlock(int $userId)
+    {
+        if ($userId === auth()->id()) {
+            return response()->json(['message' => "O'zingizni bloklayolmaysiz."], 403);
+        }
+
+        $user = User::find($userId);
+        if (! $user) {
+            return response()->json(['message' => 'Foydalanuvchi topilmadi.'], 404);
+        }
+
+        $user->update(['is_blocked' => ! $user->is_blocked]);
+
+        return response()->json([
+            'message'    => $user->is_blocked ? 'Foydalanuvchi bloklandi.' : 'Blok olib tashlandi.',
+            'is_blocked' => $user->is_blocked,
+        ]);
+    }
+
+    public function updateRole(Request $request, int $userId)
+    {
+        $data = $request->validate([
+            'role' => ['required', 'in:user,worker,admin'],
+        ]);
+
+        if ($userId === auth()->id()) {
+            return response()->json(['message' => "O'z rolingizni o'zgartirib bo'lmaydi."], 403);
+        }
+
+        $updated = User::where('id', $userId)->update(['role' => $data['role']]);
+
+        if (! $updated) {
+            return response()->json(['message' => 'Foydalanuvchi topilmadi.'], 404);
+        }
+
+        return response()->json(['message' => 'Rol yangilandi.', 'role' => $data['role']]);
+    }
+
+    public function adjustBalance(Request $request, int $userId)
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'not_in:0'],
+        ]);
+
+        if (! User::where('id', $userId)->exists()) {
+            return response()->json(['message' => 'Foydalanuvchi topilmadi.'], 404);
+        }
+
+        DB::transaction(function () use ($userId, $data) {
+            $row     = DB::table('user_balances')->where('user_id', $userId)->lockForUpdate()->first();
+            $current = (float) ($row?->balance ?? 0);
+            $new     = max(0, $current + (float) $data['amount']);
+
+            DB::table('user_balances')->updateOrInsert(
+                ['user_id' => $userId],
+                ['balance' => $new, 'updated_at' => now()]
+            );
+        });
+
+        return response()->json(['message' => 'Balans yangilandi.']);
+    }
+
     // /start bosilganda
     public function start(Request $request)
     {

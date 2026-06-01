@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Services\AdminOrderNotificationService;
+use App\Services\WorkerNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,7 @@ class PaymentController extends Controller
 
         if (!$userId) {
             return response()->json([
-                'message' => 'Foydalanuvchi aniqlanmadi',
+                'message' => __('payment.user_not_found'),
             ], 422);
         }
 
@@ -49,7 +50,7 @@ class PaymentController extends Controller
 
         if ($paymentMethod === 'balance' && $orderType === 'topup') {
             return response()->json([
-                'message' => 'Balansni balans bilan to\'ldirib bo\'lmaydi',
+                'message' => __('payment.cannot_topup_with_balance'),
             ], 422);
         }
 
@@ -72,14 +73,14 @@ class PaymentController extends Controller
             $product = DB::table('uc_products')->where('id', $productId)->first();
 
             if (!$product) {
-                return ['error' => 'UC mahsulot topilmadi'];
+                return ['error' => __('payment.uc_product_not_found')];
             }
 
             $pubgPlayerId = trim((string) ($validated['pubg_player_id'] ?? ''));
             $pubgName = trim((string) ($validated['pubg_name'] ?? ''));
 
             if ($pubgPlayerId === '') {
-                return ['error' => 'PUBG Player ID kiriting'];
+                return ['error' => __('payment.enter_pubg_player_id')];
             }
 
             $pricing = $this->calculateBasePricing(
@@ -115,14 +116,14 @@ class PaymentController extends Controller
             $product = DB::table('ml_products')->where('id', $productId)->first();
 
             if (!$product) {
-                return ['error' => 'ML mahsulot topilmadi'];
+                return ['error' => __('payment.ml_product_not_found')];
             }
 
             $mlAccountIdValue = trim((string) ($validated['ml_account_id'] ?? ''));
             $mlServerIdValue = trim((string) ($validated['ml_server_id'] ?? ''));
 
             if ($mlAccountIdValue === '' || $mlServerIdValue === '') {
-                return ['error' => 'ML Account ID va Server ID kiriting'];
+                return ['error' => __('payment.enter_ml_account_info')];
             }
 
             $pricing = $this->calculateBasePricing(
@@ -158,12 +159,12 @@ class PaymentController extends Controller
             $service = DB::table('services')->where('id', $serviceId)->first();
 
             if (!$service) {
-                return ['error' => 'Service topilmadi'];
+                return ['error' => __('payment.service_not_found')];
             }
 
             $targetTelegramUsername = trim((string) ($validated['target_telegram_username'] ?? ''));
             if ($targetTelegramUsername === '') {
-                return ['error' => 'Target Telegram username kiriting'];
+                return ['error' => __('payment.enter_telegram_username')];
             }
 
             $pricing = $this->calculateBasePricing(
@@ -194,7 +195,7 @@ class PaymentController extends Controller
 
         $amount = isset($validated['amount']) ? (float) $validated['amount'] : null;
         if (!$amount) {
-            return ['error' => 'Amount kiritilmagan'];
+            return ['error' => __('payment.amount_required')];
         }
 
         return [
@@ -333,7 +334,7 @@ class PaymentController extends Controller
             $currentBalance = (float) ($balanceRow?->balance ?? 0);
 
             if ($currentBalance < $amount) {
-                return ['error' => 'Balans yetarli emas'];
+                return ['error' => __('payment.insufficient_balance')];
             }
 
             $orderId = 0;
@@ -408,6 +409,7 @@ class PaymentController extends Controller
 
         if ($orderType !== 'topup' && $result['order_id'] > 0) {
             AdminOrderNotificationService::notifyNewOrder($orderType, $result['order_id']);
+            WorkerNotificationService::notifyNewOrder($orderType, $result['order_id']);
         }
 
         return response()->json([
@@ -416,7 +418,7 @@ class PaymentController extends Controller
             'order_type' => $orderType,
             'order_id' => $result['order_id'],
             'new_balance' => $result['new_balance'],
-            'message' => 'Balansdan muvaffaqiyatli to\'landi',
+            'message' => __('payment.paid_with_balance'),
         ]);
     }
 
@@ -444,7 +446,7 @@ class PaymentController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->json(['message' => 'Order topilmadi'], 404);
+            return response()->json(['message' => __('payment.order_not_found')], 404);
         }
 
         return response()->json([
@@ -463,12 +465,12 @@ class PaymentController extends Controller
     ): array {
         $sellBase = $this->convertToBaseUzs($sellPrice, $sellCurrency);
         if ($sellBase === null) {
-            return ['error' => strtoupper($sellCurrency) . ' kursi topilmadi'];
+            return ['error' => __('payment.currency_rate_not_found', ['currency' => strtoupper($sellCurrency)])];
         }
 
         $costBase = $this->convertToBaseUzs($costPrice, $costCurrency);
         if ($costBase === null) {
-            return ['error' => strtoupper($costCurrency) . ' kursi topilmadi'];
+            return ['error' => __('payment.currency_rate_not_found', ['currency' => strtoupper($costCurrency)])];
         }
 
         return [

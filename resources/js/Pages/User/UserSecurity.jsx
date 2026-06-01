@@ -1,5 +1,6 @@
 import { Head, router, usePage } from "@inertiajs/react";
-import { CheckCircle, Eye, EyeOff, Key, Lock, XCircle } from "lucide-react";
+import axios from "axios";
+import { CheckCircle, Eye, EyeOff, Key, Lock, Mail, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -60,6 +61,227 @@ function PasswordInput({ label, value, onChange, show, onToggle, dark }) {
                         <Eye className="w-4 h-4" />
                     )}
                 </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Email Section ───────────────────────────────────────────────────────────
+
+function EmailSection({ user, dark }) {
+    const email          = user?.email ?? "";
+    const isVerified     = !!user?.email_verified_at;
+
+    const [step, setStep]         = useState("idle"); // idle | enter_email | enter_code
+    const [inputEmail, setInput]  = useState(email);
+    const [code, setCode]         = useState("");
+    const [loading, setLoading]   = useState(false);
+    const [msg, setMsg]           = useState(null);  // { type: 'ok'|'err', text }
+
+    const base = dark
+        ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+        : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20";
+
+    const sendCode = async () => {
+        if (!inputEmail) return;
+        setLoading(true); setMsg(null);
+        try {
+            await axios.post("/email/send-code", { email: inputEmail });
+            setMsg({ type: "ok", text: "Kod emailingizga yuborildi!" });
+            setStep("enter_code");
+        } catch (e) {
+            setMsg({ type: "err", text: e.response?.data?.message ?? "Xatolik yuz berdi." });
+        } finally { setLoading(false); }
+    };
+
+    const verifyCode = async () => {
+        if (code.length !== 6) return;
+        setLoading(true); setMsg(null);
+        try {
+            await axios.post("/email/verify", { code });
+            setMsg({ type: "ok", text: "Email muvaffaqiyatli tasdiqlandi!" });
+            setStep("idle");
+            setCode("");
+            router.reload({ only: ["auth"] });
+        } catch (e) {
+            setMsg({ type: "err", text: e.response?.data?.message ?? "Kod noto'g'ri." });
+        } finally { setLoading(false); }
+    };
+
+    const removeEmail = async () => {
+        if (!confirm("Emailni o'chirishni tasdiqlaysizmi?")) return;
+        setLoading(true); setMsg(null);
+        try {
+            await axios.delete("/email");
+            setMsg({ type: "ok", text: "Email o'chirildi." });
+            setStep("idle");
+            router.reload({ only: ["auth"] });
+        } catch { setMsg({ type: "err", text: "Xatolik." }); }
+        finally { setLoading(false); }
+    };
+
+    const inputCls = `w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all duration-200 ${base}`;
+    const labelCls = `block text-xs font-semibold uppercase tracking-widest mb-1.5 ${dark ? "text-slate-400" : "text-slate-500"}`;
+
+    return (
+        <div className={`rounded-2xl overflow-hidden transition-colors duration-300 ${
+            dark ? "bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40"
+                 : "bg-white border border-slate-100 shadow-xl shadow-slate-200/60"
+        }`}>
+            <div className="h-1.5 w-full bg-linear-to-r from-blue-500 via-cyan-500 to-teal-500" />
+
+            <div className="p-7 space-y-5">
+                {/* Header */}
+                <div className="flex items-start gap-4">
+                    <div className={`p-2.5 rounded-xl shrink-0 ${dark ? "bg-blue-600/20" : "bg-blue-50"}`}>
+                        <Mail className={`w-5 h-5 ${dark ? "text-blue-400" : "text-blue-600"}`} />
+                    </div>
+                    <div>
+                        <h2 className={`text-lg font-bold leading-tight ${dark ? "text-white" : "text-slate-900"}`}>
+                            Email manzil
+                        </h2>
+                        <p className={`text-xs mt-0.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                            Bildirishnomalar va tiklash uchun
+                        </p>
+                    </div>
+                </div>
+
+                {/* Current email status */}
+                {email && (
+                    <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl ${
+                        dark ? "bg-slate-800" : "bg-slate-50"
+                    }`}>
+                        <div className="min-w-0">
+                            <p className={`text-sm font-semibold truncate ${dark ? "text-white" : "text-slate-800"}`}>
+                                {email}
+                            </p>
+                            <p className={`text-xs mt-0.5 ${isVerified ? "text-emerald-500" : "text-amber-500"}`}>
+                                {isVerified ? "✅ Tasdiqlangan" : "⚠️ Tasdiqlanmagan"}
+                            </p>
+                        </div>
+                        <button
+                            onClick={removeEmail}
+                            disabled={loading}
+                            className="shrink-0 p-2 rounded-lg text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                            title="Emailni o'chirish"
+                        >
+                            <Trash2 className="size-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Messages */}
+                {msg && (
+                    <div className={`flex items-start gap-2 p-3 rounded-xl text-xs ${
+                        msg.type === "ok"
+                            ? dark ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                                   : "bg-emerald-50 border border-emerald-100 text-emerald-600"
+                            : dark ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                                   : "bg-red-50 border border-red-100 text-red-600"
+                    }`}>
+                        {msg.type === "ok"
+                            ? <CheckCircle className="size-3.5 mt-0.5 shrink-0" />
+                            : <XCircle className="size-3.5 mt-0.5 shrink-0" />
+                        }
+                        {msg.text}
+                    </div>
+                )}
+
+                {/* Step: idle — show button to add/change */}
+                {step === "idle" && (
+                    <button
+                        onClick={() => { setStep("enter_email"); setInput(email); setMsg(null); }}
+                        className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white
+                            bg-linear-to-r from-blue-500 to-cyan-600
+                            hover:from-blue-600 hover:to-cyan-700
+                            active:scale-[0.98] transition-all duration-150
+                            shadow-md shadow-blue-500/25"
+                    >
+                        {email ? "Emailni o'zgartirish" : "Email qo'shish"}
+                    </button>
+                )}
+
+                {/* Step: enter email */}
+                {step === "enter_email" && (
+                    <div className="space-y-3">
+                        <div>
+                            <label className={labelCls}>Email manzil</label>
+                            <input
+                                type="email"
+                                value={inputEmail}
+                                onChange={e => setInput(e.target.value)}
+                                placeholder="example@gmail.com"
+                                className={inputCls}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => { setStep("idle"); setMsg(null); }}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                                    dark ? "border-slate-700 text-slate-400 hover:bg-slate-800"
+                                         : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                }`}
+                            >
+                                Bekor
+                            </button>
+                            <button
+                                onClick={sendCode}
+                                disabled={loading || !inputEmail}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
+                            >
+                                {loading ? "Yuborilmoqda..." : "Kod yuborish"}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step: enter code */}
+                {step === "enter_code" && (
+                    <div className="space-y-3">
+                        <div>
+                            <label className={labelCls}>6 xonali tasdiqlash kodi</label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={6}
+                                value={code}
+                                onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
+                                placeholder="000000"
+                                className={`${inputCls} text-center text-2xl font-mono tracking-[0.5em]`}
+                                autoFocus
+                            />
+                            <p className={`text-xs mt-1.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>
+                                Kod <span className="font-semibold">{inputEmail}</span> ga yuborildi
+                            </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => { setStep("enter_email"); setCode(""); setMsg(null); }}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                                    dark ? "border-slate-700 text-slate-400 hover:bg-slate-800"
+                                         : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                }`}
+                            >
+                                Orqaga
+                            </button>
+                            <button
+                                onClick={verifyCode}
+                                disabled={loading || code.length !== 6}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50"
+                            >
+                                {loading ? "Tekshirilmoqda..." : "Tasdiqlash"}
+                            </button>
+                        </div>
+                        <button
+                            onClick={sendCode}
+                            disabled={loading}
+                            className={`w-full text-xs ${dark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"} transition-colors`}
+                        >
+                            Kodni qayta yuborish
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -156,7 +378,7 @@ function UserSecurity() {
             <Head title={t("security.page_title")} />
 
             <div
-                className={`h-[85vh] flex items-center justify-center p-4 transition-colors duration-300 ${
+                className={`min-h-[85vh] flex items-center justify-center p-4 transition-colors duration-300 ${
                     dark
                         ? "bg-slate-950"
                         : "bg-linear-to-br from-slate-100 via-slate-50 to-indigo-50"
@@ -170,10 +392,11 @@ function UserSecurity() {
                     </>
                 )}
 
-                <div className="w-full max-w-sm relative z-10">
-                    {/* Top bar */}
+                <div className="w-full max-w-sm relative z-10 space-y-4">
+                    {/* Email Section */}
+                    <EmailSection user={user} dark={dark} />
 
-                    {/* Card */}
+                    {/* Password Card */}
                     <div
                         className={`rounded-2xl overflow-hidden transition-colors duration-300 ${
                             dark

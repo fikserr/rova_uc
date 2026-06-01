@@ -3,6 +3,7 @@
 /**
  * Telegram BOT - POLLING
  * - user_notifications jadvalidan pending xabarlarni yuboradi
+ * - Worker callback: buyurtma va topup tasdiqlash/bekor qilish
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
-$BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
+$BOT_TOKEN = config('services.telegram.bot_token') ?: env('TELEGRAM_BOT_TOKEN');
 $API_URL   = rtrim(config('app.url'), '/') . '/api';
 
 if (!$BOT_TOKEN) {
@@ -29,15 +30,26 @@ if ($botInfo['ok']) {
     echo "Bot ishga tushdi, lekin getMe xato: " . $botInfo['error'] . "\n";
 }
 
+// ══════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════════════════════════════════════
+
 while (true) {
     dispatchPendingNotifications($BOT_TOKEN);
 
-    $response = file_get_contents(
+    $raw = @file_get_contents(
         "https://api.telegram.org/bot{$BOT_TOKEN}/getUpdates?" .
         http_build_query(['timeout' => 10, 'offset' => $offset])
     );
 
-    $updates = json_decode($response, true);
+    if ($raw === false) {
+        $err = error_get_last()['message'] ?? 'unknown error';
+        echo "[" . date('H:i:s') . "] getUpdates xato: $err\n";
+        sleep(5);
+        continue;
+    }
+
+    $updates = json_decode($raw, true);
 
     if (empty($updates['result'])) {
         sleep(1);
@@ -46,6 +58,12 @@ while (true) {
 
     foreach ($updates['result'] as $update) {
         $offset = $update['update_id'] + 1;
+
+        // ── Inline tugma bosildi ──────────────────────────────────
+        if (isset($update['callback_query'])) {
+            handleCallbackQuery($BOT_TOKEN, $update['callback_query']);
+            continue;
+        }
 
         if (!isset($update['message'])) {
             continue;
@@ -56,8 +74,19 @@ while (true) {
         $from       = $message['from'];
         $telegramId = $from['id'];
         $username   = $from['username'] ?? null;
+        $webAppUrl  = rtrim(config('app.url'), '/');
 
-        // /start
+        $dbUser = DB::table('users')->where('id', $telegramId)->first();
+        $role   = $dbUser?->role ?? 'guest';
+
+        // ── Worker / Admin ────────────────────────────────────────
+        if (in_array($role, ['worker', 'admin'], true)) {
+            handleWorkerMessage($BOT_TOKEN, $chatId, $telegramId, $message);
+            continue;
+        }
+
+        // ── Oddiy foydalanuvchi ───────────────────────────────────
+
         if (($message['text'] ?? null) === '/start') {
             $apiResponse = Http::post($API_URL . '/users/start', [
                 'telegram_id' => $telegramId,
@@ -82,13 +111,15 @@ while (true) {
                     ->where('user_id', $telegramId)->value('balance') ?? 0);
 
                 sendMessage($BOT_TOKEN, $chatId,
-                    "Xush kelibsiz! 👋\nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm"
+                    "Xush kelibsiz! 👋\nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
+                    ['inline_keyboard' => [[
+                        ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                    ]]]
                 );
             }
             continue;
         }
 
-        // Telefon raqam
         if (isset($message['contact'])) {
             if ($message['contact']['user_id'] != $telegramId) {
                 sendMessage($BOT_TOKEN, $chatId, "Iltimos, o'zingizning telefon raqamingizni yuboring.");
@@ -100,16 +131,27 @@ while (true) {
                 'phone_number' => $message['contact']['phone_number'],
             ]);
 
-            sendMessage($BOT_TOKEN, $chatId, "Ro'yxatdan muvaffaqiyatli o'tdingiz! ✅");
+            sendMessage($BOT_TOKEN, $chatId,
+                "Ro'yxatdan muvaffaqiyatli o'tdingiz! ✅",
+                ['remove_keyboard' => true]
+            );
+            sendMessage($BOT_TOKEN, $chatId,
+                "Ilovani ochish uchun quyidagi tugmani bosing:",
+                ['inline_keyboard' => [[
+                    ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                ]]]
+            );
             continue;
         }
 
-        // Balans
         if (($message['text'] ?? null) === 'Balans') {
             $balance = (float) (DB::table('user_balances')
                 ->where('user_id', $telegramId)->value('balance') ?? 0);
             sendMessage($BOT_TOKEN, $chatId,
-                "💰 Balansingiz: " . number_format($balance, 0, '.', ' ') . " so'm"
+                "💰 Balansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
+                ['inline_keyboard' => [[
+                    ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                ]]]
             );
         }
     }
@@ -118,10 +160,360 @@ while (true) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// WORKER MESSAGE HANDLER
+// ══════════════════════════════════════════════════════════════════
+
+function handleWorkerMessage(string $token, int $chatId, int $workerId, array $message): void
+{
+    $text  = trim($message['text'] ?? '');
+    $state = getBotState($workerId);
+
+    // Sabab kutilayotgan holat (bekor qilish yoki rad etish)
+    if ($state) {
+        if ($text === '' || $text === '/start') {
+            clearBotState($workerId);
+            sendMessage($token, $chatId, "✅ Amal bekor qilindi.");
+            return;
+        }
+        handleWorkerState($token, $chatId, $workerId, $text, $state);
+        return;
+    }
+
+    // /start yoki har qanday xabar — oddiy javob
+    sendMessage($token, $chatId,
+        "👷 Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz."
+    );
+}
+
+function handleWorkerState(string $token, int $chatId, int $workerId, string $reason, object $state): void
+{
+    $payload = is_string($state->payload)
+        ? json_decode($state->payload, true)
+        : (array) $state->payload;
+
+    if ($state->state === 'cancel_reason') {
+        $type    = $payload['type'] ?? '';
+        $orderId = (int) ($payload['id'] ?? 0);
+        clearBotState($workerId);
+        doCancelOrder($token, $chatId, $type, $orderId, $reason);
+        return;
+    }
+
+    if ($state->state === 'reject_reason') {
+        $topupId = (int) ($payload['id'] ?? 0);
+        clearBotState($workerId);
+        doRejectTopup($token, $chatId, $topupId, $reason);
+        return;
+    }
+
+    clearBotState($workerId);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CALLBACK QUERY HANDLER
+// ══════════════════════════════════════════════════════════════════
+
+function handleCallbackQuery(string $token, array $cb): void
+{
+    $callbackId = $cb['id'];
+    $chatId     = $cb['message']['chat']['id'] ?? 0;
+    $workerId   = $cb['from']['id'];
+    $data       = $cb['data'] ?? '';
+
+    $dbUser = DB::table('users')->where('id', $workerId)->first();
+    $role   = $dbUser?->role ?? 'guest';
+
+    if (!in_array($role, ['worker', 'admin'], true)) {
+        answerCallback($token, $callbackId, "❌ Ruxsat yo'q.");
+        return;
+    }
+
+    answerCallback($token, $callbackId);
+
+    // o:{type}:{action}:{id}  →  o:uc:a:5 / o:ml:c:3 / o:srv:a:7
+    if (str_starts_with($data, 'o:')) {
+        [, $type, $action, $id] = explode(':', $data, 4);
+        $orderId = (int) $id;
+
+        if ($action === 'a') {
+            doApproveOrder($token, $chatId, $type, $orderId);
+        } elseif ($action === 'c') {
+            setBotState($workerId, 'cancel_reason', ['type' => $type, 'id' => $orderId]);
+            sendMessage($token, $chatId,
+                "❌ Buyurtma #{$orderId} uchun bekor qilish *sababini* yozing:\n_(Bekor qilish uchun /start yuboring)_"
+            );
+        }
+        return;
+    }
+
+    // t:{action}:{id}  →  t:a:12 / t:r:12
+    if (str_starts_with($data, 't:')) {
+        [, $action, $id] = explode(':', $data, 3);
+        $topupId = (int) $id;
+
+        if ($action === 'a') {
+            doApproveTopup($token, $chatId, $topupId);
+        } elseif ($action === 'r') {
+            setBotState($workerId, 'reject_reason', ['id' => $topupId]);
+            sendMessage($token, $chatId,
+                "❌ Chek #{$topupId} uchun rad etish *sababini* yozing:\n_(Bekor qilish uchun /start yuboring)_"
+            );
+        }
+        return;
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ORDER ACTIONS
+// ══════════════════════════════════════════════════════════════════
+
+function doApproveOrder(string $token, int $chatId, string $type, int $orderId): void
+{
+    $table = orderTable($type);
+    if (!$table) { sendMessage($token, $chatId, "❌ Noto'g'ri tur."); return; }
+
+    $order = DB::table($table)->where('id', $orderId)->first();
+
+    if (!$order || !in_array($order->status, ['paid', 'pending'], true)) {
+        sendMessage($token, $chatId, "⚠️ Buyurtma #{$orderId} topilmadi yoki allaqachon qayta ishlangan.");
+        return;
+    }
+
+    DB::table($table)->where('id', $orderId)->update(['status' => 'delivered']);
+
+    createOrderNotification(
+        userId:    (int) $order->user_id,
+        orderType: orderTypeLabel($type),
+        orderId:   $orderId,
+        status:    'delivered',
+        title:     orderDeliveredTitle($type),
+        message:   orderDeliveredMessage($type)
+    );
+
+    sendMessage($token, $chatId, "✅ Buyurtma #{$orderId} tasdiqlandi.");
+}
+
+function doCancelOrder(string $token, int $chatId, string $type, int $orderId, string $reason): void
+{
+    $table = orderTable($type);
+    if (!$table) { sendMessage($token, $chatId, "❌ Noto'g'ri tur."); return; }
+
+    $order = DB::table($table)->where('id', $orderId)->first();
+
+    if (!$order || !in_array($order->status, ['paid', 'pending'], true)) {
+        sendMessage($token, $chatId, "⚠️ Buyurtma #{$orderId} topilmadi yoki allaqachon qayta ishlangan.");
+        return;
+    }
+
+    DB::transaction(function () use ($table, $order, $orderId, $reason) {
+        DB::table($table)->where('id', $orderId)->update(['status' => 'canceled']);
+
+        $refund = (float) ($order->sell_price ?? 0);
+        if ($refund > 0) {
+            DB::table('user_balances')
+                ->where('user_id', $order->user_id)
+                ->update(['balance' => DB::raw("balance + {$refund}"), 'updated_at' => now()]);
+        }
+    });
+
+    createOrderNotification(
+        userId:      (int) $order->user_id,
+        orderType:   orderTypeLabel($type),
+        orderId:     $orderId,
+        status:      'canceled',
+        title:       '❌ Buyurtma bekor qilindi',
+        message:     "Buyurtmangiz bekor qilindi.",
+        description: $reason
+    );
+
+    sendMessage($token, $chatId, "✅ Buyurtma #{$orderId} bekor qilindi.");
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TOPUP ACTIONS
+// ══════════════════════════════════════════════════════════════════
+
+function doApproveTopup(string $token, int $chatId, int $topupId): void
+{
+    $topup = DB::table('manual_topup_requests')->where('id', $topupId)->first();
+
+    if (!$topup || $topup->status !== 'pending') {
+        sendMessage($token, $chatId, "⚠️ Chek #{$topupId} topilmadi yoki allaqachon qayta ishlangan.");
+        return;
+    }
+
+    $amount = (float) $topup->amount;
+
+    DB::transaction(function () use ($topupId, $topup, $amount) {
+        DB::table('manual_topup_requests')
+            ->where('id', $topupId)
+            ->update(['status' => 'approved', 'updated_at' => now()]);
+
+        DB::table('user_balances')
+            ->where('user_id', $topup->user_id)
+            ->update(['balance' => DB::raw("balance + {$amount}"), 'updated_at' => now()]);
+    });
+
+    createTopupNotification(
+        userId:  (int) $topup->user_id,
+        topupId: $topupId,
+        status:  'approved',
+        title:   '✅ Balans to\'ldirildi',
+        message: number_format($amount, 0, '.', ' ') . " so'm balansingizga qo'shildi."
+    );
+
+    sendMessage($token, $chatId,
+        "✅ Chek #{$topupId} qabul qilindi. " . number_format($amount, 0, '.', ' ') . " so'm qo'shildi."
+    );
+}
+
+function doRejectTopup(string $token, int $chatId, int $topupId, string $reason): void
+{
+    $topup = DB::table('manual_topup_requests')->where('id', $topupId)->first();
+
+    if (!$topup || $topup->status !== 'pending') {
+        sendMessage($token, $chatId, "⚠️ Chek #{$topupId} topilmadi yoki allaqachon qayta ishlangan.");
+        return;
+    }
+
+    DB::table('manual_topup_requests')
+        ->where('id', $topupId)
+        ->update(['status' => 'rejected', 'notes' => $reason, 'updated_at' => now()]);
+
+    createTopupNotification(
+        userId:      (int) $topup->user_id,
+        topupId:     $topupId,
+        status:      'rejected',
+        title:       '❌ Chek rad etildi',
+        message:     "Chekingiz rad etildi.",
+        description: $reason
+    );
+
+    sendMessage($token, $chatId, "✅ Chek #{$topupId} rad etildi.");
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════════
+
+function createOrderNotification(
+    int $userId, string $orderType, int $orderId,
+    string $status, string $title, string $message, string $description = ''
+): void {
+    if (!Schema::hasTable('user_notifications')) return;
+    DB::table('user_notifications')->insert([
+        'user_id'     => $userId,
+        'source'      => 'admin',
+        'order_type'  => $orderType,
+        'order_id'    => $orderId,
+        'status'      => $status,
+        'title'       => $title,
+        'message'     => $message,
+        'description' => $description ?: null,
+        'is_read'     => false,
+        'created_at'  => now(),
+    ]);
+}
+
+function createTopupNotification(
+    int $userId, int $topupId,
+    string $status, string $title, string $message, string $description = ''
+): void {
+    if (!Schema::hasTable('user_notifications')) return;
+    DB::table('user_notifications')->insert([
+        'user_id'     => $userId,
+        'source'      => 'system',
+        'order_type'  => null,
+        'order_id'    => $topupId,
+        'status'      => $status,
+        'title'       => $title,
+        'message'     => $message,
+        'description' => $description ?: null,
+        'is_read'     => false,
+        'created_at'  => now(),
+    ]);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BOT STATE
+// ══════════════════════════════════════════════════════════════════
+
+function getBotState(int $userId): ?object
+{
+    if (!Schema::hasTable('bot_states')) return null;
+    return DB::table('bot_states')->where('user_id', $userId)->first();
+}
+
+function setBotState(int $userId, string $state, array $payload): void
+{
+    if (!Schema::hasTable('bot_states')) return;
+    DB::table('bot_states')->updateOrInsert(
+        ['user_id' => $userId],
+        ['state' => $state, 'payload' => json_encode($payload)]
+    );
+}
+
+function clearBotState(int $userId): void
+{
+    if (!Schema::hasTable('bot_states')) return;
+    DB::table('bot_states')->where('user_id', $userId)->delete();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+
+function orderTable(string $type): ?string
+{
+    return match ($type) {
+        'uc'  => 'uc_orders',
+        'ml'  => 'ml_orders',
+        'srv' => 'service_orders',
+        default => null,
+    };
+}
+
+function orderTypeLabel(string $type): string
+{
+    return match ($type) {
+        'uc'  => 'uc',
+        'ml'  => 'ml',
+        'srv' => 'service',
+        default => $type,
+    };
+}
+
+function orderDeliveredTitle(string $type): string
+{
+    return match ($type) {
+        'uc'  => 'UC tushdi ✅',
+        'ml'  => 'Almaz tushdi ✅',
+        'srv' => 'Xizmat bajarildi ✅',
+        default => 'Buyurtma bajarildi ✅',
+    };
+}
+
+function orderDeliveredMessage(string $type): string
+{
+    return match ($type) {
+        'uc'  => 'Buyurtmangiz bajarildi. UC hisobingizga tushirildi.',
+        'ml'  => 'Buyurtmangiz bajarildi. Almaz hisobingizga tushirildi.',
+        'srv' => 'Buyurtmangiz bajarildi.',
+        default => 'Buyurtmangiz bajarildi.',
+    };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TELEGRAM API
+// ══════════════════════════════════════════════════════════════════
 
 function sendMessage(string $token, int $chatId, string $text, ?array $replyMarkup = null): array
 {
-    $data = ['chat_id' => $chatId, 'text' => $text];
+    $data = [
+        'chat_id'    => $chatId,
+        'text'       => $text,
+        'parse_mode' => 'Markdown',
+    ];
 
     if ($replyMarkup !== null) {
         $data['reply_markup'] = json_encode($replyMarkup);
@@ -131,31 +523,30 @@ function sendMessage(string $token, int $chatId, string $text, ?array $replyMark
     $raw = @file_get_contents($url);
 
     if ($raw === false) {
-        $error = error_get_last();
-        return ['ok' => false, 'error' => $error['message'] ?? 'sendMessage failed'];
+        return ['ok' => false, 'error' => error_get_last()['message'] ?? 'failed'];
     }
 
     $json = json_decode($raw, true);
-    if (!is_array($json) || !($json['ok'] ?? false)) {
-        return ['ok' => false, 'error' => is_array($json) ? json_encode($json) : 'invalid response'];
-    }
+    return ['ok' => ($json['ok'] ?? false) === true, 'error' => null];
+}
 
-    return ['ok' => true, 'error' => null];
+function answerCallback(string $token, string $callbackId, string $text = ''): void
+{
+    $data = ['callback_query_id' => $callbackId];
+    if ($text !== '') $data['text'] = $text;
+    @file_get_contents("https://api.telegram.org/bot{$token}/answerCallbackQuery?" . http_build_query($data));
 }
 
 function getBotInfo(string $token): array
 {
     $raw = @file_get_contents("https://api.telegram.org/bot{$token}/getMe");
     if ($raw === false) {
-        $error = error_get_last();
-        return ['ok' => false, 'error' => $error['message'] ?? 'getMe failed', 'username' => '', 'id' => 0];
+        return ['ok' => false, 'error' => 'getMe failed', 'username' => '', 'id' => 0];
     }
-
     $json = json_decode($raw, true);
     if (!is_array($json) || !($json['ok'] ?? false)) {
-        return ['ok' => false, 'error' => 'invalid getMe response', 'username' => '', 'id' => 0];
+        return ['ok' => false, 'error' => 'invalid response', 'username' => '', 'id' => 0];
     }
-
     return [
         'ok'       => true,
         'error'    => null,
@@ -166,9 +557,7 @@ function getBotInfo(string $token): array
 
 function dispatchPendingNotifications(string $botToken): void
 {
-    if (!Schema::hasTable('user_notifications')) {
-        return;
-    }
+    if (!Schema::hasTable('user_notifications')) return;
 
     $rows = DB::table('user_notifications')
         ->whereNull('tg_sent_at')
@@ -178,39 +567,21 @@ function dispatchPendingNotifications(string $botToken): void
         ->get();
 
     foreach ($rows as $row) {
-        $text   = buildNotificationText($row);
-        $result = sendMessage($botToken, (int) $row->user_id, $text);
+        $title   = trim((string) ($row->title ?? 'Bildirishnoma'));
+        $message = trim((string) ($row->message ?? ''));
+        $desc    = trim((string) ($row->description ?? ''));
 
+        $text = $title;
+        if ($message !== '') $text .= "\n\n" . $message;
+        if ($desc !== '')    $text .= "\n\nSabab: " . $desc;
+
+        $result       = sendMessage($botToken, (int) $row->user_id, $text);
         $nextAttempts = (int) ($row->tg_attempts ?? 0) + 1;
 
-        if ($result['ok']) {
-            DB::table('user_notifications')->where('id', $row->id)->update([
-                'tg_sent_at'    => now(),
-                'tg_attempts'   => $nextAttempts,
-                'tg_last_error' => null,
-            ]);
-        } else {
-            DB::table('user_notifications')->where('id', $row->id)->update([
-                'tg_attempts'   => $nextAttempts,
-                'tg_last_error' => $result['error'],
-            ]);
-        }
+        DB::table('user_notifications')->where('id', $row->id)->update(
+            $result['ok']
+                ? ['tg_sent_at' => now(), 'tg_attempts' => $nextAttempts, 'tg_last_error' => null]
+                : ['tg_attempts' => $nextAttempts, 'tg_last_error' => $result['error']]
+        );
     }
-}
-
-function buildNotificationText(object $row): string
-{
-    $title       = trim((string) ($row->title ?? 'Bildirishnoma'));
-    $message     = trim((string) ($row->message ?? ''));
-    $description = trim((string) ($row->description ?? ''));
-
-    $text = $title;
-    if ($message !== '') {
-        $text .= "\n\n" . $message;
-    }
-    if ($description !== '') {
-        $text .= "\n\nSabab: " . $description;
-    }
-
-    return $text;
 }

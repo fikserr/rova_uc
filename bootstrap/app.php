@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\CheckUserBlocked;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnsureUserRole;
+use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\VerifyTelegramWebApp;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
@@ -39,7 +41,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            SetLocale::class,
+            CheckUserBlocked::class,
             HandleInertiaRequests::class,
+        ]);
+
+        $middleware->api(append: [
+            SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

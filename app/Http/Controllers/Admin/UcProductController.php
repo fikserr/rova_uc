@@ -43,7 +43,7 @@ class UcProductController extends Controller
         }
 
         return Inertia::render('User/UcShop', [
-            'products' => UcProduct::orderByDesc('id')->get(),
+            'products' => UcProduct::where('is_active', true)->orderByDesc('id')->get(),
             'lastPubgAccount' => $lastPubgAccount,
         ]);
     }

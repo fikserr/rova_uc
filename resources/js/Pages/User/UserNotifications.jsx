@@ -3,6 +3,59 @@ import { Bell, CalendarClock, Check, Info, Package } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+// Notification type → i18n key mapping
+function resolveNotification(item, t) {
+    const src    = item.source;
+    const type   = item.order_type;   // uc | ml | service | null
+    const status = item.order_status; // delivered | canceled | paid | approved | rejected | null
+    const desc   = item.description;
+
+    // ── System (topup) ────────────────────────────────────────────
+    if (src === 'system' || (!type && (status === 'approved' || status === 'rejected'))) {
+        if (status === 'approved') {
+            return {
+                title:   t('notifications.topup_approved_title'),
+                message: t('notifications.topup_approved_message'),
+            };
+        }
+        if (status === 'rejected') {
+            return {
+                title:   t('notifications.topup_rejected_title'),
+                message: t('notifications.topup_rejected_message'),
+            };
+        }
+    }
+
+    // ── Order notifications ───────────────────────────────────────
+    if (type && status) {
+        if (status === 'delivered') {
+            const titleKey = `notifications.order_delivered_${type}_title`;
+            const msgKey   = `notifications.order_delivered_${type}_message`;
+            return {
+                title:   t(titleKey, { defaultValue: item.title }),
+                message: t(msgKey,   { defaultValue: item.message }),
+            };
+        }
+        if (status === 'canceled') {
+            return {
+                title:   t('notifications.order_canceled_title'),
+                message: desc
+                    ? t('notifications.order_canceled_message_with_reason', { reason: desc })
+                    : t('notifications.order_canceled_message'),
+            };
+        }
+        if (status === 'paid') {
+            return {
+                title:   t('notifications.order_paid_title'),
+                message: t('notifications.order_paid_message'),
+            };
+        }
+    }
+
+    // ── Fallback: broadcast / custom admin message ────────────────
+    return { title: item.title, message: item.message };
+}
+
 function UserNotifications() {
     const { t } = useTranslation();
     const { notifications = [], stats = {} } = usePage().props;
@@ -106,12 +159,16 @@ function UserNotifications() {
 
                 {/* Notification cards */}
                 <div className="space-y-4">
-                    {notifications.map((item) => (
+                    {notifications.map((item) => {
+                        const { title, message } = resolveNotification(item, t);
+                        const isUnread = item.is_read === "unread";
+
+                        return (
                         <div
                             key={item.id}
                             className={`backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 sm:p-6 border
                                 ${
-                                    item.status === "unread"
+                                    isUnread
                                         ? "bg-blue-50/80 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/40"
                                         : "bg-white/80 dark:bg-slate-800 border-slate-100 dark:border-slate-700"
                                 }`}
@@ -120,12 +177,12 @@ function UserNotifications() {
                                 {/* Icon */}
                                 <div
                                     className={`p-3 rounded-xl shrink-0 ${
-                                        item.source === "admin"
+                                        item.order_type
                                             ? "bg-linear-to-br from-emerald-500 to-teal-600"
                                             : "bg-linear-to-br from-blue-600 to-indigo-600"
                                     }`}
                                 >
-                                    {item.source === "admin" ? (
+                                    {item.order_type ? (
                                         <Package className="size-5 text-white" />
                                     ) : (
                                         <Bell className="size-5 text-white" />
@@ -136,53 +193,37 @@ function UserNotifications() {
                                     {/* Header row */}
                                     <div className="flex items-start justify-between gap-3 mb-2">
                                         <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                                            {item.title}
+                                            {title}
                                         </h3>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            {item.status === "unread" && (
+                                            {isUnread && (
                                                 <button
-                                                    onClick={() =>
-                                                        markAsRead(item.id)
-                                                    }
+                                                    onClick={() => markAsRead(item.id)}
                                                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
-                                                    title={t(
-                                                        "notifications.mark_read",
-                                                    )}
+                                                    title={t("notifications.mark_read")}
                                                 >
                                                     <Check className="size-3" />
-                                                    {t(
-                                                        "notifications.mark_read",
-                                                    )}
+                                                    {t("notifications.mark_read")}
                                                 </button>
                                             )}
                                             <span
                                                 className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                                    item.status === "unread"
+                                                    isUnread
                                                         ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                                                         : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
                                                 }`}
                                             >
-                                                {item.status === "unread"
-                                                    ? t(
-                                                          "notifications.status.unread",
-                                                      )
-                                                    : t(
-                                                          "notifications.status.read",
-                                                      )}
+                                                {isUnread
+                                                    ? t("notifications.status.unread")
+                                                    : t("notifications.status.read")}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Message */}
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                                        {item.message}
-                                    </p>
-
-                                    {/* Reason */}
-                                    {item.description && (
-                                        <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">
-                                            {t("notifications.reason")}:{" "}
-                                            {item.description}
+                                    {message && (
+                                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                                            {message}
                                         </p>
                                     )}
 
@@ -194,7 +235,8 @@ function UserNotifications() {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Empty state */}

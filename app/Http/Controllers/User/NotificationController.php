@@ -52,13 +52,16 @@ class NotificationController extends Controller
             ->get();
 
         return $rows->map(fn ($row) => [
-            'id' => $row->id,
-            'source' => $row->source ?: 'admin',
-            'title' => (string) ($row->title ?: 'Bildirishnoma'),
-            'message' => (string) ($row->message ?: ''),
-            'description' => (string) ($row->description ?: ''),
-            'status' => (bool) $row->is_read ? 'read' : 'unread',
-            'created_at' => $row->created_at,
+            'id'           => $row->id,
+            'source'       => $row->source ?: 'admin',
+            'order_type'   => $row->order_type,
+            'order_id'     => $row->order_id,
+            'order_status' => $row->status,
+            'title'        => (string) ($row->title ?: ''),
+            'message'      => (string) ($row->message ?: ''),
+            'description'  => (string) ($row->description ?: ''),
+            'is_read'      => (bool) $row->is_read ? 'read' : 'unread',
+            'created_at'   => $row->created_at,
         ]);
     }
 }

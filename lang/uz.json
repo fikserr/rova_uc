@@ -1,0 +1,21 @@
+{
+    "payment.user_not_found": "Foydalanuvchi aniqlanmadi",
+    "payment.cannot_topup_with_balance": "Balansni balans bilan to'ldirib bo'lmaydi",
+    "payment.uc_product_not_found": "UC mahsulot topilmadi",
+    "payment.enter_pubg_player_id": "PUBG Player ID kiriting",
+    "payment.ml_product_not_found": "ML mahsulot topilmadi",
+    "payment.enter_ml_account_info": "ML Account ID va Server ID kiriting",
+    "payment.service_not_found": "Xizmat topilmadi",
+    "payment.enter_telegram_username": "Telegram username kiriting",
+    "payment.amount_required": "Miqdor kiritilmagan",
+    "payment.insufficient_balance": "Balans yetarli emas",
+    "payment.paid_with_balance": "Balansdan muvaffaqiyatli to'landi",
+    "payment.order_not_found": "Buyurtma topilmadi",
+    "payment.currency_rate_not_found": ":currency kursi topilmadi",
+    "password.set_success": "Parol muvaffaqiyatli o'rnatildi",
+    "password.not_found": "Parol topilmadi",
+    "password.current_incorrect": "Eski parolingiz to'g'ri emas",
+    "password.updated": "Parol muvaffaqiyatli yangilandi",
+    "topup.receipt_accepted": "Chekingiz qabul qilindi. Ko'rib chiqilgandan so'ng balansingizga qo'shiladi.",
+    "auth.phone_required": "Botda telefon raqamingizni ro'yxatdan o'tkazing"
+}

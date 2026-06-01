@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Services\WorkerNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class ManualTopupController extends Controller
 
         $path = $request->file('receipt')->store('topup-receipts', 'public');
 
-        DB::table('manual_topup_requests')->insert([
+        $topupId = DB::table('manual_topup_requests')->insertGetId([
             'user_id'        => auth()->id(),
             'amount'         => $data['amount'],
             'photo_file_id'  => $path,
@@ -30,9 +31,10 @@ class ManualTopupController extends Controller
         ]);
 
         $this->notifyAdmins((float) $data['amount'], (int) auth()->id());
+        WorkerNotificationService::notifyNewTopup($topupId);
 
         return response()->json([
-            'message' => "Chekingiz qabul qilindi. Ko'rib chiqilgandan so'ng balansingizga qo'shiladi.",
+            'message' => __('topup.receipt_accepted'),
         ]);
     }
 

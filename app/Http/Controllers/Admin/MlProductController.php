@@ -43,7 +43,7 @@ class MlProductController extends Controller
         }
 
         return Inertia::render('User/Mlegends', [
-            'products' => MlProduct::orderByDesc('id')->get(),
+            'products' => MlProduct::where('is_active', true)->orderByDesc('id')->get(),
             'lastMlAccount' => $lastMlAccount,
         ]);
     }

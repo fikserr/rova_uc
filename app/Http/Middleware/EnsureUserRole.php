@@ -20,6 +20,10 @@ class EnsureUserRole
             return $next($request);
         }
 
+        if ($userRole === 'worker') {
+            return redirect('/uc-orders');
+        }
+
         if ($userRole === 'user') {
             return redirect('/user-services');
         }

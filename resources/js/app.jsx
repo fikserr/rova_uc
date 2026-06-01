@@ -56,9 +56,9 @@ createInertiaApp({
                 }
 
                 if (pageElement?.props?.auth?.user) {
-                    const isAdmin =
-                        pageElement?.props?.auth?.user?.role === "admin";
-                    return isAdmin ? (
+                    const role = pageElement?.props?.auth?.user?.role;
+                    const isStaff = role === "admin" || role === "worker";
+                    return isStaff ? (
                         <AdminLayout>{pageElement}</AdminLayout>
                     ) : (
                         <UserLayout>{pageElement}</UserLayout>

@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Models\UserBalance;
 use App\Services\AdminOrderNotificationService;
+use App\Services\WorkerNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -128,6 +129,7 @@ class ClickController extends Controller
 
         if ($notifyAdmin) {
             AdminOrderNotificationService::notifyNewOrder($orderType, $orderId);
+            WorkerNotificationService::notifyNewOrder($orderType, $orderId);
         }
 
         return response()->json([
