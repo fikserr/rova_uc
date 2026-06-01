@@ -1,8 +1,10 @@
 import { Head, router, usePage } from "@inertiajs/react";
 import { Bell, CalendarClock, Check, Info, Package } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 function UserNotifications() {
+    const { t } = useTranslation();
     const { notifications = [], stats = {} } = usePage().props;
 
     const markAsRead = (id) => {
@@ -37,35 +39,39 @@ function UserNotifications() {
 
     const formatDateTime = (value) => {
         if (!value) return "-";
-
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return String(value);
-
         return date.toLocaleString("uz-UZ");
     };
 
     return (
         <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 px-4 py-6 pb-24 lg:pb-8">
-            <Head title="Bildirishnomalar" />
+            <Head title={t("notifications.page_title")} />
 
             <div className="max-w-4xl mx-auto">
+                {/* Title */}
                 <div className="mb-6">
                     <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:text-white">
-                        Bildirishnomalar
+                        {t("notifications.title")}
                     </h1>
                     <p className="text-slate-600 dark:text-slate-400">
-                        Sizga kelgan barcha xabarlar va yangiliklar
+                        {t("notifications.subtitle")}
                     </p>
                 </div>
 
+                {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
                     <div className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
                         <div className="flex items-center justify-center size-10 sm:size-12 bg-white/20 rounded-xl mb-3 mx-auto">
                             <Bell className="size-5 sm:size-6" />
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl sm:text-3xl font-bold mb-1">{stats.total ?? 0}</div>
-                            <div className="text-xs sm:text-sm text-blue-100">Jami xabar</div>
+                            <div className="text-2xl sm:text-3xl font-bold mb-1">
+                                {stats.total ?? 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-blue-100">
+                                {t("notifications.stats.total")}
+                            </div>
                         </div>
                     </div>
 
@@ -74,8 +80,12 @@ function UserNotifications() {
                             <Info className="size-5 sm:size-6" />
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl sm:text-3xl font-bold mb-1">{stats.system ?? 0}</div>
-                            <div className="text-xs sm:text-sm text-violet-100">Tizim xabarlari</div>
+                            <div className="text-2xl sm:text-3xl font-bold mb-1">
+                                {stats.system ?? 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-violet-100">
+                                {t("notifications.stats.system")}
+                            </div>
                         </div>
                     </div>
 
@@ -84,20 +94,37 @@ function UserNotifications() {
                             <Package className="size-5 sm:size-6" />
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl sm:text-3xl font-bold mb-1">{stats.orders ?? 0}</div>
-                            <div className="text-xs sm:text-sm text-emerald-100">Buyurtma yangiliklari</div>
+                            <div className="text-2xl sm:text-3xl font-bold mb-1">
+                                {stats.orders ?? 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-emerald-100">
+                                {t("notifications.stats.orders")}
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Notification cards */}
                 <div className="space-y-4">
                     {notifications.map((item) => (
                         <div
                             key={item.id}
-                            className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md dark:text-white hover:shadow-lg transition-shadow p-5 sm:p-6 border border-slate-100 dark:border-slate-700"
+                            className={`backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 sm:p-6 border
+                                ${
+                                    item.status === "unread"
+                                        ? "bg-blue-50/80 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/40"
+                                        : "bg-white/80 dark:bg-slate-800 border-slate-100 dark:border-slate-700"
+                                }`}
                         >
                             <div className="flex items-start gap-4">
-                                <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-3 rounded-xl shrink-0">
+                                {/* Icon */}
+                                <div
+                                    className={`p-3 rounded-xl shrink-0 ${
+                                        item.source === "admin"
+                                            ? "bg-linear-to-br from-emerald-500 to-teal-600"
+                                            : "bg-linear-to-br from-blue-600 to-indigo-600"
+                                    }`}
+                                >
                                     {item.source === "admin" ? (
                                         <Package className="size-5 text-white" />
                                     ) : (
@@ -105,43 +132,63 @@ function UserNotifications() {
                                     )}
                                 </div>
 
-                                <div className="flex-1">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                                <div className="flex-1 min-w-0">
+                                    {/* Header row */}
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                                             {item.title}
                                         </h3>
                                         <div className="flex items-center gap-2 shrink-0">
                                             {item.status === "unread" && (
                                                 <button
-                                                    onClick={() => markAsRead(item.id)}
-                                                    className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
-                                                    title="O'qilgan deb belgilash"
+                                                    onClick={() =>
+                                                        markAsRead(item.id)
+                                                    }
+                                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                                                    title={t(
+                                                        "notifications.mark_read",
+                                                    )}
                                                 >
                                                     <Check className="size-3" />
-                                                    O'qildi
+                                                    {t(
+                                                        "notifications.mark_read",
+                                                    )}
                                                 </button>
                                             )}
                                             <span
-                                                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                                                     item.status === "unread"
-                                                        ? "bg-blue-100 text-blue-700"
-                                                        : "bg-slate-100 text-slate-600"
+                                                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
                                                 }`}
                                             >
-                                                {item.status === "unread" ? "Yangi" : "Ko'rilgan"}
+                                                {item.status === "unread"
+                                                    ? t(
+                                                          "notifications.status.unread",
+                                                      )
+                                                    : t(
+                                                          "notifications.status.read",
+                                                      )}
                                             </span>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
+
+                                    {/* Message */}
+                                    <p className="text-sm text-slate-600 dark:text-slate-300">
                                         {item.message}
                                     </p>
-                                    {item.description ? (
+
+                                    {/* Reason */}
+                                    {item.description && (
                                         <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">
-                                            Sabab: {item.description}
+                                            {t("notifications.reason")}:{" "}
+                                            {item.description}
                                         </p>
-                                    ) : null}
-                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center gap-2">
-                                        <CalendarClock className="size-3.5" />
+                                    )}
+
+                                    {/* Date */}
+                                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-3 flex items-center gap-1.5">
+                                        <CalendarClock className="size-3.5 shrink-0" />
                                         {formatDateTime(item.created_at)}
                                     </div>
                                 </div>
@@ -150,16 +197,17 @@ function UserNotifications() {
                     ))}
                 </div>
 
+                {/* Empty state */}
                 {notifications.length === 0 && (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-12 text-center border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
-                        <div className="bg-slate-100 size-20 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-slate-700">
-                            <Bell className="size-10 text-slate-400 dark:text-slate-300" />
+                    <div className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-3xl shadow-xl p-12 text-center border border-slate-100 dark:border-slate-700">
+                        <div className="bg-slate-100 dark:bg-slate-700 size-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Bell className="size-10 text-slate-400 dark:text-slate-500" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2 dark:text-white">
-                            Hozircha bildirishnoma yo'q
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                            {t("notifications.empty_title")}
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-300">
-                            Yangi holatlar bo'lsa shu yerda ko'rinadi
+                        <p className="text-slate-500 dark:text-slate-400">
+                            {t("notifications.empty_desc")}
                         </p>
                     </div>
                 )}

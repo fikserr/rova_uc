@@ -1,54 +1,58 @@
 import { Link, usePage } from "@inertiajs/react";
-import {
-    Dices,
-    ListTodo,
-    ShieldCheck,
-    ShoppingBag,
-    UserCircle,
-    Wallet,
-} from "lucide-react";
+import { ShieldCheck, ShoppingBag, UserCircle, Wallet } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Bar() {
     const { url } = usePage();
+    const { t } = useTranslation();
+    // bardan olib quyilgan funksiyalar
+    // {
+    //         id: "vazifalar",
+    //         label: "Vazifalar",
+    //         icon: ListTodo,
+    //         href: "/user-tasks",
+    //     },
+    // { id: "ruletka", label: "Ruletka", icon: Dices, href: "/user-spin" },
 
     const navItems = [
-        { id: "ruletka", label: "Ruletka", icon: Dices, href: "/user-spin" },
-        {
-            id: "vazifalar",
-            label: "Vazifalar",
-            icon: ListTodo,
-            href: "/user-tasks",
-        },
         {
             id: "xizmatlar",
-            label: "Xizmatlar",
+            label: `${t("bar.services")}`,
             icon: ShieldCheck,
             href: "/user-services",
         },
         {
             id: "xaridlarim",
-            label: "Xaridlarim",
+            label: `${t("bar.purchases")}`,
             icon: ShoppingBag,
             href: "/user-purchases",
         },
         {
+            id: "balnce_topup",
+            label: `${t("bar.balanceTopup")}`,
+            icon: Wallet,
+            href: "/user-profile/user-balance",
+        },
+        {
             id: "profil",
-            label: "Profil",
+            label: `${t("bar.profile")}`,
             icon: UserCircle,
             href: "/user-profile",
         },
     ];
-
 
     return (
         <nav
             className={`fixed bottom-0 left-0 right-0 border-t  z-50 transition-colors duration-300 bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-800 py-0 shadow-black pb-[env(safe-area-inset-bottom)] `}
         >
             <div className="max-w-7xl mx-auto px-1">
-                <div className="grid grid-cols-5 gap-1">
+                <div className="grid grid-cols-4 gap-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = url.startsWith(item.href);
+                        const isActive =
+                            url === item.href ||
+                            (item.href !== "/user-profile" &&
+                                url.startsWith(item.href + "/"));
 
                         return (
                             <Link
