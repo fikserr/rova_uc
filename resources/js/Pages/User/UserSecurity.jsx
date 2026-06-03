@@ -1,6 +1,15 @@
 import { Head, router, usePage } from "@inertiajs/react";
 import axios from "axios";
-import { CheckCircle, Eye, EyeOff, Key, Lock, Mail, Trash2, XCircle } from "lucide-react";
+import {
+    CheckCircle,
+    Eye,
+    EyeOff,
+    Key,
+    Lock,
+    Mail,
+    Trash2,
+    XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -27,32 +36,30 @@ const strengthColors = [
 
 function PasswordInput({ label, value, onChange, show, onToggle, dark }) {
     return (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
             <label
-                className={`block text-xs font-semibold uppercase tracking-widest ${
-                    dark ? "text-slate-400" : "text-slate-500"
-                }`}
+                className={`block text-sm font-medium ${dark ? "text-slate-200" : "text-slate-700"}`}
             >
                 {label}
             </label>
-            <div className="relative">
+            <div className="relative group">
                 <input
                     type={show ? "text" : "password"}
                     value={value}
                     onChange={onChange}
-                    className={`w-full px-4 py-3 pr-12 rounded-xl text-sm border outline-none transition-all duration-200 ${
+                    className={`w-full px-4 py-3 pr-12 text-sm rounded-lg border outline-none transition-all duration-200 ${
                         dark
-                            ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                            : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+                            ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                            : "bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
                     }`}
                 />
                 <button
                     type="button"
                     onClick={onToggle}
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded transition-colors ${
                         dark
-                            ? "text-slate-500 hover:text-slate-300"
-                            : "text-slate-400 hover:text-slate-600"
+                            ? "text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                            : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                     {show ? (
@@ -69,135 +76,182 @@ function PasswordInput({ label, value, onChange, show, onToggle, dark }) {
 // ─── Email Section ───────────────────────────────────────────────────────────
 
 function EmailSection({ user, dark }) {
-    const email          = user?.email ?? "";
-    const isVerified     = !!user?.email_verified_at;
+    const email = user?.email ?? "";
+    const isVerified = !!user?.email_verified_at;
+    const { t } = useTranslation();
 
-    const [step, setStep]         = useState("idle"); // idle | enter_email | enter_code
-    const [inputEmail, setInput]  = useState(email);
-    const [code, setCode]         = useState("");
-    const [loading, setLoading]   = useState(false);
-    const [msg, setMsg]           = useState(null);  // { type: 'ok'|'err', text }
-
-    const base = dark
-        ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-        : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20";
+    const [step, setStep] = useState("idle");
+    const [inputEmail, setInput] = useState(email);
+    const [code, setCode] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState(null);
 
     const sendCode = async () => {
         if (!inputEmail) return;
-        setLoading(true); setMsg(null);
+        setLoading(true);
+        setMsg(null);
         try {
             await axios.post("/email/send-code", { email: inputEmail });
-            setMsg({ type: "ok", text: "Kod emailingizga yuborildi!" });
+            setMsg({ type: "ok", text: t("security.password_sent_to_email") });
             setStep("enter_code");
         } catch (e) {
-            setMsg({ type: "err", text: e.response?.data?.message ?? "Xatolik yuz berdi." });
-        } finally { setLoading(false); }
+            setMsg({
+                type: "err",
+                text: e.response?.data?.message ?? t("security.generic_error"),
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const verifyCode = async () => {
         if (code.length !== 6) return;
-        setLoading(true); setMsg(null);
+        setLoading(true);
+        setMsg(null);
         try {
             await axios.post("/email/verify", { code });
-            setMsg({ type: "ok", text: "Email muvaffaqiyatli tasdiqlandi!" });
+            setMsg({ type: "ok", text: t("security.verified_success") });
             setStep("idle");
             setCode("");
             router.reload({ only: ["auth"] });
         } catch (e) {
-            setMsg({ type: "err", text: e.response?.data?.message ?? "Kod noto'g'ri." });
-        } finally { setLoading(false); }
+            setMsg({
+                type: "err",
+                text: e.response?.data?.message ?? t("security.verify_error"),
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const removeEmail = async () => {
-        if (!confirm("Emailni o'chirishni tasdiqlaysizmi?")) return;
-        setLoading(true); setMsg(null);
+        if (!confirm(t("security.confirm_delete_email"))) return;
+        setLoading(true);
+        setMsg(null);
         try {
             await axios.delete("/email");
-            setMsg({ type: "ok", text: "Email o'chirildi." });
+            setMsg({ type: "ok", text: t("security.email_deleted") });
             setStep("idle");
             router.reload({ only: ["auth"] });
-        } catch { setMsg({ type: "err", text: "Xatolik." }); }
-        finally { setLoading(false); }
+        } catch {
+            setMsg({ type: "err", text: t("security.error_email") });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const inputCls = `w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all duration-200 ${base}`;
-    const labelCls = `block text-xs font-semibold uppercase tracking-widest mb-1.5 ${dark ? "text-slate-400" : "text-slate-500"}`;
+    const inputCls = `w-full px-4 py-3 rounded-lg text-sm border outline-none transition-all duration-200 ${
+        dark
+            ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            : "bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+    }`;
 
     return (
-        <div className={`rounded-2xl overflow-hidden transition-colors duration-300 ${
-            dark ? "bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40"
-                 : "bg-white border border-slate-100 shadow-xl shadow-slate-200/60"
-        }`}>
-            <div className="h-1.5 w-full bg-linear-to-r from-blue-500 via-cyan-500 to-teal-500" />
-
-            <div className="p-7 space-y-5">
+        <div
+            className={`rounded-xl overflow-hidden transition-colors duration-300 ${
+                dark
+                    ? "bg-slate-800 border border-slate-700"
+                    : "bg-white border border-slate-200"
+            }`}
+        >
+            <div className="p-6 space-y-5">
                 {/* Header */}
-                <div className="flex items-start gap-4">
-                    <div className={`p-2.5 rounded-xl shrink-0 ${dark ? "bg-blue-600/20" : "bg-blue-50"}`}>
-                        <Mail className={`w-5 h-5 ${dark ? "text-blue-400" : "text-blue-600"}`} />
+                <div className="flex items-start gap-3">
+                    <div
+                        className={`p-2.5 rounded-lg shrink-0 ${dark ? "bg-blue-600/20" : "bg-blue-50"}`}
+                    >
+                        <Mail
+                            className={`w-5 h-5 ${dark ? "text-blue-400" : "text-blue-600"}`}
+                        />
                     </div>
                     <div>
-                        <h2 className={`text-lg font-bold leading-tight ${dark ? "text-white" : "text-slate-900"}`}>
-                            Email manzil
+                        <h2
+                            className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}
+                        >
+                            {t("security.email_location")}
                         </h2>
-                        <p className={`text-xs mt-0.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                            Bildirishnomalar va tiklash uchun
+                        <p
+                            className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-500"}`}
+                        >
+                            {t("security.for_restoring_notifies")}
                         </p>
                     </div>
                 </div>
 
                 {/* Current email status */}
                 {email && (
-                    <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl ${
-                        dark ? "bg-slate-800" : "bg-slate-50"
-                    }`}>
+                    <div
+                        className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg ${
+                            dark ? "bg-slate-700/50" : "bg-slate-50"
+                        }`}
+                    >
                         <div className="min-w-0">
-                            <p className={`text-sm font-semibold truncate ${dark ? "text-white" : "text-slate-800"}`}>
+                            <p
+                                className={`text-sm font-medium truncate ${dark ? "text-white" : "text-slate-800"}`}
+                            >
                                 {email}
                             </p>
-                            <p className={`text-xs mt-0.5 ${isVerified ? "text-emerald-500" : "text-amber-500"}`}>
-                                {isVerified ? "✅ Tasdiqlangan" : "⚠️ Tasdiqlanmagan"}
+                            <p
+                                className={`text-xs mt-1 font-medium ${isVerified ? "text-emerald-500" : "text-amber-500"}`}
+                            >
+                                {isVerified
+                                    ? t("security.email_verified")
+                                    : t("security.email_not_verified")}
                             </p>
                         </div>
                         <button
                             onClick={removeEmail}
                             disabled={loading}
-                            className="shrink-0 p-2 rounded-lg text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
-                            title="Emailni o'chirish"
+                            className={`shrink-0 p-2 rounded-lg transition-colors ${
+                                dark
+                                    ? "text-red-400 hover:bg-red-900/20"
+                                    : "text-red-500 hover:bg-red-50"
+                            }`}
                         >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="w-4 h-4" />
                         </button>
                     </div>
                 )}
 
                 {/* Messages */}
                 {msg && (
-                    <div className={`flex items-start gap-2 p-3 rounded-xl text-xs ${
-                        msg.type === "ok"
-                            ? dark ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-                                   : "bg-emerald-50 border border-emerald-100 text-emerald-600"
-                            : dark ? "bg-red-500/10 border border-red-500/20 text-red-400"
-                                   : "bg-red-50 border border-red-100 text-red-600"
-                    }`}>
-                        {msg.type === "ok"
-                            ? <CheckCircle className="size-3.5 mt-0.5 shrink-0" />
-                            : <XCircle className="size-3.5 mt-0.5 shrink-0" />
-                        }
-                        {msg.text}
+                    <div
+                        className={`flex items-start gap-2.5 p-3.5 rounded-lg text-xs font-medium ${
+                            msg.type === "ok"
+                                ? dark
+                                    ? "bg-emerald-900/20 border border-emerald-700/30 text-emerald-400"
+                                    : "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                                : dark
+                                  ? "bg-red-900/20 border border-red-700/30 text-red-400"
+                                  : "bg-red-50 border border-red-200 text-red-700"
+                        }`}
+                    >
+                        {msg.type === "ok" ? (
+                            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                        ) : (
+                            <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                        )}
+                        <span>{msg.text}</span>
                     </div>
                 )}
 
-                {/* Step: idle — show button to add/change */}
+                {/* Step: idle */}
                 {step === "idle" && (
                     <button
-                        onClick={() => { setStep("enter_email"); setInput(email); setMsg(null); }}
-                        className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white
-                            bg-linear-to-r from-blue-500 to-cyan-600
-                            hover:from-blue-600 hover:to-cyan-700
-                            active:scale-[0.98] transition-all duration-150
-                            shadow-md shadow-blue-500/25"
+                        onClick={() => {
+                            setStep("enter_email");
+                            setInput(email);
+                            setMsg(null);
+                        }}
+                        className={`w-full py-3 px-4 rounded-lg text-sm font-semibold text-white transition-all duration-200 ${
+                            dark
+                                ? "bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                                : "bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                        } active:scale-[0.98]`}
                     >
-                        {email ? "Emailni o'zgartirish" : "Email qo'shish"}
+                        {email
+                            ? t("security.change_email")
+                            : t("security.add_email")}
                     </button>
                 )}
 
@@ -205,11 +259,15 @@ function EmailSection({ user, dark }) {
                 {step === "enter_email" && (
                     <div className="space-y-3">
                         <div>
-                            <label className={labelCls}>Email manzil</label>
+                            <label
+                                className={`block text-sm font-medium mb-2 ${dark ? "text-slate-200" : "text-slate-700"}`}
+                            >
+                                {t("security.email_location")}
+                            </label>
                             <input
                                 type="email"
                                 value={inputEmail}
-                                onChange={e => setInput(e.target.value)}
+                                onChange={(e) => setInput(e.target.value)}
                                 placeholder="example@gmail.com"
                                 className={inputCls}
                                 autoFocus
@@ -217,20 +275,26 @@ function EmailSection({ user, dark }) {
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => { setStep("idle"); setMsg(null); }}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                                    dark ? "border-slate-700 text-slate-400 hover:bg-slate-800"
-                                         : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                onClick={() => {
+                                    setStep("idle");
+                                    setMsg(null);
+                                }}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                                    dark
+                                        ? "border border-slate-700 text-slate-300 hover:bg-slate-700"
+                                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
                                 }`}
                             >
-                                Bekor
+                                {t("security.cancel")}
                             </button>
                             <button
                                 onClick={sendCode}
                                 disabled={loading || !inputEmail}
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
+                                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
-                                {loading ? "Yuborilmoqda..." : "Kod yuborish"}
+                                {loading
+                                    ? t("security.sending")
+                                    : t("security.send_code")}
                             </button>
                         </div>
                     </div>
@@ -240,45 +304,68 @@ function EmailSection({ user, dark }) {
                 {step === "enter_code" && (
                     <div className="space-y-3">
                         <div>
-                            <label className={labelCls}>6 xonali tasdiqlash kodi</label>
+                            <label
+                                className={`block text-sm font-medium mb-2 ${dark ? "text-slate-200" : "text-slate-700"}`}
+                            >
+                                {t("security.verification_code")}
+                            </label>
                             <input
                                 type="text"
                                 inputMode="numeric"
                                 maxLength={6}
                                 value={code}
-                                onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
+                                onChange={(e) =>
+                                    setCode(e.target.value.replace(/\D/g, ""))
+                                }
                                 placeholder="000000"
-                                className={`${inputCls} text-center text-2xl font-mono tracking-[0.5em]`}
+                                className={`${inputCls} text-center text-2xl font-mono tracking-widest`}
                                 autoFocus
                             />
-                            <p className={`text-xs mt-1.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>
-                                Kod <span className="font-semibold">{inputEmail}</span> ga yuborildi
+                            <p
+                                className={`text-xs mt-2 ${dark ? "text-slate-400" : "text-slate-500"}`}
+                            >
+                                {t("security.code_sent_to")}{" "}
+                                <span className="font-semibold">
+                                    {inputEmail}
+                                </span>{" "}
+                                {t("security.code_sent_to_email")}
                             </p>
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => { setStep("enter_email"); setCode(""); setMsg(null); }}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                                    dark ? "border-slate-700 text-slate-400 hover:bg-slate-800"
-                                         : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                onClick={() => {
+                                    setStep("enter_email");
+                                    setCode("");
+                                    setMsg(null);
+                                }}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                                    dark
+                                        ? "border border-slate-700 text-slate-300 hover:bg-slate-700"
+                                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
                                 }`}
                             >
-                                Orqaga
+                                {t("security.back")}
                             </button>
                             <button
                                 onClick={verifyCode}
                                 disabled={loading || code.length !== 6}
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50"
+                                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
-                                {loading ? "Tekshirilmoqda..." : "Tasdiqlash"}
+                                {loading
+                                    ? t("security.verifying")
+                                    : t("security.verify_code")}
                             </button>
                         </div>
                         <button
                             onClick={sendCode}
                             disabled={loading}
-                            className={`w-full text-xs ${dark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"} transition-colors`}
+                            className={`w-full text-xs font-medium transition-colors ${
+                                dark
+                                    ? "text-slate-500 hover:text-slate-300"
+                                    : "text-slate-400 hover:text-slate-600"
+                            }`}
                         >
-                            Kodni qayta yuborish
+                            {t("security.resend_code")}
                         </button>
                     </div>
                 )}
@@ -291,7 +378,7 @@ function EmailSection({ user, dark }) {
 
 function UserSecurity() {
     const { auth, flash, errors } = usePage().props;
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const user = auth?.user;
     const userId = user?.id;
@@ -300,16 +387,6 @@ function UserSecurity() {
     const [dark, setDark] = useState(
         () => localStorage.getItem("theme") === "dark",
     );
-
-    const toggleDark = () => {
-        const next = !dark;
-        setDark(next);
-        localStorage.setItem("theme", next ? "dark" : "light");
-    };
-
-    const changeLang = (lang) => {
-        i18n.changeLanguage(lang);
-    };
 
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
@@ -323,6 +400,7 @@ function UserSecurity() {
     const [success, setSuccess] = useState("");
 
     const strength = getPasswordStrength(newPassword);
+    const passwordsMatch = confirmPassword && newPassword === confirmPassword;
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -378,71 +456,48 @@ function UserSecurity() {
             <Head title={t("security.page_title")} />
 
             <div
-                className={`min-h-[85vh] flex items-center justify-center p-4 transition-colors duration-300 ${
+                className={`min-h-screen flex items-center justify-center p-4 pt-10 transition-colors duration-300 ${
                     dark
                         ? "bg-slate-950"
-                        : "bg-linear-to-br from-slate-100 via-slate-50 to-indigo-50"
+                        : "bg-linear-to-br from-slate-50 via-blue-50 to-indigo-100"
                 }`}
             >
-                {/* Decorative blobs – light mode only */}
-                {!dark && (
-                    <>
-                        <div className="pointer-events-none fixed -top-20 -left-20 w-72 h-72 rounded-full bg-indigo-200/40 blur-3xl" />
-                        <div className="pointer-events-none fixed -bottom-15 -right-15 w-64 h-64 rounded-full bg-violet-200/30 blur-3xl" />
-                    </>
-                )}
-
-                <div className="w-full max-w-sm relative z-10 space-y-4">
+                <div className="w-full max-w-md space-y-5">
                     {/* Email Section */}
                     <EmailSection user={user} dark={dark} />
 
                     {/* Password Card */}
                     <div
-                        className={`rounded-2xl overflow-hidden transition-colors duration-300 ${
+                        className={`rounded-xl overflow-hidden transition-colors duration-300 ${
                             dark
-                                ? "bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40"
-                                : "bg-white border border-slate-100 shadow-xl shadow-slate-200/60"
+                                ? "bg-slate-800 border border-slate-700"
+                                : "bg-white border border-slate-200"
                         }`}
                     >
-                        {/* Accent bar */}
-                        <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-violet-500 to-purple-500" />
-
-                        <div className="p-7 space-y-6">
+                        <div className="p-6 space-y-6">
                             {/* Header */}
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-3">
                                 <div
-                                    className={`p-2.5 rounded-xl shrink-0 ${
+                                    className={`p-2.5 rounded-lg shrink-0 ${
                                         dark
                                             ? "bg-indigo-600/20"
                                             : "bg-indigo-50"
                                     }`}
                                 >
                                     <Lock
-                                        className={`w-5 h-5 ${
-                                            dark
-                                                ? "text-indigo-400"
-                                                : "text-indigo-600"
-                                        }`}
+                                        className={`w-5 h-5 ${dark ? "text-indigo-400" : "text-indigo-600"}`}
                                     />
                                 </div>
                                 <div>
                                     <h1
-                                        className={`text-lg font-bold leading-tight ${
-                                            dark
-                                                ? "text-white"
-                                                : "text-slate-900"
-                                        }`}
+                                        className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}
                                     >
                                         {hasPassword
                                             ? t("security.change_password")
                                             : t("security.set_password")}
                                     </h1>
                                     <p
-                                        className={`text-xs mt-0.5 leading-relaxed ${
-                                            dark
-                                                ? "text-slate-400"
-                                                : "text-slate-500"
-                                        }`}
+                                        className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-500"}`}
                                     >
                                         {hasPassword
                                             ? t("security.change_subtitle")
@@ -451,15 +506,8 @@ function UserSecurity() {
                                 </div>
                             </div>
 
-                            {/* Divider */}
-                            <div
-                                className={`h-px ${
-                                    dark ? "bg-slate-800" : "bg-slate-100"
-                                }`}
-                            />
-
                             {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-5">
                                 {hasPassword && (
                                     <PasswordInput
                                         label={t("security.current_password")}
@@ -476,7 +524,7 @@ function UserSecurity() {
                                 )}
 
                                 {/* New password + strength meter */}
-                                <div className="space-y-2">
+                                <div className="space-y-2.5">
                                     <PasswordInput
                                         label={t("security.new_password")}
                                         value={newPassword}
@@ -489,8 +537,8 @@ function UserSecurity() {
                                     />
 
                                     {newPassword && (
-                                        <div className="space-y-1.5 px-0.5">
-                                            <div className="flex gap-1 h-1">
+                                        <div className="space-y-2">
+                                            <div className="flex gap-1.5 h-1.5">
                                                 {[...Array(4)].map((_, i) => (
                                                     <div
                                                         key={i}
@@ -508,23 +556,39 @@ function UserSecurity() {
                                                 ))}
                                             </div>
                                             <p
-                                                className={`text-xs flex items-center gap-1 ${
-                                                    dark
-                                                        ? "text-slate-500"
-                                                        : "text-slate-400"
+                                                className={`text-xs font-medium flex items-center gap-1.5 ${
+                                                    strength === 4
+                                                        ? dark
+                                                            ? "text-emerald-400"
+                                                            : "text-emerald-600"
+                                                        : strength === 3
+                                                          ? dark
+                                                              ? "text-amber-400"
+                                                              : "text-amber-600"
+                                                          : strength === 2
+                                                            ? dark
+                                                                ? "text-orange-400"
+                                                                : "text-orange-600"
+                                                            : dark
+                                                              ? "text-red-400"
+                                                              : "text-red-600"
                                                 }`}
                                             >
-                                                <Key className="w-3 h-3" />
-                                                {t(
-                                                    `security.strength_${strength || 1}`,
-                                                )}
+                                                <Key className="w-3.5 h-3.5" />
+                                                {strength > 0
+                                                    ? t(
+                                                          `security.strength_${strength}`,
+                                                      )
+                                                    : t(
+                                                          "security.add_characters",
+                                                      )}
                                             </p>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Confirm password */}
-                                <div className="space-y-1.5">
+                                <div className="space-y-2.5">
                                     <PasswordInput
                                         label={t("security.confirm_password")}
                                         value={confirmPassword}
@@ -540,13 +604,17 @@ function UserSecurity() {
 
                                     {confirmPassword && (
                                         <p
-                                            className={`text-xs flex items-center gap-1 px-0.5 ${
-                                                newPassword === confirmPassword
-                                                    ? "text-emerald-500"
-                                                    : "text-red-500"
+                                            className={`text-xs font-medium flex items-center gap-1.5 ${
+                                                passwordsMatch
+                                                    ? dark
+                                                        ? "text-emerald-400"
+                                                        : "text-emerald-600"
+                                                    : dark
+                                                      ? "text-red-400"
+                                                      : "text-red-600"
                                             }`}
                                         >
-                                            {newPassword === confirmPassword ? (
+                                            {passwordsMatch ? (
                                                 <>
                                                     <CheckCircle className="w-3.5 h-3.5" />
                                                     {t(
@@ -568,13 +636,13 @@ function UserSecurity() {
                                 {/* Error message */}
                                 {errorMessage && (
                                     <div
-                                        className={`flex items-start gap-2 p-3 rounded-xl text-xs ${
+                                        className={`flex items-start gap-2.5 p-3.5 rounded-lg text-xs font-medium ${
                                             dark
-                                                ? "bg-red-500/10 border border-red-500/20 text-red-400"
-                                                : "bg-red-50 border border-red-100 text-red-600"
+                                                ? "bg-red-900/20 border border-red-700/30 text-red-400"
+                                                : "bg-red-50 border border-red-200 text-red-700"
                                         }`}
                                     >
-                                        <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                        <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
                                         {errorMessage}
                                     </div>
                                 )}
@@ -582,13 +650,13 @@ function UserSecurity() {
                                 {/* Success message */}
                                 {successMessage && (
                                     <div
-                                        className={`flex items-start gap-2 p-3 rounded-xl text-xs ${
+                                        className={`flex items-start gap-2.5 p-3.5 rounded-lg text-xs font-medium ${
                                             dark
-                                                ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-                                                : "bg-emerald-50 border border-emerald-100 text-emerald-600"
+                                                ? "bg-emerald-900/20 border border-emerald-700/30 text-emerald-400"
+                                                : "bg-emerald-50 border border-emerald-200 text-emerald-700"
                                         }`}
                                     >
-                                        <CheckCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                        <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
                                         {successMessage}
                                     </div>
                                 )}
@@ -596,11 +664,11 @@ function UserSecurity() {
                                 {/* Submit */}
                                 <button
                                     type="submit"
-                                    className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white
-                                        bg-linear-to-r from-indigo-500 to-violet-600
-                                        hover:from-indigo-600 hover:to-violet-700
-                                        active:scale-[0.98] transition-all duration-150
-                                        shadow-md shadow-indigo-500/25"
+                                    className={`w-full py-3 px-4 rounded-lg text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] ${
+                                        dark
+                                            ? "bg-linear-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800"
+                                            : "bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700"
+                                    }`}
                                 >
                                     {hasPassword
                                         ? t("security.update_password")
@@ -609,6 +677,13 @@ function UserSecurity() {
                             </form>
                         </div>
                     </div>
+
+                    {/* Footer hint */}
+                    <p
+                        className={`text-center text-xs ${dark ? "text-slate-500" : "text-slate-400"}`}
+                    >
+                        {t("security.security_footer")}
+                    </p>
                 </div>
             </div>
         </>

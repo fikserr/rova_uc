@@ -1,3 +1,4 @@
+import ClickLogo from "@images/click_logo.png";
 import { Head, usePage } from "@inertiajs/react";
 import axios from "axios";
 import {
@@ -11,7 +12,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ClickLogo from "@images/click_logo.png";
+import "swiper/css";
+import "swiper/css/pagination";
+import { Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
 function UserBalance() {
     const { t } = useTranslation();
     const { user } = usePage().props;
@@ -48,8 +52,17 @@ function UserBalance() {
         },
     ];
 
+    const cardGradients = [
+        "from-indigo-500 via-blue-600 to-violet-600",
+        "from-rose-500 via-pink-600 to-red-500",
+        "from-emerald-500 via-teal-500 to-cyan-600",
+        "from-amber-500 via-orange-500 to-red-500",
+        "from-purple-500 via-violet-600 to-indigo-600",
+        "from-cyan-500 via-sky-500 to-blue-600",
+    ];
+
     // ── Click payment ─────────────────────────────────────────────
-    const [selectedMethod, setSelectedMethod] = useState('manual');
+    const [selectedMethod, setSelectedMethod] = useState("manual");
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -205,7 +218,7 @@ function UserBalance() {
                                         </span>
                                     )}
                                     <div className="text-3xl mb-2">
-                                        {m.icon === "🇺🇿" ? null : m.icon }
+                                        {m.icon === "🇺🇿" ? null : m.icon}
                                         {m.iconComponent && (
                                             <img
                                                 src={m.iconComponent}
@@ -296,50 +309,71 @@ function UserBalance() {
                                     <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                         To'lov kartalari
                                     </p>
-                                    {paymentCards.map((card) => (
-                                        <div
-                                            key={card.id}
-                                            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600"
-                                        >
-                                            <div className="min-w-0">
-                                                <p className="font-mono text-sm font-bold text-slate-800 dark:text-white tracking-widest">
-                                                    {card.card_number}
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-0.5">
+
+                                    <Swiper
+                                        modules={[Pagination]}
+                                        slidesPerView={1.1}
+                                        spaceBetween={12}
+                                        centeredSlides={true}
+                                        pagination={{ clickable: true }}
+                                        className="pb-7!"
+                                    >
+                                        {paymentCards.map((card) => (
+                                            <SwiperSlide key={card.id}>
+                                                <div
+                                                    className={`relative rounded-2xl p-5 bg-linear-to-br ${cardGradients[paymentCards.indexOf(card) % cardGradients.length]} text-white shadow-lg`}
+                                                >
+                                                    {/* Top row */}
+                                                    <div className="flex items-center justify-between mb-5">
+                                                        <p className="font-bold text-lg tracking-wide">
+                                                            {card.bank_name ??
+                                                                "Card"}
+                                                        </p>
+                                                        <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full font-semibold backdrop-blur-sm">
+                                                            {paymentCards.indexOf(
+                                                                paymentCards.find(
+                                                                    (c) =>
+                                                                        c.id ===
+                                                                        card.id,
+                                                                ),
+                                                            ) + 1}
+                                                            /
+                                                            {
+                                                                paymentCards.length
+                                                            }
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Card number */}
+                                                    <div className="flex items-center justify-between mb-5">
+                                                        <p className="font-mono text-xl font-bold tracking-widest">
+                                                            {card.card_number}
+                                                        </p>
+                                                        <button
+                                                            onClick={() =>
+                                                                copyCard(card)
+                                                            }
+                                                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2.5 rounded-xl transition-all active:scale-95"
+                                                        >
+                                                            {copiedId ===
+                                                            card.id ? (
+                                                                <CheckCircle className="size-5" />
+                                                            ) : (
+                                                                <Copy className="size-5" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Card holder */}
                                                     {card.card_holder && (
-                                                        <span className="text-xs text-slate-500 dark:text-slate-400 uppercase truncate">
+                                                        <p className="text-sm font-semibold text-white/80 uppercase tracking-wider">
                                                             {card.card_holder}
-                                                        </span>
-                                                    )}
-                                                    {card.bank_name && (
-                                                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                                                            {card.bank_name}
-                                                        </span>
+                                                        </p>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <button
-                                                onClick={() => copyCard(card)}
-                                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
-                                                    copiedId === card.id
-                                                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                        : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                                                }`}
-                                            >
-                                                {copiedId === card.id ? (
-                                                    <>
-                                                        <CheckCircle className="size-3.5" />
-                                                        Nusxalandi
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Copy className="size-3.5" />
-                                                        Nusxa
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    ))}
+                                            </SwiperSlide>
+                                        ))}
+                                    </Swiper>
                                 </div>
                             )}
 

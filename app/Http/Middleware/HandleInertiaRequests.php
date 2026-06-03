@@ -8,7 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
-
+use Illuminate\Support\Facades\DB;
 class HandleInertiaRequests extends Middleware
 {
     /**
@@ -40,9 +40,18 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $stats = []; // ← Initialize here first
+
+
         $balance = $user
             ? (UserBalance::where('user_id', $user->id)->value('balance') ?? 0)
             : 0;
+        if ($user) {
+            $stats['unread'] = DB::table('user_notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', 0)
+            ->count();
+    }
         $currencyRates = CurrencyRate::query()
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -86,6 +95,7 @@ class HandleInertiaRequests extends Middleware
                 'created_at' => $user->created_at ? Carbon::parse($user->created_at)->toDateTimeString() : null,
 
             ] : null,
+            'stats' => $stats
         ]);
     }
 
