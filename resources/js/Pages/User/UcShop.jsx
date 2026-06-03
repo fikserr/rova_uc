@@ -227,7 +227,7 @@ function UcShop() {
 
                 {selectedProduct && (
                     <div
-                        className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 px-4"
+                        className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 px-4"
                         onClick={(e) =>
                             e.target === e.currentTarget &&
                             setSelectedProduct(null)

@@ -18,6 +18,7 @@ class ProfileController extends Controller
         $referralsEarned = 0.0;
         $totalPurchases = 0;
         $totalSpent = 0.0;
+        $unreadCount = 0;  // ← ADD THIS
 
         if ($userId) {
             $referralsCount = (int) DB::table('referrals')
@@ -58,6 +59,12 @@ class ProfileController extends Controller
 
             $totalPurchases = $ucPaidCount + $mlPaidCount + $servicePaidCount;
             $totalSpent = $ucPaidSpent + $mlPaidSpent + $servicePaidSpent;
+
+            // ← ADD THIS QUERY
+            $unreadCount = (int) DB::table('user_notifications')
+                ->where('user_id', $userId)
+                ->where('is_read', 0)
+                ->count();
         }
 
         $botUsername = $this->resolveBotUsername();
@@ -73,6 +80,7 @@ class ProfileController extends Controller
             'stats' => [
                 'total_purchases' => $totalPurchases,
                 'total_spent' => $totalSpent,
+                'unread' => $unreadCount,  // ← Now it's defined!
                 'currency' => 'UZS',
             ],
         ]);
