@@ -108,7 +108,7 @@ export default function Login({ status, canResetPassword }) {
                         )}
 
                         {/* Card */}
-                        <div className="bg-white/5 rounded-2xl shadow-xl shadow-black/30 border border-white/10 p-8 space-y-5">
+                        <form onSubmit={handleSubmit} className="bg-white/5 rounded-2xl shadow-xl shadow-black/30 border border-white/10 p-8 space-y-5">
                             {/* Username */}
                             <div>
                                 <label
@@ -265,7 +265,7 @@ export default function Login({ status, canResetPassword }) {
                                 )}
                                 {processing ? "Signing in…" : "Sign In"}
                             </button>
-                        </div>
+                        </form>
 
                         {/* Footer */}
                         <p className="mt-6 text-center text-xs text-gray-500">

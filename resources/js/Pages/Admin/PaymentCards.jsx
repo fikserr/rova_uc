@@ -12,10 +12,11 @@ import {
 import { useState } from "react";
 
 const BANK_COLORS = {
-    Uzcard:  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Humo:    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    Visa:    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    default: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+    Uzcard: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    Humo: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    Visa: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    default:
+        "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
 };
 
 function bankColor(name) {
@@ -23,7 +24,10 @@ function bankColor(name) {
 }
 
 function formatCard(num) {
-    return (num ?? "").replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
+    return (num ?? "")
+        .replace(/\s/g, "")
+        .replace(/(.{4})/g, "$1 ")
+        .trim();
 }
 
 function CardFormModal({ initial, onClose }) {
@@ -31,8 +35,8 @@ function CardFormModal({ initial, onClose }) {
     const [form, setForm] = useState({
         card_number: initial?.card_number ?? "",
         card_holder: initial?.card_holder ?? "",
-        bank_name:   initial?.bank_name ?? "",
-        is_active:   initial?.is_active ?? true,
+        bank_name: initial?.bank_name ?? "",
+        is_active: initial?.is_active ?? true,
     });
     const [processing, setProcessing] = useState(false);
 
@@ -45,11 +49,17 @@ function CardFormModal({ initial, onClose }) {
 
         if (isEdit) {
             router.put(`/payment-cards/${initial.id}`, payload, {
-                onFinish: () => { setProcessing(false); onClose(); },
+                onFinish: () => {
+                    setProcessing(false);
+                    onClose();
+                },
             });
         } else {
             router.post("/payment-cards", payload, {
-                onFinish: () => { setProcessing(false); onClose(); },
+                onFinish: () => {
+                    setProcessing(false);
+                    onClose();
+                },
             });
         }
     };
@@ -60,14 +70,19 @@ function CardFormModal({ initial, onClose }) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <div className="size-8 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                             <CreditCard className="size-4 text-white" />
                         </div>
                         <h2 className="text-base font-bold text-slate-800 dark:text-white">
-                            {isEdit ? "Kartani tahrirlash" : "Yangi karta qo'shish"}
+                            {isEdit
+                                ? "Kartani tahrirlash"
+                                : "Yangi karta qo'shish"}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    <button
+                        onClick={onClose}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
                         <X className="size-5" />
                     </button>
                 </div>
@@ -134,7 +149,9 @@ function CardFormModal({ initial, onClose }) {
                             onClick={() => set("is_active", !form.is_active)}
                             className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"}`}
                         >
-                            <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform ${form.is_active ? "translate-x-5" : "translate-x-0.5"}`} />
+                            <span
+                                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform ${form.is_active ? "translate-x-5" : "translate-x-0.5"}`}
+                            />
                         </div>
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                             {form.is_active ? "Aktiv" : "Aktiv emas"}
@@ -154,7 +171,11 @@ function CardFormModal({ initial, onClose }) {
                             disabled={processing}
                             className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all disabled:opacity-60 active:scale-95"
                         >
-                            {processing ? "Saqlanmoqda..." : isEdit ? "Saqlash" : "Qo'shish"}
+                            {processing
+                                ? "Saqlanmoqda..."
+                                : isEdit
+                                  ? "Saqlash"
+                                  : "Qo'shish"}
                         </button>
                     </div>
                 </form>
@@ -169,7 +190,12 @@ export default function PaymentCards({ cards }) {
     const [modal, setModal] = useState(null); // null | { mode: 'add' } | { mode: 'edit', card }
 
     const handleDelete = (card) => {
-        if (!confirm(`"${card.card_number}" kartasini o'chirishni tasdiqlaysizmi?`)) return;
+        if (
+            !confirm(
+                `"${card.card_number}" kartasini o'chirishni tasdiqlaysizmi?`,
+            )
+        )
+            return;
         router.delete(`/payment-cards/${card.id}`);
     };
 
@@ -177,8 +203,8 @@ export default function PaymentCards({ cards }) {
         router.put(`/payment-cards/${card.id}`, {
             card_number: card.card_number,
             card_holder: card.card_holder,
-            bank_name:   card.bank_name,
-            is_active:   !card.is_active,
+            bank_name: card.bank_name,
+            is_active: !card.is_active,
         });
     };
 
@@ -189,7 +215,7 @@ export default function PaymentCards({ cards }) {
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200 dark:shadow-blue-900/40">
+                    <div className="size-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200 dark:shadow-blue-900/40">
                         <CreditCard className="size-5 text-white" />
                     </div>
                     <div>
@@ -206,7 +232,7 @@ export default function PaymentCards({ cards }) {
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all active:scale-95 shadow-sm"
                 >
                     <Plus className="size-4" />
-                    Karta qo'shish
+                    <span className='hidden lg:block'>Karta qo'shish</span>
                 </button>
             </div>
 
@@ -214,18 +240,26 @@ export default function PaymentCards({ cards }) {
             {flash.success && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
                     <CheckCircle className="size-4 text-emerald-500 shrink-0" />
-                    <p className="text-sm text-emerald-700 dark:text-emerald-400">{flash.success}</p>
+                    <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                        {flash.success}
+                    </p>
                 </div>
             )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-100 dark:border-slate-700/60 p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Jami kartalar</p>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-white">{cards.length}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+                        Jami kartalar
+                    </p>
+                    <p className="text-2xl font-bold text-slate-800 dark:text-white">
+                        {cards.length}
+                    </p>
                 </div>
                 <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-100 dark:border-slate-700/60 p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Aktiv kartalar</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+                        Aktiv kartalar
+                    </p>
                     <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                         {cards.filter((c) => c.is_active).length}
                     </p>
@@ -236,23 +270,28 @@ export default function PaymentCards({ cards }) {
             {cards.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-600">
                     <CreditCard className="size-12 mb-3 opacity-40" />
-                    <p className="text-sm font-medium">Hali karta qo'shilmagan</p>
+                    <p className="text-sm font-medium">
+                        Hali karta qo'shilmagan
+                    </p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {cards.map((card) => (
                         <div
                             key={card.id}
                             className={`bg-white dark:bg-slate-800/80 rounded-2xl border shadow-sm overflow-hidden transition-all
-                                ${card.is_active
-                                    ? "border-slate-100 dark:border-slate-700/60"
-                                    : "border-slate-200 dark:border-slate-700 opacity-60"
+                                ${
+                                    card.is_active
+                                        ? "border-slate-100 dark:border-slate-700/60"
+                                        : "border-slate-200 dark:border-slate-700 opacity-60"
                                 }`}
                         >
-                            <div className="flex items-center gap-4 p-4">
+                            <div className="flex flex-col items-start gap-6 lg:gap-8 p-4 py-8">
                                 {/* Card icon */}
-                                <div className={`size-12 rounded-xl flex items-center justify-center shrink-0 ${card.is_active ? "bg-gradient-to-br from-blue-500 to-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}>
-                                    <CreditCard className="size-6 text-white" />
+                                <div
+                                    className={`size-12 hidden lg:flex rounded-xl  items-center justify-center shrink-0 ${card.is_active ? "bg-linear-to-br from-blue-500 to-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}
+                                >
+                                    <CreditCard className="size-6 text-white " />
                                 </div>
 
                                 {/* Info */}
@@ -260,19 +299,25 @@ export default function PaymentCards({ cards }) {
                                     <p className="font-mono text-base font-bold text-slate-800 dark:text-white tracking-widest">
                                         {formatCard(card.card_number)}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <div className="w-full flex justify-between items-center gap-2 mt-1 flex-wrap">
                                         {card.card_holder && (
                                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase">
                                                 {card.card_holder}
                                             </span>
                                         )}
                                         {card.bank_name && (
-                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${bankColor(card.bank_name)}`}>
+                                            <span
+                                                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${bankColor(card.bank_name)}`}
+                                            >
                                                 {card.bank_name}
                                             </span>
                                         )}
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${card.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
-                                            {card.is_active ? "Aktiv" : "Nofaol"}
+                                        <span
+                                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${card.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}
+                                        >
+                                            {card.is_active
+                                                ? "Aktiv"
+                                                : "Nofaol"}
                                         </span>
                                     </div>
                                 </div>
@@ -281,16 +326,23 @@ export default function PaymentCards({ cards }) {
                                 <div className="flex items-center gap-1 shrink-0">
                                     <button
                                         onClick={() => handleToggle(card)}
-                                        title={card.is_active ? "Nofaol qilish" : "Faollashtirish"}
+                                        title={
+                                            card.is_active
+                                                ? "Nofaol qilish"
+                                                : "Faollashtirish"
+                                        }
                                         className="size-9 rounded-xl flex items-center justify-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
                                     >
-                                        {card.is_active
-                                            ? <ToggleRight className="size-5 text-emerald-500" />
-                                            : <ToggleLeft className="size-5 text-slate-400" />
-                                        }
+                                        {card.is_active ? (
+                                            <ToggleRight className="size-5 text-emerald-500" />
+                                        ) : (
+                                            <ToggleLeft className="size-5 text-slate-400" />
+                                        )}
                                     </button>
                                     <button
-                                        onClick={() => setModal({ mode: "edit", card })}
+                                        onClick={() =>
+                                            setModal({ mode: "edit", card })
+                                        }
                                         title="Tahrirlash"
                                         className="size-9 rounded-xl flex items-center justify-center transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
                                     >
