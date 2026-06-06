@@ -125,7 +125,7 @@ export default function Services() {
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 rounded-t-2xl z-10">
                             <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm">
+                                <div className="size-8 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm">
                                     ⚡
                                 </div>
                                 <h2 className="text-base font-bold text-slate-800 dark:text-white">
