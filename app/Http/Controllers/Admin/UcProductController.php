@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Currency;
 use App\Models\CurrencyRate;
 use App\Models\UcProduct;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class UcProductController extends Controller
 
         return Inertia::render('Admin/UcProducts', [
             'products' => $products,
+            'currencies' => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name']),
         ]);
     }
 

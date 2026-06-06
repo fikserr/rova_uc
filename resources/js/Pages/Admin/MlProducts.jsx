@@ -5,7 +5,7 @@ import TopBar from "../../Components/TopBar";
 import ProductCard from "../../Components/ui/productCard";
 
 export default function MlProducts() {
-    const { products, flash } = usePage().props;
+    const { products, flash, currencies = [] } = usePage().props;
     const [editing, setEditing] = useState(null);
     const [formOpen, setFormOpen] = useState(false);
 
@@ -216,12 +216,10 @@ export default function MlProducts() {
                                     }
                                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all cursor-pointer"
                                 >
-                                    <option value="none">
-                                        Valyuta tanlang
-                                    </option>
-                                    <option value="USD">USD</option>
-                                    <option value="UZS">UZS</option>
-                                    <option value="IQD">IQD</option>
+                                    <option value="">Valyuta tanlang</option>
+                                    {currencies.map((c) => (
+                                        <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
+                                    ))}
                                 </select>
                             </div>
 

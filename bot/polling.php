@@ -37,19 +37,17 @@ if ($botInfo['ok']) {
 while (true) {
     dispatchPendingNotifications($BOT_TOKEN);
 
-    $raw = @file_get_contents(
-        "https://api.telegram.org/bot{$BOT_TOKEN}/getUpdates?" .
-        http_build_query(['timeout' => 10, 'offset' => $offset])
-    );
-
-    if ($raw === false) {
-        $err = error_get_last()['message'] ?? 'unknown error';
-        echo "[" . date('H:i:s') . "] getUpdates xato: $err\n";
+    try {
+        $response = Http::timeout(15)->get("https://api.telegram.org/bot{$BOT_TOKEN}/getUpdates", [
+            'timeout' => 10,
+            'offset'  => $offset,
+        ]);
+        $updates = $response->json();
+    } catch (\Throwable $e) {
+        echo "[" . date('H:i:s') . "] getUpdates xato: " . $e->getMessage() . "\n";
         sleep(5);
         continue;
     }
-
-    $updates = json_decode($raw, true);
 
     if (empty($updates['result'])) {
         sleep(1);
@@ -153,6 +151,17 @@ while (true) {
                     ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
                 ]]]
             );
+            continue;
+        }
+
+        // ── AI yordamchi (boshqa barcha matn xabarlar) ───────────
+        $userText = trim($message['text'] ?? '');
+        if ($userText !== '') {
+            $aiService = app(\App\Services\OpenAiService::class);
+            $reply = $aiService->botAnswer($userText);
+            if ($reply !== '') {
+                sendMessage($BOT_TOKEN, $chatId, $reply);
+            }
         }
     }
 
@@ -347,7 +356,7 @@ function doApproveTopup(string $token, int $chatId, int $topupId): void
     DB::transaction(function () use ($topupId, $topup, $amount) {
         DB::table('manual_topup_requests')
             ->where('id', $topupId)
-            ->update(['status' => 'approved', 'updated_at' => now()]);
+            ->update(['status' => 'approved']);
 
         DB::table('user_balances')
             ->where('user_id', $topup->user_id)
@@ -378,7 +387,7 @@ function doRejectTopup(string $token, int $chatId, int $topupId, string $reason)
 
     DB::table('manual_topup_requests')
         ->where('id', $topupId)
-        ->update(['status' => 'rejected', 'notes' => $reason, 'updated_at' => now()]);
+        ->update(['status' => 'rejected', 'notes' => $reason]);
 
     createTopupNotification(
         userId:      (int) $topup->user_id,
@@ -519,40 +528,42 @@ function sendMessage(string $token, int $chatId, string $text, ?array $replyMark
         $data['reply_markup'] = json_encode($replyMarkup);
     }
 
-    $url = "https://api.telegram.org/bot{$token}/sendMessage?" . http_build_query($data);
-    $raw = @file_get_contents($url);
-
-    if ($raw === false) {
-        return ['ok' => false, 'error' => error_get_last()['message'] ?? 'failed'];
+    try {
+        $res = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", $data);
+        return ['ok' => ($res->json('ok') === true), 'error' => null];
+    } catch (\Throwable $e) {
+        return ['ok' => false, 'error' => $e->getMessage()];
     }
-
-    $json = json_decode($raw, true);
-    return ['ok' => ($json['ok'] ?? false) === true, 'error' => null];
 }
 
 function answerCallback(string $token, string $callbackId, string $text = ''): void
 {
     $data = ['callback_query_id' => $callbackId];
     if ($text !== '') $data['text'] = $text;
-    @file_get_contents("https://api.telegram.org/bot{$token}/answerCallbackQuery?" . http_build_query($data));
+    try {
+        Http::timeout(5)->post("https://api.telegram.org/bot{$token}/answerCallbackQuery", $data);
+    } catch (\Throwable $e) {
+        // ignore
+    }
 }
 
 function getBotInfo(string $token): array
 {
-    $raw = @file_get_contents("https://api.telegram.org/bot{$token}/getMe");
-    if ($raw === false) {
-        return ['ok' => false, 'error' => 'getMe failed', 'username' => '', 'id' => 0];
+    try {
+        $res = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getMe");
+        $json = $res->json();
+        if (!is_array($json) || !($json['ok'] ?? false)) {
+            return ['ok' => false, 'error' => 'invalid response', 'username' => '', 'id' => 0];
+        }
+        return [
+            'ok'       => true,
+            'error'    => null,
+            'username' => (string) ($json['result']['username'] ?? ''),
+            'id'       => (int) ($json['result']['id'] ?? 0),
+        ];
+    } catch (\Throwable $e) {
+        return ['ok' => false, 'error' => $e->getMessage(), 'username' => '', 'id' => 0];
     }
-    $json = json_decode($raw, true);
-    if (!is_array($json) || !($json['ok'] ?? false)) {
-        return ['ok' => false, 'error' => 'invalid response', 'username' => '', 'id' => 0];
-    }
-    return [
-        'ok'       => true,
-        'error'    => null,
-        'username' => (string) ($json['result']['username'] ?? ''),
-        'id'       => (int) ($json['result']['id'] ?? 0),
-    ];
 }
 
 function dispatchPendingNotifications(string $botToken): void

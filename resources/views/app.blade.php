@@ -11,7 +11,7 @@
             if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
-        })();ser
+        })();
     </script>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>

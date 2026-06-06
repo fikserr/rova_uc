@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessFragmentServiceOrder;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\UserBalance;
@@ -130,6 +131,10 @@ class ClickController extends Controller
         if ($notifyAdmin) {
             AdminOrderNotificationService::notifyNewOrder($orderType, $orderId);
             WorkerNotificationService::notifyNewOrder($orderType, $orderId);
+
+            if ($orderType === 'service' && $orderId > 0) {
+                ProcessFragmentServiceOrder::dispatch($orderId);
+            }
         }
 
         return response()->json([

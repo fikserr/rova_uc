@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Currency;
 use App\Models\CurrencyRate;
 use App\Models\MlProduct;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class MlProductController extends Controller
 
         return Inertia::render('Admin/MlProducts', [
             'products' => $products,
+            'currencies' => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name']),
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class WorkerNotificationService
 {
@@ -82,12 +83,9 @@ class WorkerNotificationService
             ['text' => '❌ Rad etish',    'callback_data' => "t:r:{$topupId}"],
         ]]];
 
-        $appUrl = rtrim(config('app.url'), '/');
-
         foreach ($workerIds as $workerId) {
             if (!empty($topup->photo_file_id)) {
-                $photoUrl = $appUrl . '/storage/' . $topup->photo_file_id;
-                $sent = self::sendPhoto($token, (int) $workerId, $photoUrl, $text, $keyboard);
+                $sent = self::sendPhotoFile($token, (int) $workerId, $topup->photo_file_id, $text, $keyboard);
                 if (!$sent) {
                     self::send($token, (int) $workerId, $text, $keyboard);
                 }
@@ -184,19 +182,28 @@ class WorkerNotificationService
         }
     }
 
-    private static function sendPhoto(string $token, int $chatId, string $photoUrl, string $caption, array $keyboard): bool
+    private static function sendPhotoFile(string $token, int $chatId, string $storagePath, string $caption, array $keyboard): bool
     {
         try {
-            $res = Http::asForm()->post("https://api.telegram.org/bot{$token}/sendPhoto", [
-                'chat_id'      => $chatId,
-                'photo'        => $photoUrl,
-                'caption'      => $caption,
-                'parse_mode'   => 'Markdown',
-                'reply_markup' => json_encode($keyboard),
-            ]);
+            if (!Storage::disk('public')->exists($storagePath)) {
+                return false;
+            }
+
+            $fileContents = Storage::disk('public')->get($storagePath);
+            $filename     = basename($storagePath);
+            $mimeType     = Storage::disk('public')->mimeType($storagePath) ?: 'image/jpeg';
+
+            $res = Http::attach('photo', $fileContents, $filename, ['Content-Type' => $mimeType])
+                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                    'chat_id'      => $chatId,
+                    'caption'      => $caption,
+                    'parse_mode'   => 'Markdown',
+                    'reply_markup' => json_encode($keyboard),
+                ]);
+
             return ($res->json('ok') === true);
         } catch (\Throwable $e) {
-            Log::warning("WorkerNotificationService: sendPhoto failed", ['error' => $e->getMessage()]);
+            Log::warning("WorkerNotificationService: sendPhotoFile failed", ['error' => $e->getMessage()]);
             return false;
         }
     }

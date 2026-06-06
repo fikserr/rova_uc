@@ -44,4 +44,14 @@ return [
         'secret_key'  => env('CLICK_SECRET_KEY'),
     ],
 
+    'fragment' => [
+        'auth_key'    => env('FRAGMENT_AUTH_KEY', ''),
+        'wallet_type' => env('FRAGMENT_WALLET_TYPE', 'v4r2'),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model'   => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

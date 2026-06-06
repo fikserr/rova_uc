@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessFragmentServiceOrder;
 use App\Services\AdminOrderNotificationService;
 use App\Services\WorkerNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -167,6 +168,18 @@ class PaymentController extends Controller
                 return ['error' => __('payment.enter_telegram_username')];
             }
 
+            $targetTelegramUsername = ltrim($targetTelegramUsername, '@');
+
+            // Agar raqamli ID kiritilgan bo'lsa, users jadvalidan username topamiz
+            if (is_numeric($targetTelegramUsername)) {
+                $resolvedUsername = DB::table('users')
+                    ->where('id', (int) $targetTelegramUsername)
+                    ->value('username');
+                if ($resolvedUsername) {
+                    $targetTelegramUsername = (string) $resolvedUsername;
+                }
+            }
+
             $pricing = $this->calculateBasePricing(
                 (float) $service->sell_price,
                 (string) $service->sell_currency,
@@ -183,7 +196,7 @@ class PaymentController extends Controller
                 'amount' => (float) $pricing['sell_base'],
                 'order_payload' => [
                     'service_id' => $service->id,
-                    'target_telegram_id' => ltrim($targetTelegramUsername, '@'),
+                    'target_telegram_id' => $targetTelegramUsername,
                     'sell_price' => $pricing['sell_base'],
                     'sell_currency' => 'UZS',
                     'cost_price' => $service->cost_price,
@@ -410,6 +423,10 @@ class PaymentController extends Controller
         if ($orderType !== 'topup' && $result['order_id'] > 0) {
             AdminOrderNotificationService::notifyNewOrder($orderType, $result['order_id']);
             WorkerNotificationService::notifyNewOrder($orderType, $result['order_id']);
+
+            if ($orderType === 'service') {
+                ProcessFragmentServiceOrder::dispatch($result['order_id']);
+            }
         }
 
         return response()->json([

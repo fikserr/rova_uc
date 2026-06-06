@@ -5,7 +5,7 @@ import TopBar from "../../Components/TopBar"
 import ProductCard from "../../Components/ui/productCard"
 
 export default function Services() {
-    const { services, flash } = usePage().props;
+    const { services, flash, currencies = [] } = usePage().props;
     const [editing, setEditing] = useState(null);
     const [formOpen, setFormOpen] = useState(false);
     const [choosedServiceType, setChoosedServiceType] = useState("stars");
@@ -240,8 +240,10 @@ export default function Services() {
                                     onChange={(e) => setData("cost_currency", e.target.value)}
                                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all cursor-pointer"
                                 >
-                                    <option value="USD">USD</option>
-                                    <option value="IQD">IQD</option>
+                                    <option value="">Valyuta tanlang</option>
+                                    {currencies.map((c) => (
+                                        <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
+                                    ))}
                                 </select>
                             </div>
 
