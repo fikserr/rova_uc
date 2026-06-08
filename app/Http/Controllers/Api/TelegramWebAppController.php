@@ -54,21 +54,20 @@ class TelegramWebAppController extends Controller
 
         $data = TelegramAuthService::verify($initData);
 
-        if (isset($data['_fail'])) {
-            $reason = $data['_fail'];
+        if (isset($data['_fail']) || ! $data) {
+            $reason = $data['_fail'] ?? 'unknown';
             Log::warning('Telegram sessionLogin: initData verification failed', [
                 'reason' => $reason,
                 'init_data_length' => strlen($initData),
                 'auth_date' => $data['_auth_date'] ?? null,
             ]);
-            $message = config('app.debug')
-                ? ['message' => 'Invalid or expired init data', 'debug_reason' => $reason]
-                : ['message' => 'Invalid or expired init data'];
-            return response()->json($message, 401);
-        }
-
-        if (! $data) {
-            return response()->json(['message' => 'Invalid or expired init data'], 401);
+            if ($request->expectsJson()) {
+                $message = config('app.debug')
+                    ? ['message' => 'Invalid or expired init data', 'debug_reason' => $reason]
+                    : ['message' => 'Invalid or expired init data'];
+                return response()->json($message, 401);
+            }
+            return redirect('/login');
         }
 
         $userPayload = $this->extractUser($data);
@@ -83,21 +82,43 @@ class TelegramWebAppController extends Controller
                     'telegram_id' => $userPayload['id'] ?? null,
                     'username' => $userPayload['username'] ?? null,
                 ]);
+                if (! $request->expectsJson()) {
+                    return redirect('/login');
+                }
                 return response()->json(['message' => __('auth.phone_required')], 403);
             }
 
             if ($user->is_blocked) {
-                return response()->json(['message' => 'Hisobingiz bloklangan. Admin bilan bog\'laning.'], 403);
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Hisobingiz bloklangan. Admin bilan bog\'laning.'], 403);
+                }
+                return redirect('/login');
+            }
+
+            // Eski sessionni to'liq tozalaymiz (Android multi-account bug fix)
+            if (Auth::check()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
             }
 
             Auth::login($user, false);
             $request->session()->regenerate();
+
+            // Form POST (Android) → redirect; fetch (AJAX) → JSON
+            if (! $request->expectsJson()) {
+                return redirect('/');
+            }
+
             return response()->json([
                 'status' => 'ok',
                 'user' => $this->transformUser($user),
             ]);
         } catch (\Throwable $e) {
             Log::error('Telegram sessionLogin error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            if (! $request->expectsJson()) {
+                return redirect('/login');
+            }
             return response()->json(['message' => 'Server error'], 500);
         }
     }

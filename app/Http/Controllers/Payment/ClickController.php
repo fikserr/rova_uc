@@ -150,10 +150,9 @@ class ClickController extends Controller
     {
         $secretKey = config('services.click.secret_key');
 
-        // Skip verification if secret not configured (local dev)
         if (!$secretKey) {
-            Log::warning('Click signature verification skipped: CLICK_SECRET_KEY not set');
-            return true;
+            Log::error('Click signature verification failed: CLICK_SECRET_KEY not configured');
+            return false;
         }
 
         $parts = [

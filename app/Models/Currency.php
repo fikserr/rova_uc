@@ -14,6 +14,11 @@ class Currency extends Model
         'code', 'name', 'symbol', 'is_base', 'is_active'
     ];
 
+    protected $casts = [
+        'is_base' => 'boolean',
+        'is_active' => 'boolean',
+    ];
+
     public function rates()
     {
         return $this->hasMany(CurrencyRate::class, 'currency_code', 'code');

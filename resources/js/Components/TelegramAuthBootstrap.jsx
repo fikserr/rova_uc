@@ -1,27 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 
+const STORAGE_KEY = "__tg_auth";
+
 function getTelegramInitData() {
-    if (typeof window === "undefined") {
-        return "";
-    }
-
+    if (typeof window === "undefined") return "";
     const tg = window.Telegram?.WebApp;
-    try {
-        tg?.ready?.();
-    } catch (_) {
-        // ignore
-    }
+    try { tg?.ready?.(); } catch (_) {}
     let initData = tg?.initData?.trim?.() ?? "";
-
-    if (! initData && window.location.hash) {
+    if (!initData && window.location.hash) {
         const match = window.location.hash.match(/tgWebAppData=([^&]+)/);
-        if (match) {
-            initData = decodeURIComponent(match[1]);
-        }
+        if (match) initData = decodeURIComponent(match[1]);
     }
-
     return initData?.trim?.() ?? "";
+}
+
+function submitAuthForm(initData) {
+    try { sessionStorage.setItem(STORAGE_KEY, initData); } catch (_) {}
+    const old = document.getElementById("__tg_form");
+    if (old) old.remove();
+    const form = document.createElement("form");
+    form.id = "__tg_form";
+    form.method = "POST";
+    form.action = "/telegram/webapp/session";
+    form.style.display = "none";
+    const inp = document.createElement("input");
+    inp.type = "hidden";
+    inp.name = "init_data";
+    inp.value = initData;
+    form.appendChild(inp);
+    document.body.appendChild(form);
+    form.submit();
 }
 
 export default function TelegramAuthBootstrap({
@@ -35,10 +44,7 @@ export default function TelegramAuthBootstrap({
     const [errorMessage, setErrorMessage] = useState("");
 
     const isTelegramWebView = useMemo(() => {
-        if (typeof window === "undefined") {
-            return false;
-        }
-
+        if (typeof window === "undefined") return false;
         const hasInitData = getTelegramInitData().length > 0;
         const search = window.location.search;
         const hash = window.location.hash;
@@ -49,40 +55,46 @@ export default function TelegramAuthBootstrap({
             hash.includes("tgWebAppPlatform") ||
             search.includes("tgWebAppData=") ||
             hash.includes("tgWebAppData=");
-
         const platform = window.Telegram?.WebApp?.platform;
         const hasKnownTelegramPlatform =
             typeof platform === "string" &&
             platform.trim() !== "" &&
             platform !== "unknown";
-
-        return Boolean(
-            hasTelegramParams ||
-            hasKnownTelegramPlatform ||
-            hasInitData,
-        );
+        return Boolean(hasTelegramParams || hasKnownTelegramPlatform || hasInitData);
     }, []);
 
     useEffect(() => {
-        if (status === "failed") {
-            return;
-        }
+        if (status === "failed") return;
 
         if (user) {
-            setStatus("authenticated");
+            // User bor — lekin Telegram session bilan mos keladimi?
+            // sessionStorage da saqlangan initData bilan solishtiramiz
+            const initData = getTelegramInitData();
 
+            if (initData) {
+                let stored = null;
+                try { stored = sessionStorage.getItem(STORAGE_KEY); } catch (_) {}
+
+                if (stored !== initData) {
+                    // Boshqa akkount initData si — form POST orqali qayta autentifikatsiya
+                    // fetch() emas: Android WebView da Set-Cookie navigatsiyaga ta'sir qilmaydi
+                    submitAuthForm(initData);
+                    return;
+                }
+            }
+
+            // initData mos — to'g'ri user
+            setStatus("authenticated");
             if (isAuthPage) {
                 router.replace("/");
             }
-
             return;
         }
 
-        if (! isTelegramWebView || tried.current) {
-            if (! isTelegramWebView) {
+        if (!isTelegramWebView || tried.current) {
+            if (!isTelegramWebView) {
                 setStatus("skipped");
             }
-
             return;
         }
 
@@ -99,15 +111,13 @@ export default function TelegramAuthBootstrap({
             const startedAt = Date.now();
             let initData = getTelegramInitData();
 
-            while (! initData && Date.now() - startedAt < 10000) {
+            while (!initData && Date.now() - startedAt < 10000) {
                 await new Promise((resolve) => window.setTimeout(resolve, 100));
-                if (cancelled) {
-                    return;
-                }
+                if (cancelled) return;
                 initData = getTelegramInitData();
             }
 
-            if (! initData) {
+            if (!initData) {
                 fail("Telegram initData topilmadi. (E_INITDATA_EMPTY)");
                 return;
             }
@@ -115,88 +125,8 @@ export default function TelegramAuthBootstrap({
             tried.current = true;
             setStatus("authenticating");
 
-            const csrfToken = document.cookie
-                ?.split("; ")
-                ?.find((row) => row.startsWith("XSRF-TOKEN="))
-                ?.split("=")[1];
-
-            const headers = {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-Requested-With": "XMLHttpRequest",
-                "X-Telegram-Init-Data": initData,
-            };
-
-            if (csrfToken) {
-                headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
-            }
-
-            try {
-                const controller = new AbortController();
-                const timeoutId = window.setTimeout(() => controller.abort(), 30000);
-                let response;
-                try {
-                    response = await fetch(route("telegram.webapp.session"), {
-                        method: "POST",
-                        headers,
-                        credentials: "include",
-                        signal: controller.signal,
-                        body: JSON.stringify({ init_data: initData }),
-                    });
-                } finally {
-                    window.clearTimeout(timeoutId);
-                }
-
-                if (! response.ok) {
-                    let message = `So'rov xatosi (${response.status})`;
-                    let payload = null;
-                    if (response.status === 419) {
-                        message = "Sessiya tokeni topilmadi (419). Iltimos WebApp'ni qayta oching.";
-                    }
-                    try {
-                        payload = await response.json();
-                        if (payload?.message) {
-                            message = payload.message;
-                        } else if (payload?.debug_reason) {
-                            message = payload.debug_reason;
-                        }
-                    } catch (_) {
-                        // ignore json parsing errors
-                    }
-
-                    // First open can race with bot polling registration; retry briefly.
-                    if (
-                        response.status === 403 &&
-                        payload?.message === "User is not registered via bot"
-                    ) {
-                        let shouldRetry = false;
-                        if (registrationRetryCount.current < 3) {
-                            registrationRetryCount.current += 1;
-                            shouldRetry = true;
-                            await new Promise((resolve) => window.setTimeout(resolve, 2000));
-                        }
-
-                        if (! cancelled && shouldRetry) {
-                            tried.current = false;
-                            setStatus("checking");
-                            return;
-                        }
-                    }
-
-                    fail(`${message} (E_HTTP_${response.status})`);
-                    return;
-                }
-
-                setStatus("authenticated");
-                registrationRetryCount.current = 0;
-
-                // Full reload is more reliable here because session cookie was just created by fetch.
-                window.location.replace("/");
-            } catch (error) {
-                console.error("Telegram auth request error", error);
-                const code = error?.name === "AbortError" ? "E_FETCH_ABORT" : "E_FETCH";
-                fail(`So'rov yuborishda xatolik yuz berdi. (${code})`);
-            }
+            // initData mavjud, user yo'q → form POST (Android va boshqa barcha platformalar uchun)
+            submitAuthForm(initData);
         };
 
         authenticate();
@@ -207,9 +137,7 @@ export default function TelegramAuthBootstrap({
     }, [isAuthPage, isTelegramWebView, status, user]);
 
     const shouldHandleTelegramAuthScreen =
-        isAuthPage &&
-        isTelegramWebView &&
-        ! user;
+        isAuthPage && isTelegramWebView && !user;
 
     const isFailureState = status === "failed";
 
@@ -217,11 +145,13 @@ export default function TelegramAuthBootstrap({
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-950 px-6 text-white">
                 <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur">
-                    {! isFailureState ? (
+                    {!isFailureState ? (
                         <>
                             <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-cyan-400" />
                             <h1 className="text-xl font-semibold">
-                                {status === "authenticated" ? "Kirish tasdiqlandi" : "Telegram orqali kirilmoqda"}
+                                {status === "authenticated"
+                                    ? "Kirish tasdiqlandi"
+                                    : "Telegram orqali kirilmoqda"}
                             </h1>
                             <p className="mt-3 text-sm text-slate-300">
                                 {status === "authenticated"
@@ -244,4 +174,3 @@ export default function TelegramAuthBootstrap({
 
     return children;
 }
-

@@ -1,61 +1,66 @@
-import { useEffect, useRef } from "react";
-import { router } from "@inertiajs/react";
+import { useEffect } from "react";
 
-export default function useTelegramAuth(authUser) {
-    const tried = useRef(false);
+const STORAGE_KEY = "__tg_auth";
 
+export default function useTelegramAuth() {
     useEffect(() => {
-        if (tried.current) return;
-        if (authUser) return; // User allaqachon auth bo'lsa hech narsa qilmaymiz
-
-        const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : null;
-        let initData = tg?.initData?.trim?.();
-
-        // Agar hash orqali kelgan bo'lsa
-        if (!initData && typeof window !== "undefined" && window.location.hash) {
-            const m = window.location.hash.match(/tgWebAppData=(.+)$/);
-            if (m) initData = decodeURIComponent(m[1]);
-        }
-
-        if (!initData?.trim?.()) {
-            console.log("⚠️ No Telegram initData found");
-            return;
-        }
-
-        initData = initData.trim();
-        tried.current = true;
-
-        const csrfToken = document.cookie
-            ?.split("; ")
-            ?.find((row) => row.startsWith("XSRF-TOKEN="))
-            ?.split("=")[1];
-
-        const headers = {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-Requested-With": "XMLHttpRequest",
+        const getInitData = () => {
+            const tg = window.Telegram?.WebApp;
+            let data = tg?.initData?.trim?.() || "";
+            if (!data && window.location.hash) {
+                const m = window.location.hash.match(/tgWebAppData=([^&]+)/);
+                if (m) data = decodeURIComponent(m[1]);
+            }
+            return data.trim();
         };
-        if (csrfToken) headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
 
-        console.log("📤 Sending Telegram initData to backend...");
+        const doAuth = () => {
+            const initData = getInitData();
+            if (!initData) return;
 
-        fetch("/telegram/webapp/session", {
-            method: "POST",
-            headers,
-            credentials: "include",
-            body: JSON.stringify({ init_data: initData }),
-        })
-            .then(async (res) => {
-                if (res.ok) {
-                    console.log("✅ Auth successful, reloading...");
-                    router.reload();
-                } else {
-                    const data = await res.json();
-                    console.warn("❌ Auth failed", data);
-                }
-            })
-            .catch((err) => {
-                console.error("❌ Telegram auth error:", err);
-            });
-    }, [authUser]);
+            // sessionStorage: loop oldini olish uchun
+            // Har yangi initData (boshqa akkount) = yangi tekshiruv
+            try {
+                if (sessionStorage.getItem(STORAGE_KEY) === initData) return;
+                sessionStorage.setItem(STORAGE_KEY, initData);
+            } catch (_) {}
+
+            // Form POST: barcha WebView larda ishlaydigan yagona ishonchli usul
+            // fetch() → Set-Cookie Android da cookie jar ga tushmaydi (Chrome WebView bug)
+            const old = document.getElementById("__tg_form");
+            if (old) old.remove();
+
+            const form = document.createElement("form");
+            form.id = "__tg_form";
+            form.method = "POST";
+            form.action = "/telegram/webapp/session";
+            form.style.display = "none";
+
+            const inp = document.createElement("input");
+            inp.type = "hidden";
+            inp.name = "init_data";
+            inp.value = initData;
+            form.appendChild(inp);
+
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        // Mount bo'lganda darhol tekshiramiz
+        doAuth();
+
+        // Android da bir xil WebView qayta ishlatilganda trigger
+        const onVisible = () => {
+            if (document.visibilityState === "visible") doAuth();
+        };
+        document.addEventListener("visibilitychange", onVisible);
+
+        const tg = window.Telegram?.WebApp;
+        tg?.onEvent?.("activated", doAuth);
+
+        return () => {
+            document.removeEventListener("visibilitychange", onVisible);
+            tg?.offEvent?.("activated", doAuth);
+        };
+    }, []);
 }

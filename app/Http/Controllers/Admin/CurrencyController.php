@@ -42,8 +42,8 @@ class CurrencyController extends Controller
         if ($code === 'UZS') {
             Currency::where('code', '!=', 'UZS')->update(['is_base' => false]);
             CurrencyRate::firstOrCreate(
-                ['currency_code' => 'UZS', 'rate_to_base' => 1],
-                ['created_at' => now()]
+                ['currency_code' => 'UZS'],
+                ['rate_to_base' => 1, 'created_at' => now()]
             );
         }
 
@@ -106,8 +106,8 @@ class CurrencyController extends Controller
         Currency::where('code', '!=', 'UZS')->update(['is_base' => false]);
 
         CurrencyRate::firstOrCreate(
-            ['currency_code' => 'UZS', 'rate_to_base' => 1],
-            ['created_at' => now()]
+            ['currency_code' => 'UZS'],
+            ['rate_to_base' => 1, 'created_at' => now()]
         );
     }
 }

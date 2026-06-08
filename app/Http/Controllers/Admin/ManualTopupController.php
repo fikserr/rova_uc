@@ -128,21 +128,36 @@ class ManualTopupController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $affected = DB::table('manual_topup_requests')
-            ->where('id', $id)
-            ->where('status', 'pending')
-            ->update([
-                'status' => 'rejected',
-                'notes'  => $data['notes'] ?? null,
-            ]);
+        try {
+            $topupData = DB::transaction(function () use ($id, $data) {
+                $topup = DB::table('manual_topup_requests')
+                    ->where('id', $id)
+                    ->where('status', 'pending')
+                    ->lockForUpdate()
+                    ->first();
 
-        if (!$affected) {
-            return back()->with('error', "So'rov topilmadi yoki allaqachon ko'rib chiqilgan");
+                if (!$topup) {
+                    throw new \RuntimeException('already_processed');
+                }
+
+                DB::table('manual_topup_requests')
+                    ->where('id', $id)
+                    ->update([
+                        'status' => 'rejected',
+                        'notes'  => $data['notes'] ?? null,
+                    ]);
+
+                return $topup;
+            });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'already_processed') {
+                return back()->with('error', "So'rov topilmadi yoki allaqachon ko'rib chiqilgan");
+            }
+            throw $e;
         }
 
-        $topup = DB::table('manual_topup_requests')->where('id', $id)->first();
-        $userId = (int) $topup->user_id;
-        $amount = (float) $topup->amount;
+        $userId = (int) $topupData->user_id;
+        $amount = (float) $topupData->amount;
 
         if (Schema::hasTable('user_notifications')) {
             DB::table('user_notifications')->insert([

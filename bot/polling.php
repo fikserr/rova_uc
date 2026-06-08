@@ -196,6 +196,9 @@ function handleWorkerMessage(string $token, int $chatId, int $workerId, array $m
 
 function handleWorkerState(string $token, int $chatId, int $workerId, string $reason, object $state): void
 {
+    // Limit reason length to prevent oversized DB inserts
+    $reason = mb_substr(trim($reason), 0, 500);
+
     $payload = is_string($state->payload)
         ? json_decode($state->payload, true)
         : (array) $state->payload;
@@ -204,14 +207,18 @@ function handleWorkerState(string $token, int $chatId, int $workerId, string $re
         $type    = $payload['type'] ?? '';
         $orderId = (int) ($payload['id'] ?? 0);
         clearBotState($workerId);
-        doCancelOrder($token, $chatId, $type, $orderId, $reason);
+        if ($orderId > 0 && orderTable($type)) {
+            doCancelOrder($token, $chatId, $type, $orderId, $reason);
+        }
         return;
     }
 
     if ($state->state === 'reject_reason') {
         $topupId = (int) ($payload['id'] ?? 0);
         clearBotState($workerId);
-        doRejectTopup($token, $chatId, $topupId, $reason);
+        if ($topupId > 0) {
+            doRejectTopup($token, $chatId, $topupId, $reason);
+        }
         return;
     }
 
@@ -241,12 +248,17 @@ function handleCallbackQuery(string $token, array $cb): void
 
     // o:{type}:{action}:{id}  →  o:uc:a:5 / o:ml:c:3 / o:srv:a:7
     if (str_starts_with($data, 'o:')) {
-        [, $type, $action, $id] = explode(':', $data, 4);
+        $parts = explode(':', $data, 4);
+        if (count($parts) !== 4) return;
+        [, $type, $action, $id] = $parts;
         $orderId = (int) $id;
+        if ($orderId <= 0) return;
+        if (!in_array($action, ['a', 'c'], true)) return;
+        if (!orderTable($type)) return; // unknown type
 
         if ($action === 'a') {
             doApproveOrder($token, $chatId, $type, $orderId);
-        } elseif ($action === 'c') {
+        } else {
             setBotState($workerId, 'cancel_reason', ['type' => $type, 'id' => $orderId]);
             sendMessage($token, $chatId,
                 "❌ Buyurtma #{$orderId} uchun bekor qilish *sababini* yozing:\n_(Bekor qilish uchun /start yuboring)_"
@@ -257,12 +269,16 @@ function handleCallbackQuery(string $token, array $cb): void
 
     // t:{action}:{id}  →  t:a:12 / t:r:12
     if (str_starts_with($data, 't:')) {
-        [, $action, $id] = explode(':', $data, 3);
+        $parts = explode(':', $data, 3);
+        if (count($parts) !== 3) return;
+        [, $action, $id] = $parts;
         $topupId = (int) $id;
+        if ($topupId <= 0) return;
+        if (!in_array($action, ['a', 'r'], true)) return;
 
         if ($action === 'a') {
             doApproveTopup($token, $chatId, $topupId);
-        } elseif ($action === 'r') {
+        } else {
             setBotState($workerId, 'reject_reason', ['id' => $topupId]);
             sendMessage($token, $chatId,
                 "❌ Chek #{$topupId} uchun rad etish *sababini* yozing:\n_(Bekor qilish uchun /start yuboring)_"
@@ -319,9 +335,14 @@ function doCancelOrder(string $token, int $chatId, string $type, int $orderId, s
 
         $refund = (float) ($order->sell_price ?? 0);
         if ($refund > 0) {
+            $balanceRow = DB::table('user_balances')
+                ->where('user_id', $order->user_id)
+                ->lockForUpdate()
+                ->first();
+            $newBalance = (float) ($balanceRow->balance ?? 0) + $refund;
             DB::table('user_balances')
                 ->where('user_id', $order->user_id)
-                ->update(['balance' => DB::raw("balance + {$refund}"), 'updated_at' => now()]);
+                ->update(['balance' => $newBalance, 'updated_at' => now()]);
         }
     });
 
@@ -358,9 +379,14 @@ function doApproveTopup(string $token, int $chatId, int $topupId): void
             ->where('id', $topupId)
             ->update(['status' => 'approved']);
 
+        $balanceRow = DB::table('user_balances')
+            ->where('user_id', $topup->user_id)
+            ->lockForUpdate()
+            ->first();
+        $newBalance = (float) ($balanceRow->balance ?? 0) + $amount;
         DB::table('user_balances')
             ->where('user_id', $topup->user_id)
-            ->update(['balance' => DB::raw("balance + {$amount}"), 'updated_at' => now()]);
+            ->update(['balance' => $newBalance, 'updated_at' => now()]);
     });
 
     createTopupNotification(
