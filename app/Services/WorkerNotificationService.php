@@ -74,9 +74,9 @@ class WorkerNotificationService
         $user   = $topup->username ? "@{$topup->username}" : "User #{$topup->uid}";
         $amount = number_format((float) $topup->amount, 0, '.', ' ');
 
-        $text = "💳 *Yangi chek so'rovi #{$topup->id}*\n"
+        $text = "💳 Yangi chek so'rovi #{$topup->id}\n"
               . "👤 {$user}\n"
-              . "💰 Miqdor: *{$amount} so'm*";
+              . "💰 Miqdor: {$amount} so'm";
 
         $keyboard = ['inline_keyboard' => [[
             ['text' => '✅ Qabul qilish', 'callback_data' => "t:a:{$topupId}"],
@@ -152,13 +152,13 @@ class WorkerNotificationService
         $account = $d->account ?? '-';
 
         $accountLabel = match ($type) {
-            'uc'      => "🎮 PUBG ID: `{$account}`",
-            'ml'      => "🎮 ML ID: `{$account}`",
+            'uc'      => "🎮 PUBG ID: {$account}",
+            'ml'      => "🎮 ML ID: {$account}",
             'service' => "📨 Target: @{$account}",
-            default   => "ID: `{$account}`",
+            default   => "ID: {$account}",
         };
 
-        return "{$emoji} *Yangi {$label} buyurtma #{$orderId}*\n"
+        return "{$emoji} Yangi {$label} buyurtma #{$orderId}\n"
              . "👤 {$user}\n"
              . "{$accountLabel}\n"
              . "🛍️ {$product}\n"
@@ -171,7 +171,6 @@ class WorkerNotificationService
             Http::asForm()->post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id'      => $chatId,
                 'text'         => $text,
-                'parse_mode'   => 'Markdown',
                 'reply_markup' => json_encode($keyboard),
             ]);
         } catch (\Throwable $e) {
@@ -197,7 +196,6 @@ class WorkerNotificationService
                 ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
                     'chat_id'      => $chatId,
                     'caption'      => $caption,
-                    'parse_mode'   => 'Markdown',
                     'reply_markup' => json_encode($keyboard),
                 ]);
 
