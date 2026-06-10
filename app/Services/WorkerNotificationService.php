@@ -84,13 +84,60 @@ class WorkerNotificationService
         ]]];
 
         foreach ($workerIds as $workerId) {
+            $wid = (int) $workerId;
             if (!empty($topup->photo_file_id)) {
-                $sent = self::sendPhotoFile($token, (int) $workerId, $topup->photo_file_id, $text, $keyboard);
-                if (!$sent) {
-                    self::send($token, (int) $workerId, $text, $keyboard);
+                $msgId = self::sendPhotoFile($token, $wid, $topup->photo_file_id, $text, $keyboard);
+                if (!$msgId) {
+                    $msgId = self::send($token, $wid, $text, $keyboard);
                 }
             } else {
-                self::send($token, (int) $workerId, $text, $keyboard);
+                $msgId = self::send($token, $wid, $text, $keyboard);
+            }
+            if ($msgId > 0) {
+                try {
+                    DB::statement(
+                        "INSERT IGNORE INTO worker_notification_messages (type, ref_id, worker_id, chat_id, message_id, created_at) VALUES ('topup', {$topupId}, {$wid}, {$wid}, {$msgId}, NOW())"
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('worker_notification_messages table missing: ' . $e->getMessage());
+                }
+            }
+        }
+    }
+
+    public static function editTopupMessages(int $topupId, string $text): void
+    {
+        $token = self::token();
+        if (!$token) return;
+
+        try {
+            $rows = DB::select("SELECT chat_id, message_id FROM worker_notification_messages WHERE type = 'topup' AND ref_id = {$topupId}");
+        } catch (\Throwable $e) {
+            return;
+        }
+        foreach ($rows as $row) {
+            try {
+                // editMessageReplyMarkup works for both text and photo messages
+                Http::timeout(5)->asForm()->post("https://api.telegram.org/bot{$token}/editMessageReplyMarkup", [
+                    'chat_id'      => (string) $row->chat_id,
+                    'message_id'   => (int) $row->message_id,
+                    'reply_markup' => json_encode(['inline_keyboard' => []]),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('editTopupMessages failed: ' . $e->getMessage());
+            }
+        }
+
+        // Send status update as a new message to all workers/admins
+        $workerIds = self::workerIds();
+        foreach ($workerIds as $workerId) {
+            try {
+                Http::timeout(5)->asForm()->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => (string) $workerId,
+                    'text'    => $text,
+                ]);
+            } catch (\Throwable $e) {
+                // ignore
             }
         }
     }
@@ -165,44 +212,45 @@ class WorkerNotificationService
              . "💰 {$amount} so'm";
     }
 
-    private static function send(string $token, int $chatId, string $text, array $keyboard): void
+    private static function send(string $token, int $chatId, string $text, array $keyboard): int
     {
         try {
-            Http::asForm()->post("https://api.telegram.org/bot{$token}/sendMessage", [
+            $res = Http::asForm()->post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id'      => $chatId,
                 'text'         => $text,
                 'reply_markup' => json_encode($keyboard),
             ]);
+            return (int) ($res->json('result.message_id') ?? 0);
         } catch (\Throwable $e) {
             Log::warning("WorkerNotificationService: sendMessage failed", [
                 'chat_id' => $chatId,
                 'error'   => $e->getMessage(),
             ]);
+            return 0;
         }
     }
 
-    private static function sendPhotoFile(string $token, int $chatId, string $storagePath, string $caption, array $keyboard): bool
+    private static function sendPhotoFile(string $token, int $chatId, string $storagePath, string $caption, array $keyboard): int
     {
         try {
             if (!Storage::disk('public')->exists($storagePath)) {
-                return false;
+                return 0;
             }
 
             $fileContents = Storage::disk('public')->get($storagePath);
             $filename     = basename($storagePath);
-            $mimeType     = Storage::disk('public')->mimeType($storagePath) ?: 'image/jpeg';
 
-            $res = Http::attach('photo', $fileContents, $filename, ['Content-Type' => $mimeType])
+            $res = Http::attach('photo', $fileContents, $filename, ['Content-Type' => 'image/jpeg'])
                 ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
                     'chat_id'      => $chatId,
                     'caption'      => $caption,
                     'reply_markup' => json_encode($keyboard),
                 ]);
 
-            return ($res->json('ok') === true);
+            return ($res->json('ok') === true) ? (int) ($res->json('result.message_id') ?? 0) : 0;
         } catch (\Throwable $e) {
             Log::warning("WorkerNotificationService: sendPhotoFile failed", ['error' => $e->getMessage()]);
-            return false;
+            return 0;
         }
     }
 }

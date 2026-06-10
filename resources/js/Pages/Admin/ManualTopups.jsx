@@ -48,7 +48,9 @@ function resolveReceiptUrl(raw) {
         return "/" + cleaned.replace("storage/app/public/", "storage/");
     if (cleaned.startsWith("storage/app/"))
         return "/" + cleaned.replace("storage/app/", "storage/");
-    return "/storage" + cleaned;
+    if (cleaned.startsWith("storage/"))
+        return "/" + cleaned;
+    return "/storage/" + cleaned;
 }
 
 function StatCard({ icon: Icon, label, value, color, sub }) {

@@ -26,7 +26,7 @@ class ManualTopupController extends Controller
                 'user_id'     => $row->user_id,
                 'username'    => $row->username ?? '-',
                 'amount'      => (float) $row->amount,
-                'receipt_url' => Storage::url($row->photo_file_id),
+                'receipt_url' => $row->photo_file_id ? Storage::disk('public')->url($row->photo_file_id) : null,
                 'status'      => $row->status,
                 'notes'       => $row->notes,
                 'created_at'  => $row->created_at,

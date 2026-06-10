@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Bot;
 
 use App\Http\Controllers\Controller;
+use App\Services\WorkerNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class TelegramBotController extends Controller
         $telegramId = $from['id'];
         $username   = $from['username'] ?? null;
 
-        $dbUser = DB::table('users')->where('id', $telegramId)->first();
+        $dbUser = DB::selectOne("SELECT * FROM users WHERE id = {$telegramId}");
         $role   = $dbUser?->role ?? 'guest';
 
         // Worker yoki Admin xabari
@@ -76,8 +77,12 @@ class TelegramBotController extends Controller
             return;
         }
 
+        $webAppUrl = rtrim(config('app.url'), '/');
         $this->send($chatId,
-            "👷 Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz."
+            "👷 Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz.",
+            ['inline_keyboard' => [[
+                ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+            ]]]
         );
     }
 
@@ -102,7 +107,7 @@ class TelegramBotController extends Controller
             $topupId = (int) ($payload['id'] ?? 0);
             $this->clearBotState($workerId);
             if ($topupId > 0) {
-                $this->doRejectTopup($chatId, $topupId, $reason);
+                $this->doRejectTopup($chatId, $topupId, $reason, $workerId);
             }
             return;
         }
@@ -127,27 +132,18 @@ class TelegramBotController extends Controller
                 return;
             }
 
-            // HTTP call o'rniga to'g'ridan-to'g'ri DB ishlatamiz
-            $user = DB::table('users')->where('id', $telegramId)->first();
+            // Literal ID in SQL to avoid PDO 32-bit truncation for large Telegram IDs
+            $tid = (int) $telegramId;
+            DB::statement("INSERT IGNORE INTO users (id, username, role, created_at) VALUES ({$tid}, ?, 'user', NOW())", [$username]);
+            DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
 
-            if (!$user) {
-                DB::table('users')->insertOrIgnore([
-                    'id'         => $telegramId,
-                    'username'   => $username,
-                    'role'       => 'user',
-                    'created_at' => now(),
-                ]);
-                DB::table('user_balances')->insertOrIgnore([
-                    'user_id'    => $telegramId,
-                    'balance'    => 0,
-                    'updated_at' => now(),
-                ]);
-                $user = DB::table('users')->where('id', $telegramId)->first();
-            } elseif ($username && $user->username !== $username) {
-                DB::table('users')->where('id', $telegramId)->update(['username' => $username]);
+            $user = DB::selectOne("SELECT * FROM users WHERE id = {$tid}");
+
+            if ($user && $username && $user->username !== $username) {
+                DB::statement("UPDATE users SET username = ? WHERE id = {$tid}", [$username]);
             }
 
-            $needPhone = empty($user->phone_number);
+            $needPhone = empty($user->phone_number ?? null);
 
             if ($needPhone) {
                 $this->send($chatId,
@@ -161,8 +157,7 @@ class TelegramBotController extends Controller
                     ]
                 );
             } else {
-                $balance = (float) (DB::table('user_balances')
-                    ->where('user_id', $telegramId)->value('balance') ?? 0);
+                $balance = (float) DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0;
                 $this->send($chatId,
                     "Xush kelibsiz! 👋\nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
                     ['inline_keyboard' => [[
@@ -178,16 +173,14 @@ class TelegramBotController extends Controller
                 $this->send($chatId, "Iltimos, o'zingizning telefon raqamingizni yuboring.");
                 return;
             }
-            // Telefon raqamni to'g'ridan-to'g'ri DB ga yozamiz
+            $tid         = (int) $telegramId;
             $phoneNumber = $message['contact']['phone_number'];
-            $phoneExists = DB::table('users')
-                ->where('phone_number', $phoneNumber)
-                ->where('id', '!=', $telegramId)
-                ->exists();
+            $phoneExists = DB::selectOne(
+                "SELECT id FROM users WHERE phone_number = ? AND id != {$tid} LIMIT 1",
+                [$phoneNumber]
+            );
             if (!$phoneExists) {
-                DB::table('users')->where('id', $telegramId)
-                    ->whereNull('phone_number')
-                    ->update(['phone_number' => $phoneNumber]);
+                DB::statement("UPDATE users SET phone_number = ? WHERE id = {$tid} AND phone_number IS NULL", [$phoneNumber]);
             }
             $this->send($chatId, "Ro'yxatdan muvaffaqiyatli o'tdingiz! ✅", ['remove_keyboard' => true]);
             $this->send($chatId,
@@ -237,7 +230,7 @@ class TelegramBotController extends Controller
         $workerId   = $cb['from']['id'];
         $data       = $cb['data'] ?? '';
 
-        $dbUser = DB::table('users')->where('id', $workerId)->first();
+        $dbUser = DB::selectOne("SELECT * FROM users WHERE id = {$workerId}");
         $role   = $dbUser?->role ?? 'guest';
 
         if (!in_array($role, ['worker', 'admin'], true)) {
@@ -275,7 +268,7 @@ class TelegramBotController extends Controller
             if ($topupId <= 0 || !in_array($action, ['a', 'r'], true)) return;
 
             if ($action === 'a') {
-                $this->doApproveTopup($chatId, $topupId);
+                $this->doApproveTopup($chatId, $topupId, (int) $workerId);
             } else {
                 $this->setBotState($workerId, 'reject_reason', ['id' => $topupId]);
                 $this->send($chatId,
@@ -353,7 +346,7 @@ class TelegramBotController extends Controller
     // TOPUP ACTIONS
     // ══════════════════════════════════════════════════════════
 
-    private function doApproveTopup(int $chatId, int $topupId): void
+    private function doApproveTopup(int $chatId, int $topupId, int $workerId = 0): void
     {
         $topup = DB::table('manual_topup_requests')->where('id', $topupId)->first();
         if (!$topup || $topup->status !== 'pending') {
@@ -378,12 +371,20 @@ class TelegramBotController extends Controller
             message: number_format($amount, 0, '.', ' ') . " so'm balansingizga qo'shildi."
         );
 
+        $worker = $workerId ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
+        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId ? "Worker #{$workerId}" : 'Worker');
+
+        WorkerNotificationService::editTopupMessages(
+            $topupId,
+            "✅ Chek #{$topupId} tasdiqlandi.\n💰 " . number_format($amount, 0, '.', ' ') . " so'm\n👤 {$workerName} tomonidan"
+        );
+
         $this->send($chatId,
             "✅ Chek #{$topupId} qabul qilindi. " . number_format($amount, 0, '.', ' ') . " so'm qo'shildi."
         );
     }
 
-    private function doRejectTopup(int $chatId, int $topupId, string $reason): void
+    private function doRejectTopup(int $chatId, int $topupId, string $reason, int $workerId = 0): void
     {
         try {
             $topup = DB::transaction(function () use ($topupId, $reason) {
@@ -407,6 +408,14 @@ class TelegramBotController extends Controller
             title:       '❌ Chek rad etildi',
             message:     "Chekingiz rad etildi.",
             description: $reason
+        );
+
+        $worker = $workerId ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
+        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId ? "Worker #{$workerId}" : 'Worker');
+
+        WorkerNotificationService::editTopupMessages(
+            $topupId,
+            "❌ Chek #{$topupId} rad etildi.\n👤 {$workerName} tomonidan\n📝 Sabab: {$reason}"
         );
 
         $this->send($chatId, "✅ Chek #{$topupId} rad etildi.");

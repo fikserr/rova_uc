@@ -86,15 +86,29 @@ while (true) {
         // ── Oddiy foydalanuvchi ───────────────────────────────────
 
         if (($message['text'] ?? null) === '/start') {
-            $apiResponse = Http::post($API_URL . '/users/start', [
-                'telegram_id' => $telegramId,
-                'username'    => $username,
-            ]);
-            $data = $apiResponse->json();
+            if (!$username) {
+                sendMessage($BOT_TOKEN, $chatId,
+                    "Ilovadan foydalanish uchun Telegram username o'rnatishingiz kerak.\n\n" .
+                    "Sozlamalar -> Profilni tahrirlash -> Username qo'shing, keyin /start bosing."
+                );
+                continue;
+            }
 
-            if (!empty($data['need_phone'])) {
-                sendMessage(
-                    $BOT_TOKEN, $chatId,
+            $tid = (int) $telegramId;
+            // Literal ID in SQL to avoid PDO 32-bit truncation for large Telegram IDs
+            DB::statement("INSERT IGNORE INTO users (id, username, role, created_at) VALUES ({$tid}, ?, 'user', NOW())", [$username]);
+            DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
+
+            $user = DB::selectOne("SELECT * FROM users WHERE id = {$tid}");
+
+            if ($user && $username && $user->username !== $username) {
+                DB::statement("UPDATE users SET username = ? WHERE id = {$tid}", [$username]);
+            }
+
+            $needPhone = empty($user->phone_number ?? null);
+
+            if ($needPhone) {
+                sendMessage($BOT_TOKEN, $chatId,
                     "Assalomu alaykum!\nDavom etish uchun telefon raqamingizni yuboring.",
                     ['keyboard' => [[[
                         'text'            => 'Telefon raqamni yuborish',
@@ -105,13 +119,11 @@ while (true) {
                     ]
                 );
             } else {
-                $balance = (float) (DB::table('user_balances')
-                    ->where('user_id', $telegramId)->value('balance') ?? 0);
-
+                $balance = (float) DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0;
                 sendMessage($BOT_TOKEN, $chatId,
-                    "Xush kelibsiz! 👋\nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
+                    "Xush kelibsiz! \nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
                     ['inline_keyboard' => [[
-                        ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                        ['text' => 'Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
                     ]]]
                 );
             }
@@ -124,19 +136,24 @@ while (true) {
                 continue;
             }
 
-            Http::post($API_URL . '/users/phone', [
-                'telegram_id'  => $telegramId,
-                'phone_number' => $message['contact']['phone_number'],
-            ]);
+            $tid   = (int) $telegramId;
+            $phone = $message['contact']['phone_number'];
+            $phoneExists = DB::selectOne(
+                "SELECT id FROM users WHERE phone_number = ? AND id != {$tid} LIMIT 1",
+                [$phone]
+            );
+            if (!$phoneExists) {
+                DB::statement("UPDATE users SET phone_number = ? WHERE id = {$tid} AND phone_number IS NULL", [$phone]);
+            }
 
             sendMessage($BOT_TOKEN, $chatId,
-                "Ro'yxatdan muvaffaqiyatli o'tdingiz! ✅",
+                "Ro'yxatdan muvaffaqiyatli o'tdingiz!",
                 ['remove_keyboard' => true]
             );
             sendMessage($BOT_TOKEN, $chatId,
                 "Ilovani ochish uchun quyidagi tugmani bosing:",
                 ['inline_keyboard' => [[
-                    ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                    ['text' => 'Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
                 ]]]
             );
             continue;
@@ -188,9 +205,12 @@ function handleWorkerMessage(string $token, int $chatId, int $workerId, array $m
         return;
     }
 
-    // /start yoki har qanday xabar — oddiy javob
+    $webAppUrl = rtrim(config('app.url'), '/');
     sendMessage($token, $chatId,
-        "👷 Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz."
+        "Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz.",
+        ['inline_keyboard' => [[
+            ['text' => 'Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+        ]]]
     );
 }
 
@@ -547,7 +567,6 @@ function sendMessage(string $token, int $chatId, string $text, ?array $replyMark
     $data = [
         'chat_id'    => $chatId,
         'text'       => $text,
-        'parse_mode' => 'Markdown',
     ];
 
     if ($replyMarkup !== null) {
