@@ -71,26 +71,11 @@ function Mlegends() {
         setVerifyStatus(null);
         setVerifyMessage("");
         try {
-            const response = await fetch(
-                `https://check-id-game1.p.rapidapi.com/api/game/cek-region-mlbb-m?zone=${mlServerId.trim()}&id=${mlAccountId.trim()}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
-                        "x-rapidapi-host": "check-id-game1.p.rapidapi.com",
-                        "Content-Type": "application/json",
-                    },
-                },
-            );
-            const data = await response.json();
-            const username =
-                data?.data?.username ||
-                data?.data?.name ||
-                data?.data?.nickname ||
-                data?.username ||
-                data?.name ||
-                data?.nickname ||
-                null;
+            const response = await axios.post("/game/verify/mlegends", {
+                id: mlAccountId.trim(),
+                zone: mlServerId.trim(),
+            });
+            const username = response?.data?.username ?? null;
             if (username) {
                 setVerifyStatus("success");
                 setVerifyMessage(username);

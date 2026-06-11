@@ -20,6 +20,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Payment\ClickController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\User\EmailVerificationController;
+use App\Http\Controllers\User\GameVerifyController;
 use App\Http\Controllers\User\ManualTopupController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\NotificationController;
@@ -186,6 +187,13 @@ Route::middleware(['auth'])->group(function () {
             ->name('payment.create');
         Route::get('/payment/status', [PaymentController::class, 'status'])
             ->name('payment.status');
+
+        Route::post('/game/verify/pubg', [GameVerifyController::class, 'verifyPubg'])
+            ->middleware('throttle:30,1')
+            ->name('game.verify.pubg');
+        Route::post('/game/verify/mlegends', [GameVerifyController::class, 'verifyMlegends'])
+            ->middleware('throttle:30,1')
+            ->name('game.verify.mlegends');
 
         Route::get('/user-services', function () {
             return Inertia::render('User/UserServices');

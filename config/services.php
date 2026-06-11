@@ -54,4 +54,8 @@ return [
         'model'   => env('OPENAI_MODEL', 'gpt-4o-mini'),
     ],
 
+    'rapidapi' => [
+        'key' => env('RAPIDAPI_KEY'),
+    ],
+
 ];
