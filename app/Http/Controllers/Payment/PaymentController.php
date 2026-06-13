@@ -17,8 +17,9 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'amount'                    => 'nullable|numeric|min:1000|max:50000000',
-            'order_type'                => 'nullable|in:uc,ml,service,topup',
+            'order_type'                => 'nullable|in:uc,ml,service,topup,bundle',
             'product_id'                => 'nullable|integer',
+            'bundle_id'                 => 'nullable|integer',
             'ml_account_id'             => 'nullable|string|max:64',
             'ml_server_id'              => 'nullable|string|max:64',
             'pubg_player_id'            => 'nullable|string|max:64',
@@ -206,6 +207,49 @@ class PaymentController extends Controller
             ];
         }
 
+        if ($orderType === 'bundle') {
+            $bundleId = $validated['bundle_id'] ?? null;
+            $bundle = DB::table('uc_bundles')->where('id', $bundleId)->where('is_active', true)->first();
+
+            if (!$bundle) {
+                return ['error' => __('payment.uc_product_not_found')];
+            }
+
+            $pubgPlayerId = trim((string) ($validated['pubg_player_id'] ?? ''));
+            $pubgName     = trim((string) ($validated['pubg_name'] ?? ''));
+
+            if ($pubgPlayerId === '') {
+                return ['error' => __('payment.enter_pubg_player_id')];
+            }
+
+            $pricing = $this->calculateBasePricing(
+                (float) $bundle->sell_price,
+                (string) $bundle->sell_currency,
+                (float) $bundle->cost_price,
+                (string) $bundle->cost_currency
+            );
+
+            if ($pricing['error']) {
+                return ['error' => $pricing['error']];
+            }
+
+            $accountId = $this->resolvePubgAccountId($userId, $pubgPlayerId, $pubgName);
+
+            return [
+                'error'  => null,
+                'amount' => (float) $pricing['sell_base'],
+                'order_payload' => [
+                    'pubg_account_id' => $accountId,
+                    'bundle_id'       => $bundle->id,
+                    'sell_price'      => $pricing['sell_base'],
+                    'sell_currency'   => 'UZS',
+                    'cost_price'      => $bundle->cost_price,
+                    'cost_currency'   => $bundle->cost_currency,
+                    'profit_base'     => $pricing['profit_base'],
+                ],
+            ];
+        }
+
         $amount = isset($validated['amount']) ? (float) $validated['amount'] : null;
         if (!$amount) {
             return ['error' => __('payment.amount_required')];
@@ -285,6 +329,15 @@ class PaymentController extends Controller
 
         if ($orderType === 'service') {
             $orderId = DB::table('service_orders')->insertGetId([
+                'user_id' => $userId,
+                ...$context['order_payload'],
+                'status' => 'pending',
+                'created_at' => now(),
+            ]);
+        }
+
+        if ($orderType === 'bundle') {
+            $orderId = DB::table('bundle_orders')->insertGetId([
                 'user_id' => $userId,
                 ...$context['order_payload'],
                 'status' => 'pending',
@@ -372,6 +425,15 @@ class PaymentController extends Controller
 
             if ($orderType === 'service') {
                 $orderId = DB::table('service_orders')->insertGetId([
+                    'user_id' => $userId,
+                    ...$context['order_payload'],
+                    'status' => 'paid',
+                    'created_at' => now(),
+                ]);
+            }
+
+            if ($orderType === 'bundle') {
+                $orderId = DB::table('bundle_orders')->insertGetId([
                     'user_id' => $userId,
                     ...$context['order_payload'],
                     'status' => 'paid',

@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
 use App\Http\Controllers\Admin\SpinSectorController;
+use App\Http\Controllers\Admin\UcBundleController;
 use App\Http\Controllers\Admin\UcProductController;
 use App\Http\Controllers\Api\TelegramWebAppController;
 use App\Http\Controllers\Api\UserController;
@@ -90,6 +91,15 @@ Route::middleware(['auth'])->group(function () {
             ->name('uc-products.update');
         Route::delete('/uc-products/{product}', [UcProductController::class, 'destroy'])
             ->name('uc-products.destroy');
+
+        Route::get('/products-bundles', [UcBundleController::class, 'index'])
+            ->name('uc-bundles.index');
+        Route::post('/uc-bundles', [UcBundleController::class, 'store'])
+            ->name('uc-bundles.store');
+        Route::post('/uc-bundles/{bundle}/update', [UcBundleController::class, 'update'])
+            ->name('uc-bundles.update');
+        Route::delete('/uc-bundles/{bundle}', [UcBundleController::class, 'destroy'])
+            ->name('uc-bundles.destroy');
 
         Route::get('/currencies', [CurrencyController::class, 'index'])
             ->name('currencies.index');

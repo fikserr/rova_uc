@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\CurrencyRate;
+use App\Models\UcBundle;
 use App\Models\UcProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class UcProductController extends Controller
@@ -44,8 +46,20 @@ class UcProductController extends Controller
                 ->first(['pubg_player_id', 'pubg_name']);
         }
 
+        $bundles = UcBundle::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($b) {
+                $b->image_url = $b->image_path
+                    ? Storage::disk('public')->url($b->image_path)
+                    : null;
+                return $b;
+            });
+
         return Inertia::render('User/UcShop', [
-            'products' => UcProduct::where('is_active', true)->orderByDesc('id')->get(),
+            'products'        => UcProduct::where('is_active', true)->orderByDesc('id')->get(),
+            'bundles'         => $bundles,
             'lastPubgAccount' => $lastPubgAccount,
         ]);
     }

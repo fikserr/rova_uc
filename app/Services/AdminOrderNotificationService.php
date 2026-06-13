@@ -92,6 +92,20 @@ class AdminOrderNotificationService
                 ])
                 ->first(),
 
+            'bundle' => DB::table('bundle_orders as o')
+                ->leftJoin('users as u', 'u.id', '=', 'o.user_id')
+                ->leftJoin('uc_bundles as b', 'b.id', '=', 'o.bundle_id')
+                ->leftJoin('pubg_accounts as a', 'a.id', '=', 'o.pubg_account_id')
+                ->where('o.id', $orderId)
+                ->select([
+                    'o.sell_price',
+                    'o.sell_currency',
+                    'u.username',
+                    'b.title as product_title',
+                    'a.pubg_player_id',
+                ])
+                ->first(),
+
             default => null,
         };
     }
@@ -102,6 +116,7 @@ class AdminOrderNotificationService
             'uc'      => 'UC',
             'ml'      => 'ML Diamond',
             'service' => 'Service',
+            'bundle'  => "To'plam",
             default   => strtoupper($orderType),
         };
 
@@ -123,6 +138,7 @@ class AdminOrderNotificationService
             'uc'      => 'PUBG ID: ' . ($d->pubg_player_id ?? '-'),
             'ml'      => 'ML ID: ' . ($d->ml_account_id ?? '-') . ' | Server: ' . ($d->ml_server_id ?? '-'),
             'service' => 'TG: @' . ($d->target_telegram_id ?? '-'),
+            'bundle'  => 'PUBG ID: ' . ($d->pubg_player_id ?? '-'),
             default   => '',
         };
 

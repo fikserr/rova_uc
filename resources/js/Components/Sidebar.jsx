@@ -32,7 +32,8 @@ export function Sidebar({ isOpen = true, onClose }) {
         { href: "/profit-analytics",         label: "Profit Analytics",   icon: FaChartLine,       roles: ["admin"] },
         { href: "/referral-settings",        label: "Referral Settings",  icon: FaLayerGroup,      roles: ["admin"] },
         { href: "/users",                    label: "Users",              icon: LuUser,            roles: ["admin"] },
-        { href: "/products-uc",              label: "Products",           icon: LuBox,             roles: ["admin"] },
+        { href: "/products-uc",              label: "UC Products",        icon: LuBox,             roles: ["admin"] },
+        { href: "/products-bundles",         label: "To'plamlar",         icon: LuBox,             roles: ["admin"] },
         { href: "/currencies",               label: "Currency Rates",     icon: FaDollarSign,      roles: ["admin"] },
         { href: "/spin-sectors",             label: "Spin Management",    icon: FaCog,             roles: ["admin"] },
         { href: "/tasks",                    label: "Tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
@@ -101,7 +102,7 @@ export function Sidebar({ isOpen = true, onClose }) {
                                     url === "/admin/dashboard" ||
                                     url.startsWith("/admin/dashboard/");
                             } else if (item.href === "/products-uc") {
-                                isActive = url.startsWith("/products-");
+                                isActive = url === "/products-uc" || url.startsWith("/uc-products");
                             } else if (item.href.startsWith("/spin-sectors")) {
                                 isActive = url.startsWith("/spin-");
                             } else {

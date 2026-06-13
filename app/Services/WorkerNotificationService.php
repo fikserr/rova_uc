@@ -40,6 +40,7 @@ class WorkerNotificationService
             'uc'      => 'uc',
             'ml'      => 'ml',
             'service' => 'srv',
+            'bundle'  => 'bnd',
             default   => 'uc',
         };
 
@@ -170,6 +171,14 @@ class WorkerNotificationService
                 ->select('o.sell_price', 'u.username', 'u.id as uid', 's.title as product', 'o.target_telegram_id as account')
                 ->first(),
 
+            'bundle' => DB::table('bundle_orders as o')
+                ->leftJoin('users as u', 'u.id', '=', 'o.user_id')
+                ->leftJoin('uc_bundles as b', 'b.id', '=', 'o.bundle_id')
+                ->leftJoin('pubg_accounts as a', 'a.id', '=', 'o.pubg_account_id')
+                ->where('o.id', $orderId)
+                ->select('o.sell_price', 'u.username', 'u.id as uid', 'b.title as product', 'a.pubg_player_id as account')
+                ->first(),
+
             default => null,
         };
     }
@@ -180,12 +189,14 @@ class WorkerNotificationService
             'uc'      => '📦',
             'ml'      => '💎',
             'service' => '⭐',
+            'bundle'  => '🎁',
             default   => '📦',
         };
         $label = match ($type) {
             'uc'      => 'UC',
             'ml'      => 'ML Diamond',
             'service' => 'Service',
+            'bundle'  => "To'plam",
             default   => strtoupper($type),
         };
 
@@ -202,6 +213,7 @@ class WorkerNotificationService
             'uc'      => "🎮 PUBG ID: {$account}",
             'ml'      => "🎮 ML ID: {$account}",
             'service' => "📨 Target: @{$account}",
+            'bundle'  => "🎮 PUBG ID: {$account}",
             default   => "ID: {$account}",
         };
 
