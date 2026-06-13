@@ -8,6 +8,7 @@ use App\Models\UserBalance;
 use App\Services\TelegramAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TelegramWebAppController extends Controller
@@ -67,7 +68,7 @@ class TelegramWebAppController extends Controller
                     : ['message' => 'Invalid or expired init data'];
                 return response()->json($message, 401);
             }
-            return redirect('/login');
+            return redirect('/login?reason=auth_failed');
         }
 
         $userPayload = $this->extractUser($data);
@@ -83,7 +84,7 @@ class TelegramWebAppController extends Controller
                     'username' => $userPayload['username'] ?? null,
                 ]);
                 if (! $request->expectsJson()) {
-                    return redirect('/login');
+                    return redirect('/login?reason=phone_required');
                 }
                 return response()->json(['message' => __('auth.phone_required')], 403);
             }
@@ -164,21 +165,28 @@ class TelegramWebAppController extends Controller
 
     private function findRegisteredUser(array $userPayload): ?User
     {
-        $user = User::find($userPayload['id']);
-        if (! $user || empty($user->phone_number)) {
+        // Keep as string to avoid any integer overflow/truncation on 32-bit PDO
+        $tidStr = (string) ($userPayload['id'] ?? '');
+        if ($tidStr === '' || $tidStr === '0') {
             return null;
         }
 
-        if (($userPayload['username'] ?? null) && $user->username !== $userPayload['username']) {
-            $user->update(['username' => $userPayload['username']]);
+        // Use raw SQL for the existence check (safest for large Telegram IDs)
+        $raw = DB::selectOne("SELECT * FROM users WHERE id = {$tidStr} LIMIT 1");
+        if (! $raw || empty($raw->phone_number)) {
+            return null;
         }
 
-        UserBalance::firstOrCreate(
-            ['user_id' => $user->id],
-            ['balance' => 0, 'updated_at' => now()]
+        if (($userPayload['username'] ?? null) && $raw->username !== $userPayload['username']) {
+            DB::statement("UPDATE users SET username = ? WHERE id = {$tidStr}", [$userPayload['username']]);
+        }
+
+        DB::statement(
+            "INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tidStr}, 0, NOW())"
         );
 
-        return $user->fresh();
+        // User model now has keyType='string', so find() binds via PARAM_STR (no truncation)
+        return User::find($tidStr);
     }
 
     private function getInitDataFromRequest(Request $request): string

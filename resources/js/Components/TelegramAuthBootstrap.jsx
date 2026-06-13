@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 
 const STORAGE_KEY = "__tg_auth";
+// Tracks the initData of the last auth attempt to detect failure loops
+const ATTEMPT_KEY = "__tg_auth_attempt";
 
 function getTelegramInitData() {
     if (typeof window === "undefined") return "";
@@ -15,8 +17,25 @@ function getTelegramInitData() {
     return initData?.trim?.() ?? "";
 }
 
+// Extract telegram_id from initData string for comparison
+function getTelegramIdFromInitData(initData) {
+    try {
+        const params = new URLSearchParams(initData);
+        const userStr = params.get("user");
+        if (!userStr) return null;
+        const userObj = JSON.parse(decodeURIComponent(userStr));
+        return userObj?.id ?? null;
+    } catch (_) {
+        return null;
+    }
+}
+
 function submitAuthForm(initData) {
-    try { sessionStorage.setItem(STORAGE_KEY, initData); } catch (_) {}
+    try {
+        sessionStorage.setItem(STORAGE_KEY, initData);
+        // Track this attempt so we can detect failure on next load
+        sessionStorage.setItem(ATTEMPT_KEY, initData);
+    } catch (_) {}
     const old = document.getElementById("__tg_form");
     if (old) old.remove();
     const form = document.createElement("form");
@@ -39,7 +58,6 @@ export default function TelegramAuthBootstrap({
     user = null,
 }) {
     const tried = useRef(false);
-    const registrationRetryCount = useRef(0);
     const [status, setStatus] = useState("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -67,23 +85,34 @@ export default function TelegramAuthBootstrap({
         if (status === "failed") return;
 
         if (user) {
-            // User bor — lekin Telegram session bilan mos keladimi?
-            // sessionStorage da saqlangan initData bilan solishtiramiz
+            // Auth succeeded — clear any failure tracking
+            try { sessionStorage.removeItem(ATTEMPT_KEY); } catch (_) {}
+
             const initData = getTelegramInitData();
 
             if (initData) {
-                let stored = null;
-                try { stored = sessionStorage.getItem(STORAGE_KEY); } catch (_) {}
+                // Compare by telegram_id, not raw initData string.
+                // Raw initData changes every session (auth_date differs), but the
+                // user id stays the same. Comparing raw strings causes false positives.
+                const currentTgId = getTelegramIdFromInitData(initData);
+                const storedTgId = getTelegramIdFromInitData(
+                    (() => { try { return sessionStorage.getItem(STORAGE_KEY) ?? ""; } catch (_) { return ""; } })()
+                );
 
-                if (stored !== initData) {
-                    // Boshqa akkount initData si — form POST orqali qayta autentifikatsiya
-                    // fetch() emas: Android WebView da Set-Cookie navigatsiyaga ta'sir qilmaydi
+                if (
+                    currentTgId &&
+                    storedTgId &&
+                    currentTgId !== storedTgId
+                ) {
+                    // Different Telegram account — re-authenticate
                     submitAuthForm(initData);
                     return;
                 }
+
+                // Same user or can't determine — update stored initData
+                try { sessionStorage.setItem(STORAGE_KEY, initData); } catch (_) {}
             }
 
-            // initData mos — to'g'ri user
             setStatus("authenticated");
             if (isAuthPage) {
                 router.replace("/");
@@ -122,10 +151,39 @@ export default function TelegramAuthBootstrap({
                 return;
             }
 
+            // Detect failure loop: if we already attempted this initData and
+            // still ended up here with no user, auth failed.
+            let lastAttempt = null;
+            try { lastAttempt = sessionStorage.getItem(ATTEMPT_KEY); } catch (_) {}
+
+            if (lastAttempt === initData) {
+                try { sessionStorage.removeItem(ATTEMPT_KEY); } catch (_) {}
+
+                // Distinguish failure reason from URL param set by the backend redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                const reason = urlParams.get("reason");
+
+                if (reason === "phone_required" || reason === "no_account") {
+                    fail(
+                        "Telegram bot orqali ro'yxatdan o'tishingiz kerak. Botni oching, /start bosing va telefon raqamingizni ulashing.",
+                        "E_NOT_REGISTERED"
+                    );
+                } else if (reason === "auth_failed") {
+                    fail(
+                        "Autentifikatsiya xatosi yuz berdi. Iltimos qayta urinib ko'ring yoki botga /start bosing.",
+                        "E_AUTH_FAILED"
+                    );
+                } else {
+                    fail(
+                        "Kirish tasdiqlanmadi. Qayta urinib ko'ring.",
+                        "E_UNKNOWN"
+                    );
+                }
+                return;
+            }
+
             tried.current = true;
             setStatus("authenticating");
-
-            // initData mavjud, user yo'q → form POST (Android va boshqa barcha platformalar uchun)
             submitAuthForm(initData);
         };
 
@@ -161,10 +219,24 @@ export default function TelegramAuthBootstrap({
                         </>
                     ) : (
                         <>
-                            <h1 className="text-xl font-semibold">Kirish tasdiqlanmadi</h1>
+                            <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border-2 border-red-500/40 bg-red-500/10 text-2xl">
+                                ✕
+                            </div>
+                            <h1 className="text-xl font-semibold text-red-400">
+                                Kirish tasdiqlanmadi
+                            </h1>
                             <p className="mt-3 text-sm text-slate-300">
                                 {errorMessage || "Auth failed (E_UNKNOWN_UI)."}
                             </p>
+                            <button
+                                className="mt-5 w-full rounded-xl bg-white/10 py-2.5 text-sm font-medium text-white hover:bg-white/20 transition"
+                                onClick={() => {
+                                    try { sessionStorage.removeItem(ATTEMPT_KEY); } catch (_) {}
+                                    window.location.reload();
+                                }}
+                            >
+                                Qayta urinish
+                            </button>
                         </>
                     )}
                 </div>

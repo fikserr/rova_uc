@@ -28,10 +28,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    /**
-     * The primary key type is integer (unsignedBigInteger)
-     */
-    protected $keyType = 'int';
+    // Use 'string' so PDO binds large Telegram IDs (>2.1B) via PARAM_STR,
+    // avoiding 32-bit integer truncation in PDO parameter binding.
+    protected $keyType = 'string';
 
 
     public function balance()
