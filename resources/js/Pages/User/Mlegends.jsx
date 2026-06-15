@@ -187,19 +187,24 @@ function Mlegends() {
                         {t("shop.select_package")}
                     </h2>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        {service.products.map((product) => (
-                            <UserProductCard
-                                product={{
-                                    type: "diamond",
-                                    value: product.diamonds,
-                                    sell_price: product.sell_price,
-                                    sell_currency: product.sell_currency,
-                                    title: product.title,
-                                }}
-                                onClick={setSelectedProduct.bind(null, product)}
-                                key={product.id}
-                            />
-                        ))}
+                        {[...service.products]
+                            .sort((a, b) => a.sell_price - b.sell_price)
+                            .map((product) => (
+                                <UserProductCard
+                                    product={{
+                                        type: "diamond",
+                                        value: product.diamonds,
+                                        sell_price: product.sell_price,
+                                        sell_currency: product.sell_currency,
+                                        title: product.title,
+                                    }}
+                                    onClick={setSelectedProduct.bind(
+                                        null,
+                                        product,
+                                    )}
+                                    key={product.id}
+                                />
+                            ))}
                     </div>
                 </div>
 

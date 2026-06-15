@@ -124,26 +124,28 @@ function UserTgStars() {
                         {t("shop.select_package")}
                     </h2>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {services.map(
-                            (s) =>
-                                s.service_type === "stars" && (
-                                    <UserProductCard
-                                        product={{
-                                            type: "tg",
-                                            service_type: s.service_type,
-                                            value: s.value,
-                                            sell_price: s.sell_price,
-                                            sell_currency: s.sell_currency,
-                                            title: s.title,
-                                        }}
-                                        onClick={setSelectedProduct.bind(
-                                            null,
-                                            s,
-                                        )}
-                                        key={s.id}
-                                    />
-                                ),
-                        )}
+                        {[...services]
+                            .sort((a, b) => a.sell_price - b.sell_price)
+                            .map(
+                                (s) =>
+                                    s.service_type === "stars" && (
+                                        <UserProductCard
+                                            product={{
+                                                type: "tg",
+                                                service_type: s.service_type,
+                                                value: s.value,
+                                                sell_price: s.sell_price,
+                                                sell_currency: s.sell_currency,
+                                                title: s.title,
+                                            }}
+                                            onClick={setSelectedProduct.bind(
+                                                null,
+                                                s,
+                                            )}
+                                            key={s.id}
+                                        />
+                                    ),
+                            )}
                     </div>
                 </div>
 
