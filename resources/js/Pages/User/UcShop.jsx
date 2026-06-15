@@ -33,14 +33,18 @@ function UcShop() {
     const [verifyStatus, setVerifyStatus] = useState(null);
     const [verifyMessage, setVerifyMessage] = useState("");
 
-    const { products, bundles = [], flash, user, lastPubgAccount } = usePage().props;
+    const {
+        products,
+        bundles = [],
+        flash,
+        user,
+        lastPubgAccount,
+    } = usePage().props;
     const userBalance = Number(user?.balance ?? 0);
 
     const activeItem = selectedProduct || selectedBundle;
     const activeItemType = selectedProduct ? "uc" : "bundle";
-    const activeItemPrice = activeItem
-        ? Number(activeItem.sell_price ?? 0)
-        : 0;
+    const activeItemPrice = activeItem ? Number(activeItem.sell_price ?? 0) : 0;
 
     // Reset payment method when item or balance changes
     useEffect(() => {
@@ -235,19 +239,24 @@ function UcShop() {
                             {t("shop.select_package")}
                         </h2>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            {products.map((product) => (
-                                <UserProductCard
-                                    product={{
-                                        type: "uc",
-                                        value: product.uc_amount,
-                                        sell_price: product.sell_price,
-                                        sell_currency: product.sell_currency,
-                                        title: product.title,
-                                    }}
-                                    onClick={() => setSelectedProduct(product)}
-                                    key={product.id}
-                                />
-                            ))}
+                            {[...products]
+                                .sort((a, b) => a.sell_price - b.sell_price)
+                                .map((product) => (
+                                    <UserProductCard
+                                        product={{
+                                            type: "uc",
+                                            value: product.uc_amount,
+                                            sell_price: product.sell_price,
+                                            sell_currency:
+                                                product.sell_currency,
+                                            title: product.title,
+                                        }}
+                                        onClick={() =>
+                                            setSelectedProduct(product)
+                                        }
+                                        key={product.id}
+                                    />
+                                ))}
                         </div>
                     </div>
                 )}
@@ -269,51 +278,61 @@ function UcShop() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                {bundles.map((bundle) => (
-                                    <button
-                                        key={bundle.id}
-                                        onClick={() => setSelectedBundle(bundle)}
-                                        className="group relative w-full rounded-2xl text-left transition-all duration-300 overflow-hidden border bg-white dark:bg-slate-800/90 border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:shadow-blue-100 dark:hover:shadow-blue-900/30 cursor-pointer"
-                                    >
-                                        {/* Top accent bar */}
-                                        <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
+                                {[...bundles]
+                                    .sort((a, b) => a.sell_price - b.sell_price)
+                                    .map((bundle) => (
+                                        <button
+                                            key={bundle.id}
+                                            onClick={() =>
+                                                setSelectedBundle(bundle)
+                                            }
+                                            className="group relative w-full rounded-2xl text-left transition-all duration-300 overflow-hidden border bg-white dark:bg-slate-800/90 border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:shadow-blue-100 dark:hover:shadow-blue-900/30 cursor-pointer"
+                                        >
+                                            {/* Top accent bar */}
+                                            <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
 
-                                        {/* Image */}
-                                        <div className="relative h-36 bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden">
-                                            {bundle.image_url ? (
-                                                <img
-                                                    src={bundle.image_url}
-                                                    alt={bundle.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                />
-                                            ) : (
-                                                <ImageIcon className="size-10 text-slate-300 dark:text-slate-600" />
-                                            )}
-                                        </div>
+                                            {/* Image */}
+                                            <div className="relative h-36 bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden">
+                                                {bundle.image_url ? (
+                                                    <img
+                                                        src={bundle.image_url}
+                                                        alt={bundle.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    />
+                                                ) : (
+                                                    <ImageIcon className="size-10 text-slate-300 dark:text-slate-600" />
+                                                )}
+                                            </div>
 
-                                        <div className="p-4">
-                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1 truncate">
-                                                {bundle.title}
-                                            </h3>
-                                            <div className="flex flex-col items-start gap-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 px-3 py-2.5">
-                                                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                                    {t("others.price")}
-                                                </p>
-                                                <p className="text-base font-bold text-blue-600 dark:text-blue-400 leading-none">
-                                                    {Number(
-                                                        Math.floor(bundle.sell_price),
-                                                    ).toLocaleString("fr-FR")}
-                                                    <span className="text-xs font-bold ml-1">
-                                                        UZS
-                                                    </span>
-                                                </p>
-                                                <div className="flex items-center gap-2 px-3 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold shadow-sm transition-all group-hover:scale-105">
-                                                    <span>{t("others.buy")}</span>
+                                            <div className="p-4">
+                                                <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1 truncate">
+                                                    {bundle.title}
+                                                </h3>
+                                                <div className="flex flex-col items-start gap-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 px-3 py-2.5">
+                                                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                                        {t("others.price")}
+                                                    </p>
+                                                    <p className="text-base font-bold text-blue-600 dark:text-blue-400 leading-none">
+                                                        {Number(
+                                                            Math.floor(
+                                                                bundle.sell_price,
+                                                            ),
+                                                        ).toLocaleString(
+                                                            "fr-FR",
+                                                        )}
+                                                        <span className="text-xs font-bold ml-1">
+                                                            UZS
+                                                        </span>
+                                                    </p>
+                                                    <div className="flex items-center gap-2 px-3 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold shadow-sm transition-all group-hover:scale-105">
+                                                        <span>
+                                                            {t("others.buy")}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </button>
-                                ))}
+                                        </button>
+                                    ))}
                             </div>
                         )}
                     </div>
@@ -353,11 +372,16 @@ function UcShop() {
                                     </span>
                                     {activeItemType === "uc" ? (
                                         <span className="flex items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
-                                            <img src={UcIcon} alt="UC" className="w-5 h-5" />
+                                            <img
+                                                src={UcIcon}
+                                                alt="UC"
+                                                className="w-5 h-5"
+                                            />
                                             {selectedProduct.uc_amount} UC
                                             {selectedProduct.bonus && (
                                                 <span className="rounded-full border border-emerald-600 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-500 dark:text-emerald-300">
-                                                    +{selectedProduct.bonus} bonus
+                                                    +{selectedProduct.bonus}{" "}
+                                                    bonus
                                                 </span>
                                             )}
                                         </span>
@@ -389,12 +413,15 @@ function UcShop() {
                                             type="text"
                                             value={pubgPlayerId}
                                             onChange={handlePlayerIdChange}
-                                            placeholder={t("shop.pubg_id_placeholder")}
+                                            placeholder={t(
+                                                "shop.pubg_id_placeholder",
+                                            )}
                                             className={`h-10 flex-1 min-w-0 rounded-lg border px-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition
                                                 ${
                                                     verifyStatus === "success"
                                                         ? "border-emerald-400 bg-emerald-50/50 focus:ring-2 focus:ring-emerald-100 dark:border-emerald-600 dark:bg-emerald-900/10"
-                                                        : verifyStatus === "error"
+                                                        : verifyStatus ===
+                                                            "error"
                                                           ? "border-red-400 bg-red-50/50 focus:ring-2 focus:ring-red-100 dark:border-red-600 dark:bg-red-900/10"
                                                           : "border-slate-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500 dark:focus:ring-blue-900/30"
                                                 }
@@ -403,15 +430,23 @@ function UcShop() {
                                         <button
                                             type="button"
                                             onClick={handleVerify}
-                                            disabled={isVerifying || !pubgPlayerId.trim()}
+                                            disabled={
+                                                isVerifying ||
+                                                !pubgPlayerId.trim()
+                                            }
                                             className="h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100 flex items-center gap-1.5 shrink-0"
                                         >
                                             {isVerifying ? (
-                                                <Loader2 size={13} className="animate-spin" />
+                                                <Loader2
+                                                    size={13}
+                                                    className="animate-spin"
+                                                />
                                             ) : (
                                                 <CheckCircle size={13} />
                                             )}
-                                            {isVerifying ? "..." : t("shop.verify_btn")}
+                                            {isVerifying
+                                                ? "..."
+                                                : t("shop.verify_btn")}
                                         </button>
                                     </div>
                                     {verifyStatus === "success" && (
@@ -436,7 +471,9 @@ function UcShop() {
                                         {verifyStatus === "success" && (
                                             <span className="ml-auto flex items-center gap-0.5 text-slate-400 dark:text-slate-500">
                                                 <Lock size={10} />
-                                                <span>{t("shop.auto_filled")}</span>
+                                                <span>
+                                                    {t("shop.auto_filled")}
+                                                </span>
                                             </span>
                                         )}
                                     </label>
@@ -444,7 +481,9 @@ function UcShop() {
                                         type="text"
                                         value={pubgName}
                                         readOnly
-                                        placeholder={t("shop.nickname_auto_placeholder")}
+                                        placeholder={t(
+                                            "shop.nickname_auto_placeholder",
+                                        )}
                                         className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-500 placeholder-slate-400 outline-none cursor-not-allowed dark:border-slate-700 dark:bg-slate-700/50 dark:text-slate-400 dark:placeholder-slate-500"
                                     />
                                 </div>
@@ -457,7 +496,10 @@ function UcShop() {
                                         {t("shop.balance_label")}
                                     </span>
                                     <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                        {Number(userBalance).toLocaleString("fr-FR")} UZS
+                                        {Number(userBalance).toLocaleString(
+                                            "fr-FR",
+                                        )}{" "}
+                                        UZS
                                     </span>
                                 </div>
                                 {userBalance < activeItemPrice && (
@@ -493,7 +535,10 @@ function UcShop() {
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 size={18} className="animate-spin" />
+                                        <Loader2
+                                            size={18}
+                                            className="animate-spin"
+                                        />
                                         {t("shop.submitting")}
                                     </>
                                 ) : (
