@@ -113,7 +113,7 @@ export default function AdminSecurity({ hasPassword }) {
 
             {/* Header */}
             <div className="flex items-center gap-3">
-                <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200 dark:shadow-blue-900/40">
+                <div className="size-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200 dark:shadow-blue-900/40">
                     <ShieldCheck className="size-5 text-white" />
                 </div>
                 <div>

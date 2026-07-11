@@ -2,7 +2,7 @@ import { Head, useForm, usePage } from "@inertiajs/react";
 import { AlertCircle, CheckCircle, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../Components/TopBar";
-import ProductCard from "../../Components/ui/productCard";
+import ProductCard from "../../Components/ui/ProductCard";
 
 export default function MlProducts() {
     const { products, flash, currencies = [] } = usePage().props;
@@ -137,7 +137,7 @@ export default function MlProducts() {
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
                             <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white text-sm">
+                                <div className="size-8 rounded-xl bg-linear-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white text-sm">
                                     💎
                                 </div>
                                 <h2 className="text-base font-bold text-slate-800 dark:text-white">

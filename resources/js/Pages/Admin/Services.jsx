@@ -2,7 +2,7 @@ import { Head, useForm, usePage } from "@inertiajs/react"
 import { AlertCircle, CheckCircle, Sparkles, Star, X } from "lucide-react"
 import { useState } from "react"
 import TopBar from "../../Components/TopBar"
-import ProductCard from "../../Components/ui/productCard"
+import ProductCard from "../../Components/ui/ProductCard"
 
 export default function Services() {
     const { services, flash, currencies = [] } = usePage().props;
