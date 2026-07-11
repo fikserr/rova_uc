@@ -1,30 +1,83 @@
 import { Head, router, usePage } from "@inertiajs/react";
 import axios from "axios";
 import {
-    ChevronDown, ChevronRight, Loader2, RefreshCw, Save, X
+    ChevronLeft,
+    ChevronRight,
+    Loader2,
+    RefreshCw,
+    Save,
+    X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import AdminLayout from "../Layout/AdminLayout";
 
 const CATEGORY_COLORS = {
-    "Game":                    "from-violet-500 to-purple-600",
-    "Aplikasi Premium":        "from-blue-500 to-indigo-600",
-    "E-Wallet":                "from-emerald-500 to-teal-600",
-    "SMM":                     "from-pink-500 to-rose-600",
+    Game: "from-violet-500 to-purple-600",
+    "Aplikasi Premium": "from-blue-500 to-indigo-600",
+    "E-Wallet": "from-emerald-500 to-teal-600",
+    SMM: "from-pink-500 to-rose-600",
     "Top Up & Digital Services": "from-amber-500 to-orange-600",
-    "Tagihan":                 "from-slate-500 to-gray-600",
-    "Voucher":                 "from-cyan-500 to-sky-600",
+    Tagihan: "from-slate-500 to-gray-600",
+    Voucher: "from-cyan-500 to-sky-600",
 };
 
 function catColor(cat) {
     return CATEGORY_COLORS[cat] ?? "from-slate-400 to-slate-600";
 }
 
-function VariantRow({ product, idrRate, onSaved }) {
-    const [editing, setEditing]   = useState(false);
+/* ---------- Breadcrumb / back nav ---------- */
+
+function Breadcrumb({ items, onNavigate }) {
+    // items: [{ label, onClick? }] - last item is current (not clickable)
+    return (
+        <div className="flex items-center gap-1 sm:gap-1.5 mb-4 text-xs sm:text-sm flex-wrap">
+            {items.map((item, i) => {
+                const isLast = i === items.length - 1;
+                return (
+                    <div key={i} className="flex items-center gap-1.5">
+                        {i > 0 && (
+                            <ChevronRight className="size-3.5 text-slate-300 dark:text-slate-600" />
+                        )}
+                        {isLast ? (
+                            <span className="font-bold text-slate-800 dark:text-white">
+                                {item.label}
+                            </span>
+                        ) : (
+                            <button
+                                onClick={() => onNavigate(i)}
+                                className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                            >
+                                {item.label}
+                            </button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function BackButton({ label, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            className="flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+        >
+            <ChevronLeft className="size-4" />
+            {label}
+        </button>
+    );
+}
+
+/* ---------- Variant editing row ---------- */
+/* Grid column template shared between header + rows on md+ screens */
+const VARIANT_GRID_COLS =
+    "md:grid-cols-[minmax(0,2fr)_90px_110px_64px_84px_120px]";
+
+function VariantRow({ product, onSaved }) {
+    const [editing, setEditing] = useState(false);
     const [priceUzs, setPriceUzs] = useState(String(product.price_uzs));
-    const [active, setActive]     = useState(product.is_active);
-    const [saving, setSaving]     = useState(false);
+    const [active, setActive] = useState(product.is_active);
+    const [saving, setSaving] = useState(false);
 
     const save = async () => {
         setSaving(true);
@@ -40,88 +93,187 @@ function VariantRow({ product, idrRate, onSaved }) {
         }
     };
 
+    const cancel = () => {
+        setEditing(false);
+        setPriceUzs(String(product.price_uzs));
+        setActive(product.is_active);
+    };
+
+    const statusPill = (isOn) => (
+        <span
+            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isOn ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-400 dark:bg-slate-700"}`}
+        >
+            {isOn ? "Aktiv" : "Yopiq"}
+        </span>
+    );
+
+    const priceInput = (
+        <input
+            type="number"
+            value={priceUzs}
+            onChange={(e) => setPriceUzs(e.target.value)}
+            min="100"
+            step="1000"
+            className="w-full md:w-28 text-right px-2 py-1.5 rounded-lg border border-violet-300 dark:border-violet-600 bg-white dark:bg-slate-800 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-violet-500"
+        />
+    );
+
+    const activeToggle = (
+        <button
+            onClick={() => setActive((a) => !a)}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700"}`}
+        >
+            {active ? "Aktiv" : "Yopiq"}
+        </button>
+    );
+
+    const editActions = (
+        <div className="flex items-center gap-1.5">
+            <button
+                onClick={save}
+                disabled={saving}
+                className="p-2 md:p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg disabled:opacity-50"
+            >
+                {saving ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                    <Save className="size-3.5" />
+                )}
+            </button>
+            <button
+                onClick={cancel}
+                className="p-2 md:p-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+            >
+                <X className="size-3.5" />
+            </button>
+        </div>
+    );
+
     return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-0">
-            <td className="px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 max-w-56 truncate">
-                {product.name}
-            </td>
-            <td className="px-4 py-2.5 text-right text-xs font-mono text-slate-500 dark:text-slate-400">
-                {Number(product.price_idr).toLocaleString()}
-            </td>
-            <td className="px-4 py-2.5 text-right">
-                {editing ? (
-                    <input
-                        type="number"
-                        value={priceUzs}
-                        onChange={e => setPriceUzs(e.target.value)}
-                        min="100"
-                        step="1000"
-                        className="w-28 text-right px-2 py-1 rounded-lg border border-violet-300 dark:border-violet-600 bg-white dark:bg-slate-800 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-violet-500"
-                    />
-                ) : (
-                    <span className="text-sm font-bold text-slate-800 dark:text-white">
-                        {Number(product.price_uzs).toLocaleString()}
-                    </span>
-                )}
-            </td>
-            <td className="px-4 py-2.5 text-center text-xs text-slate-400">
-                {Number(product.markup_percent).toFixed(1)}%
-            </td>
-            <td className="px-4 py-2.5 text-center">
-                {editing ? (
-                    <button
-                        onClick={() => setActive(a => !a)}
-                        className={`px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700"}`}
-                    >
-                        {active ? "Aktiv" : "Yopiq"}
-                    </button>
-                ) : (
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${product.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-400 dark:bg-slate-700"}`}>
-                        {product.is_active ? "Aktiv" : "Yopiq"}
-                    </span>
-                )}
-            </td>
-            <td className="px-4 py-2.5 text-center">
-                {editing ? (
-                    <div className="flex items-center justify-center gap-1.5">
-                        <button onClick={save} disabled={saving}
-                            className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg disabled:opacity-50">
-                            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+        <>
+            {/* Desktop / tablet: grid row (md and up) */}
+            <div
+                className={`hidden md:grid ${VARIANT_GRID_COLS} gap-2 items-center px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-0`}
+            >
+                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                    {product.name}
+                </span>
+                <span className="text-right text-xs font-mono text-slate-500 dark:text-slate-400">
+                    {Number(product.price_idr).toLocaleString()}
+                </span>
+                <span className="text-right">
+                    {editing ? (
+                        priceInput
+                    ) : (
+                        <span className="text-sm font-bold text-slate-800 dark:text-white">
+                            {Number(product.price_uzs).toLocaleString()}
+                        </span>
+                    )}
+                </span>
+                <span className="text-center text-xs text-slate-400">
+                    {Number(product.markup_percent).toFixed(1)}%
+                </span>
+                <span className="flex justify-center">
+                    {editing ? activeToggle : statusPill(product.is_active)}
+                </span>
+                <span className="flex justify-center">
+                    {editing ? (
+                        editActions
+                    ) : (
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                        >
+                            Tahrir
                         </button>
-                        <button onClick={() => { setEditing(false); setPriceUzs(String(product.price_uzs)); setActive(product.is_active); }}
-                            className="p-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
-                            <X className="size-3.5" />
-                        </button>
+                    )}
+                </span>
+            </div>
+
+            {/* Mobile: stacked card (below md) */}
+            <div className="md:hidden px-4 py-3.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 min-w-0 flex-1">
+                        {product.name}
+                    </p>
+                    {editing ? null : statusPill(product.is_active)}
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                    <span>
+                        IDR:{" "}
+                        <span className="font-mono">
+                            {Number(product.price_idr).toLocaleString()}
+                        </span>
+                    </span>
+                    <span>
+                        Foyda: {Number(product.markup_percent).toFixed(1)}%
+                    </span>
+                </div>
+
+                {editing ? (
+                    <div className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                            {priceInput}
+                            <span className="text-xs text-slate-400 shrink-0">
+                                UZS
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                            {activeToggle}
+                            {editActions}
+                        </div>
                     </div>
                 ) : (
-                    <button onClick={() => setEditing(true)}
-                        className="px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
-                        Tahrir
-                    </button>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-base font-bold text-slate-800 dark:text-white">
+                            {Number(product.price_uzs).toLocaleString()} UZS
+                        </span>
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                        >
+                            Tahrir
+                        </button>
+                    </div>
                 )}
-            </td>
-        </tr>
+            </div>
+        </>
     );
 }
 
-function TypeSection({ typeName, products: initProducts, idrRate, markup, onBulkApply }) {
+/* ---------- Type (server/variant group) table ---------- */
+
+function TypeSection({
+    typeName,
+    products: initProducts,
+    idrRate,
+    markup,
+    onBulkApply,
+}) {
     const [products, setProducts] = useState(initProducts);
-    const [bulkMarkup, setBulkMarkup]   = useState(markup);
-    const [applying, setApplying]       = useState(false);
+    const [bulkMarkup, setBulkMarkup] = useState(markup);
+    const [applying, setApplying] = useState(false);
 
     const handleSaved = (updated) => {
-        setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+        setProducts((prev) =>
+            prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)),
+        );
     };
 
     const applyBulk = async () => {
         setApplying(true);
         try {
             await onBulkApply(bulkMarkup, typeName);
-            // Refresh prices locally
-            setProducts(prev => prev.map(p => {
-                const cost = p.price_idr * idrRate;
-                return { ...p, markup_percent: bulkMarkup, price_uzs: Math.ceil(cost * (1 + bulkMarkup / 100)) };
-            }));
+            setProducts((prev) =>
+                prev.map((p) => {
+                    const cost = p.price_idr * idrRate;
+                    return {
+                        ...p,
+                        markup_percent: bulkMarkup,
+                        price_uzs: Math.ceil(cost * (1 + bulkMarkup / 100)),
+                    };
+                }),
+            );
         } finally {
             setApplying(false);
         }
@@ -129,186 +281,456 @@ function TypeSection({ typeName, products: initProducts, idrRate, markup, onBulk
 
     return (
         <div className="mb-3">
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-700/60 rounded-lg mb-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700/60 rounded-lg mb-1">
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-                    {typeName} <span className="font-normal text-slate-400">({products.length})</span>
+                    {typeName}{" "}
+                    <span className="font-normal text-slate-400">
+                        ({products.length})
+                    </span>
                 </span>
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
                         value={bulkMarkup}
-                        onChange={e => setBulkMarkup(parseFloat(e.target.value) || 0)}
-                        min="0" max="500"
+                        onChange={(e) =>
+                            setBulkMarkup(parseFloat(e.target.value) || 0)
+                        }
+                        min="0"
+                        max="500"
                         className="w-16 text-right px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
                     />
                     <span className="text-xs text-slate-400">%</span>
-                    <button onClick={applyBulk} disabled={applying}
-                        className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold disabled:opacity-50 flex items-center gap-1">
-                        {applying ? <Loader2 className="size-3 animate-spin" /> : null}
+                    <button
+                        onClick={applyBulk}
+                        disabled={applying}
+                        className="px-2.5 py-1.5 md:py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold disabled:opacity-50 flex items-center gap-1"
+                    >
+                        {applying ? (
+                            <Loader2 className="size-3 animate-spin" />
+                        ) : null}
                         Qo'lla
                     </button>
                 </div>
             </div>
-            <table className="w-full text-sm">
-                <thead>
-                    <tr className="text-xs text-slate-400 uppercase">
-                        <th className="text-left px-4 py-1.5">Variant</th>
-                        <th className="text-right px-4 py-1.5">IDR</th>
-                        <th className="text-right px-4 py-1.5">UZS narx</th>
-                        <th className="text-center px-4 py-1.5">Foyda%</th>
-                        <th className="text-center px-4 py-1.5">Holat</th>
-                        <th className="text-center px-4 py-1.5">Amal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {products.map(p => (
-                        <VariantRow key={p.id} product={p} idrRate={idrRate} onSaved={handleSaved} />
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
 
-function GamePanel({ category, game, idrRate, defaultMarkup }) {
-    const [data, setData]       = useState(null);
-    const [loading, setLoading] = useState(false);
-    const loaded                = useRef(false);
-
-    useEffect(() => {
-        if (loaded.current) return;
-        loaded.current = true;
-        setLoading(true);
-        axios.get('/sekali-products/variants', { params: { category, game } })
-            .then(r => setData(r.data))
-            .finally(() => setLoading(false));
-    }, []);
-
-    const handleBulkApply = async (markup, productType) => {
-        await axios.post('/sekali-products/bulk-markup', {
-            markup_percent: markup,
-            category,
-            game,
-            product_type: productType === 'Standard' ? null : productType,
-        });
-    };
-
-    if (loading) return (
-        <div className="flex items-center justify-center py-10">
-            <Loader2 className="size-6 animate-spin text-violet-500" />
-        </div>
-    );
-    if (!data) return null;
-
-    const { grouped, types } = data;
-
-    return (
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                    Jami: <strong>{data.total}</strong> variant, <strong>{types.length}</strong> server/tur
-                </span>
+            {/* Header row: only shown on md+, mobile cards self-label each field */}
+            <div
+                className={`hidden md:grid ${VARIANT_GRID_COLS} gap-2 px-4 py-1.5 text-xs text-slate-400 uppercase`}
+            >
+                <span className="text-left">Variant</span>
+                <span className="text-right">IDR</span>
+                <span className="text-right">UZS narx</span>
+                <span className="text-center">Foyda%</span>
+                <span className="text-center">Holat</span>
+                <span className="text-center">Amal</span>
             </div>
-            <div className="p-4">
-                {types.map(type => (
-                    <TypeSection
-                        key={type}
-                        typeName={type}
-                        products={grouped[type] ?? []}
-                        idrRate={idrRate}
-                        markup={defaultMarkup}
-                        onBulkApply={handleBulkApply}
-                    />
+
+            <div>
+                {products.map((p) => (
+                    <VariantRow key={p.id} product={p} onSaved={handleSaved} />
                 ))}
             </div>
         </div>
     );
 }
 
-function GameRow({ category, game, idrRate, defaultMarkup }) {
-    const [open, setOpen] = useState(false);
+/* ---------- Server (type) list screen inside a game ---------- */
+
+function ServerListPage({
+    category,
+    game,
+    types,
+    grouped,
+    total,
+    onSelectType,
+    onBack,
+    onBreadcrumb,
+}) {
+    const [filter, setFilter] = useState("");
+
+    const filteredTypes = filter.trim()
+        ? types.filter((t) =>
+              t.toLowerCase().includes(filter.trim().toLowerCase()),
+          )
+        : types;
 
     return (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mb-2">
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-            >
-                <span className="font-semibold text-slate-800 dark:text-white text-sm">{game}</span>
-                {open
-                    ? <ChevronDown className="size-4 text-slate-400" />
-                    : <ChevronRight className="size-4 text-slate-400" />}
-            </button>
-            {open && (
-                <div className="border-t border-slate-100 dark:border-slate-700 p-3 bg-slate-50/50 dark:bg-slate-900/30">
-                    <GamePanel category={category} game={game} idrRate={idrRate} defaultMarkup={defaultMarkup} />
-                </div>
-            )}
+        <div>
+            <Breadcrumb
+                items={[
+                    { label: "Kategoriyalar" },
+                    { label: category },
+                    { label: game },
+                ]}
+                onNavigate={onBreadcrumb}
+            />
+            <BackButton label={`${category} ga qaytish`} onClick={onBack} />
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    Jami: <strong>{total}</strong> variant,{" "}
+                    <strong>{types.length}</strong> server/tur
+                </span>
+                {types.length > 6 && (
+                    <input
+                        type="text"
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        placeholder="Server qidirish..."
+                        className="w-full sm:w-48 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                    />
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredTypes.map((type) => {
+                    const count = (grouped[type] ?? []).length;
+                    return (
+                        <button
+                            key={type}
+                            onClick={() => onSelectType(type)}
+                            className="flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-sm transition-all text-left"
+                        >
+                            <div className="min-w-0">
+                                <p className="font-bold text-slate-800 dark:text-white text-sm uppercase tracking-wide truncate">
+                                    {type}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    {count} ta variant
+                                </p>
+                            </div>
+                            <ChevronRight className="size-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                        </button>
+                    );
+                })}
+                {filteredTypes.length === 0 && (
+                    <p className="text-sm text-slate-400 col-span-full py-6 text-center">
+                        Hech narsa topilmadi
+                    </p>
+                )}
+            </div>
         </div>
     );
 }
 
-function CategorySection({ category, games, idrRate, defaultMarkup }) {
-    const [open, setOpen] = useState(false);
+/* ---------- Single server's variant table, full screen ---------- */
+
+function ServerDetailPage({
+    category,
+    game,
+    type,
+    products,
+    idrRate,
+    onBulkApply,
+    onBack,
+    onBreadcrumb,
+}) {
+    // breadcrumb click: 0/1 = go up to root state (category/game reset), 2 = back to server list
+    const handleBreadcrumb = (level) => {
+        if (level <= 1) onBreadcrumb(level);
+        else onBack();
+    };
+
+    return (
+        <div>
+            <Breadcrumb
+                items={[
+                    { label: "Kategoriyalar" },
+                    { label: category },
+                    { label: game },
+                    { label: type },
+                ]}
+                onNavigate={handleBreadcrumb}
+            />
+            <BackButton label="Serverlarga qaytish" onClick={onBack} />
+
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div className="p-2 sm:p-4">
+                    <TypeSection
+                        typeName={type}
+                        products={products}
+                        idrRate={idrRate}
+                        markup={20}
+                        onBulkApply={onBulkApply}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- Full-screen "page" for a single game: loads data, routes to server list or detail ---------- */
+
+function GamePage({ category, game, idrRate, onBack, onBreadcrumb }) {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedType, setSelectedType] = useState(null);
+    const loaded = useRef(false);
+
+    useEffect(() => {
+        if (loaded.current) return;
+        loaded.current = true;
+        setLoading(true);
+        axios
+            .get("/sekali-products/variants", { params: { category, game } })
+            .then((r) => setData(r.data))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleBulkApply = async (markup, productType) => {
+        await axios.post("/sekali-products/bulk-markup", {
+            markup_percent: markup,
+            category,
+            game,
+            product_type: productType === "Standard" ? null : productType,
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <Loader2 className="size-6 animate-spin text-violet-500" />
+            </div>
+        );
+    }
+    if (!data) return null;
+
+    if (!selectedType) {
+        return (
+            <ServerListPage
+                category={category}
+                game={game}
+                types={data.types}
+                grouped={data.grouped}
+                total={data.total}
+                onSelectType={setSelectedType}
+                onBack={onBack}
+                onBreadcrumb={onBreadcrumb}
+            />
+        );
+    }
+
+    return (
+        <ServerDetailPage
+            category={category}
+            game={game}
+            type={selectedType}
+            products={data.grouped[selectedType] ?? []}
+            idrRate={idrRate}
+            onBulkApply={handleBulkApply}
+            onBack={() => setSelectedType(null)}
+            onBreadcrumb={onBreadcrumb}
+        />
+    );
+}
+
+/* ---------- Page listing games inside a category ---------- */
+
+function CategoryPage({ category, games, onSelectGame, onBack }) {
     const color = catColor(category);
 
     return (
-        <div className="mb-4 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center gap-3 px-5 py-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors text-left"
-            >
-                <div className={`size-9 rounded-xl bg-linear-to-br ${color} flex items-center justify-center shrink-0`}>
-                    <span className="text-white font-bold text-sm">{category.charAt(0)}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 dark:text-white">{category}</p>
-                    <p className="text-xs text-slate-400">{games.length} ta mahsulot/o'yin</p>
-                </div>
-                {open
-                    ? <ChevronDown className="size-5 text-slate-400" />
-                    : <ChevronRight className="size-5 text-slate-400" />}
-            </button>
-            {open && (
-                <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/20">
-                    {games.map(game => (
-                        <GameRow key={game} category={category} game={game} idrRate={idrRate} defaultMarkup={20} />
-                    ))}
+        <div>
+            <Breadcrumb
+                items={[{ label: "Kategoriyalar" }, { label: category }]}
+                onNavigate={onBack}
+            />
+            <BackButton
+                label="Kategoriyalarga qaytish"
+                onClick={() => onBack(0)}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {games.map((game) => (
+                    <button
+                        key={game}
+                        onClick={() => onSelectGame(game)}
+                        className="flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-sm transition-all text-left"
+                    >
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div
+                                className={`size-8 rounded-lg bg-linear-to-br ${color} flex items-center justify-center shrink-0`}
+                            >
+                                <span className="text-white font-bold text-xs">
+                                    {game.charAt(0)}
+                                </span>
+                            </div>
+                            <span className="font-semibold text-slate-800 dark:text-white text-sm truncate">
+                                {game}
+                            </span>
+                        </div>
+                        <ChevronRight className="size-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ---------- Global search across every category's items ---------- */
+
+function GlobalSearch({ tree, categories, onJump }) {
+    const [query, setQuery] = useState("");
+
+    const q = query.trim().toLowerCase();
+
+    // flat index built fresh each render off `tree` - cheap, no need to memoize for typical sizes
+    const results = q
+        ? categories.flatMap((cat) =>
+              (tree[cat] ?? [])
+                  .filter((item) => item.toLowerCase().includes(q))
+                  .map((item) => ({ category: cat, item })),
+          )
+        : [];
+
+    return (
+        <div className="mb-5 relative">
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Qidirish: o'yin, ilova, xizmat nomi..."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+
+            {q && (
+                <div className="absolute z-10 mt-1.5 w-full max-h-80 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg">
+                    {results.length === 0 && (
+                        <p className="text-sm text-slate-400 px-4 py-3">
+                            Hech narsa topilmadi
+                        </p>
+                    )}
+                    {results.map(({ category, item }) => {
+                        const color = catColor(category);
+                        return (
+                            <button
+                                key={`${category}-${item}`}
+                                onClick={() => {
+                                    onJump(category, item);
+                                    setQuery("");
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                            >
+                                <div
+                                    className={`size-7 rounded-lg bg-linear-to-br ${color} flex items-center justify-center shrink-0`}
+                                >
+                                    <span className="text-white font-bold text-xs">
+                                        {item.charAt(0)}
+                                    </span>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                                        {item}
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                        {category}
+                                    </p>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
     );
 }
+
+/* ---------- Top-level page listing categories ---------- */
+
+function CategoryList({ categories, tree, onSelectCategory }) {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {categories.map((cat) => {
+                const color = catColor(cat);
+                const games = tree[cat] ?? [];
+                return (
+                    <button
+                        key={cat}
+                        onClick={() => onSelectCategory(cat)}
+                        className="flex items-center gap-3 px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-sm transition-all text-left"
+                    >
+                        <div
+                            className={`size-9 rounded-xl bg-linear-to-br ${color} flex items-center justify-center shrink-0`}
+                        >
+                            <span className="text-white font-bold text-sm">
+                                {cat.charAt(0)}
+                            </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-800 dark:text-white">
+                                {cat}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                                {games.length} ta mahsulot/o'yin
+                            </p>
+                        </div>
+                        <ChevronRight className="size-5 text-slate-300 dark:text-slate-600 shrink-0" />
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+/* ---------- Root: drives which "screen" is shown ---------- */
 
 export default function SekaliProducts() {
     const { tree, idr_rate, flash } = usePage().props;
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // navigation state - null/null = category list screen
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedGame, setSelectedGame] = useState(null);
+
     const categories = tree ? Object.keys(tree) : [];
 
     const handleSync = () => {
         setIsSyncing(true);
-        router.post("/sekali-products/sync", {}, {
-            preserveScroll: true,
-            onFinish: () => setIsSyncing(false),
-        });
+        router.post(
+            "/sekali-products/sync",
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setIsSyncing(false),
+            },
+        );
+    };
+
+    // breadcrumb index clicked -> jump back to that level
+    const goToLevel = (level) => {
+        if (level === 0) {
+            setSelectedCategory(null);
+            setSelectedGame(null);
+        } else if (level === 1) {
+            setSelectedGame(null);
+        }
     };
 
     return (
-        <AdminLayout>
+        <div>
             <Head title="SekalıPay Mahsulotlari" />
-            <div className="p-4 max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto">
+                {/* Header - always visible */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">SekalıPay Mahsulotlari</h1>
-                        <p className="text-sm text-slate-500 mt-0.5">
-                            IDR kursi: {idr_rate ? `1 IDR = ${Number(idr_rate).toLocaleString()} UZS` : "Kiritilmagan"}
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                            SekalıPay Mahsulotlari
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                            IDR kursi:{" "}
+                            {idr_rate
+                                ? `1 IDR = ${Number(idr_rate).toLocaleString()} UZS`
+                                : "Kiritilmagan"}
                         </p>
                     </div>
-                    <button onClick={handleSync} disabled={isSyncing}
-                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition-colors">
-                        <RefreshCw className={`size-4 ${isSyncing ? "animate-spin" : ""}`} />
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition-colors"
+                    >
+                        <RefreshCw
+                            className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
+                        />
                         {isSyncing ? "Sync..." : "SekalıPay Sync"}
                     </button>
                 </div>
@@ -319,21 +741,50 @@ export default function SekaliProducts() {
                     </div>
                 )}
 
-                <p className="text-xs text-slate-400 mb-4">
-                    Kategoriyaga bosing → O'yin/xizmatga bosing → Server bo'yicha narx va ustama belgilang
-                </p>
+                {/* Screen 1: category list */}
+                {!selectedCategory && (
+                    <>
+                        <GlobalSearch
+                            tree={tree}
+                            categories={categories}
+                            onJump={(category, game) => {
+                                setSelectedCategory(category);
+                                setSelectedGame(game);
+                            }}
+                        />
+                        <p className="text-xs text-slate-400 mb-4">
+                            Kategoriyaga bosing → O'yin/xizmatni tanlang →
+                            Server bo'yicha narx va ustama belgilang
+                        </p>
+                        <CategoryList
+                            categories={categories}
+                            tree={tree}
+                            onSelectCategory={setSelectedCategory}
+                        />
+                    </>
+                )}
 
-                {categories.map(cat => (
-                    <CategorySection
-                        key={cat}
-                        category={cat}
-                        games={tree[cat] ?? []}
-                        idr_rate={idr_rate}
-                        idrRate={idr_rate}
-                        defaultMarkup={20}
+                {/* Screen 2: games inside selected category */}
+                {selectedCategory && !selectedGame && (
+                    <CategoryPage
+                        category={selectedCategory}
+                        games={tree[selectedCategory] ?? []}
+                        onSelectGame={setSelectedGame}
+                        onBack={goToLevel}
                     />
-                ))}
+                )}
+
+                {/* Screen 3: variants inside selected game */}
+                {selectedCategory && selectedGame && (
+                    <GamePage
+                        category={selectedCategory}
+                        game={selectedGame}
+                        idrRate={idr_rate}
+                        onBack={() => setSelectedGame(null)}
+                        onBreadcrumb={goToLevel}
+                    />
+                )}
             </div>
-        </AdminLayout>
+        </div>
     );
 }
