@@ -13,6 +13,7 @@ class SekaliProduct extends Model
         'category',
         'game_name',
         'product_type',
+        'image_url',
         'name',
         'price_idr',
         'price_uzs',

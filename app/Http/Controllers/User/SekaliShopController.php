@@ -16,17 +16,24 @@ class SekaliShopController extends Controller
 {
     public function index()
     {
-        // Only category → game structure (no variants — loaded lazily)
+        // category → game structure with one representative image per game
         $rows = SekaliProduct::where('is_active', true)
-            ->select('category', 'game_name')
-            ->distinct()
+            ->select('category', 'game_name', 'image_url')
             ->orderBy('category')
             ->orderBy('game_name')
             ->get();
 
+        // Unique games per category, keeping first image_url found
         $categories = $rows
             ->groupBy('category')
-            ->map(fn($g) => $g->pluck('game_name')->unique()->values());
+            ->map(fn($group) =>
+                $group->groupBy('game_name')
+                    ->map(fn($games) => [
+                        'name'      => $games->first()->game_name,
+                        'image_url' => $games->first(fn($g) => $g->image_url)?->image_url,
+                    ])
+                    ->values()
+            );
 
         return Inertia::render('User/SekaliShop', [
             'categories' => $categories,
@@ -46,7 +53,7 @@ class SekaliShopController extends Controller
             ->orderBy('product_type')
             ->orderBy('price_uzs')
             ->get([
-                'id', 'category', 'game_name', 'product_type', 'name',
+                'id', 'category', 'game_name', 'product_type', 'image_url', 'name',
                 'price_uzs', 'order_process', 'has_validation',
                 'required_fields', 'stock',
             ]);

@@ -269,6 +269,7 @@ export default function SekaliShop() {
     const [selectedGame, setSelectedGame] = useState(null);
 
     const catList  = categories ? Object.keys(categories) : [];
+    // gameList: array of { name, image_url }
     const gameList = selectedCat ? (categories?.[selectedCat] ?? []) : [];
     const catAcc   = accent(selectedCat ?? "");
 
@@ -307,8 +308,8 @@ export default function SekaliShop() {
                 {/* Kategoriyalar */}
                 {!selectedCat && (
                     <div className="grid grid-cols-1 gap-3 mt-2">
-                        {catList.map((cat, i) => {
-                            const acc = accent(cat);
+                        {catList.map((cat) => {
+                            const acc   = accent(cat);
                             const count = (categories[cat] ?? []).length;
                             return (
                                 <button key={cat} onClick={() => setSelectedCat(cat)}
@@ -335,16 +336,20 @@ export default function SekaliShop() {
 
                 {/* O'yinlar kategoriya ichida */}
                 {selectedCat && !selectedGame && (
-                    <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
                         {gameList.map((game, i) => {
                             const grad = GAME_COLORS[i % GAME_COLORS.length];
+                            const img  = game.image_url;
                             return (
-                                <button key={game} onClick={() => setSelectedGame(game)}
-                                    className="flex flex-col items-center gap-2 p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-center">
-                                    <div className={`size-12 rounded-2xl bg-linear-to-br ${grad} flex items-center justify-center`}>
-                                        <Gamepad2 className="size-6 text-white" />
+                                <button key={game.name} onClick={() => setSelectedGame(game.name)}
+                                    className="flex flex-col items-center gap-2 p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-center">
+                                    <div className={`size-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 ${img ? "bg-white dark:bg-slate-700" : `bg-linear-to-br ${grad}`}`}>
+                                        {img
+                                            ? <img src={img} alt={game.name} className="w-full h-full object-cover" />
+                                            : <Gamepad2 className="size-8 text-white" />
+                                        }
                                     </div>
-                                    <p className="font-semibold text-slate-800 dark:text-white text-sm leading-tight">{game}</p>
+                                    <p className="font-semibold text-slate-800 dark:text-white text-sm leading-tight">{game.name}</p>
                                 </button>
                             );
                         })}

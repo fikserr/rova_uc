@@ -50,6 +50,7 @@ class SekaliSync extends Command
 
                 foreach ($category['products'] ?? [] as $product) {
                     $gameName = $product['name'] ?? '';
+                    $imageUrl = $product['image'] ?? null;
 
                     foreach ($product['variants'] ?? [] as $variant) {
                         $itemId = (int) ($variant['id'] ?? 0);
@@ -76,6 +77,7 @@ class SekaliSync extends Command
                                 'category'        => $categoryName,
                                 'game_name'       => $gameName,
                                 'product_type'    => $productType,
+                                'image_url'       => $imageUrl,
                                 'name'            => $variant['name'] ?? '',
                                 'price_idr'       => $priceIdr,
                                 'price_uzs'       => $priceUzs,
