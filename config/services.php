@@ -35,7 +35,13 @@ return [
         ],
     ],
     'telegram' => [
-        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_token'          => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username'       => env('TELEGRAM_BOT_USERNAME'),
+        'init_data_max_age'  => env('TELEGRAM_INIT_DATA_MAX_AGE', 86400),
+        'webhook_secret'     => env('TELEGRAM_WEBHOOK_SECRET', ''),
+        // Card payment bot auto-topup
+        'card_bot_chat_id'   => env('CARD_BOT_CHAT_ID', ''),
+        'card_bot_usernames' => env('CARD_BOT_USERNAMES', 'CardXabarBot,HUMOcardbot'),
     ],
 
     'click' => [
@@ -56,6 +62,13 @@ return [
 
     'rapidapi' => [
         'key' => env('RAPIDAPI_KEY'),
+    ],
+
+    'sekalipay' => [
+        'api_key'        => env('SEKALI_API_KEY', ''),
+        'base_url'       => 'https://sekalipay.com/api',
+        'webhook_secret' => env('SEKALI_WEBHOOK_SECRET', ''),
+        'default_markup' => env('SEKALI_DEFAULT_MARKUP', 20),
     ],
 
 ];

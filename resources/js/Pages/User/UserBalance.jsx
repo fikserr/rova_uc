@@ -7,10 +7,8 @@ import {
     Copy,
     CreditCard,
     Receipt,
-    Upload,
-    X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -68,14 +66,11 @@ function UserBalance() {
 
     // ── Manual payment ────────────────────────────────────────────
     const [checkAmount, setCheckAmount] = useState("");
-    const [receiptFile, setReceiptFile] = useState(null);
-    const [preview, setPreview] = useState(null);
     const [checkLoading, setCheckLoading] = useState(false);
     const [checkSuccess, setCheckSuccess] = useState(false);
     const [myRequests, setMyRequests] = useState([]);
     const [paymentCards, setPaymentCards] = useState([]);
     const [copiedId, setCopiedId] = useState(null);
-    const fileInputRef = useRef(null);
 
     const quickAmounts = [10000, 30000, 50000, 100000, 200000, 500000];
 
@@ -118,33 +113,13 @@ function UserBalance() {
         }
     };
 
-    const onFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setReceiptFile(file);
-        setPreview(URL.createObjectURL(file));
-    };
-
-    const removeFile = () => {
-        setReceiptFile(null);
-        setPreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-
     const handleCheckSubmit = async () => {
-        if (!receiptFile || !checkAmount || parseFloat(checkAmount) < 1000)
-            return;
+        if (!checkAmount || parseFloat(checkAmount) < 1000) return;
         try {
             setCheckLoading(true);
-            const form = new FormData();
-            form.append("amount", checkAmount);
-            form.append("receipt", receiptFile);
-            await axios.post("/manual-topup", form, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await axios.post("/manual-topup", { amount: checkAmount });
             setCheckSuccess(true);
             setCheckAmount("");
-            removeFile();
             setTimeout(() => setCheckSuccess(false), 5000);
         } catch (e) {
             alert(e.response?.data?.message ?? t("others.error"));
@@ -154,7 +129,6 @@ function UserBalance() {
     };
 
     const checkDisabled =
-        !receiptFile ||
         !checkAmount ||
         parseFloat(checkAmount) < 1000 ||
         checkLoading;
@@ -398,45 +372,13 @@ function UserBalance() {
                                 ))}
                             </ol>
 
-                            {/* Receipt image upload */}
-                            {!preview ? (
-                                <button
-                                    onClick={() =>
-                                        fileInputRef.current?.click()
-                                    }
-                                    className="w-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl h-36 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-400 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors"
-                                >
-                                    <Upload className="size-8" />
-                                    <span className="text-sm font-medium">
-                                        {t("balance.upload_label")}
-                                    </span>
-                                    <span className="text-xs opacity-70">
-                                        {t("balance.upload_hint")}
-                                    </span>
-                                </button>
-                            ) : (
-                                <div className="relative">
-                                    <img
-                                        src={preview}
-                                        alt="Chek"
-                                        className="w-full max-h-64 object-contain rounded-xl border border-slate-200 dark:border-slate-600"
-                                    />
-                                    <button
-                                        onClick={removeFile}
-                                        className="absolute top-2 right-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 transition-colors"
-                                    >
-                                        <X className="size-4" />
-                                    </button>
-                                </div>
-                            )}
-
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                className="hidden"
-                                onChange={onFileChange}
-                            />
+                            {/* Auto-detect info */}
+                            <div className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
+                                <span className="text-emerald-500 text-lg shrink-0">⚡</span>
+                                <p className="text-xs text-emerald-700 dark:text-emerald-400 leading-relaxed">
+                                    {t("balance.auto_detect_info")}
+                                </p>
+                            </div>
 
                             {/* Amount input */}
                             <div>

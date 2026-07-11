@@ -52,24 +52,12 @@ class TelegramAuthService
             return config('app.debug') ? ['_fail' => 'no_bot_token'] : null;
         }
 
-        // Telegram: secret_key = HMAC_SHA256. Try both common parameter orders.
-        $secretKeyA = hash_hmac('sha256', 'WebAppData', $botToken, true);
-        $secretKeyB = hash_hmac('sha256', $botToken, 'WebAppData', true);
+        // Telegram spec: secret_key = HMAC_SHA256(key="WebAppData", data=bot_token)
+        // PHP: hash_hmac('sha256', $data, $key) → hash_hmac('sha256', $botToken, 'WebAppData')
+        $secretKey      = hash_hmac('sha256', $botToken, 'WebAppData', true);
+        $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        $calculatedHashA = hash_hmac('sha256', $dataCheckString, $secretKeyA);
-        $calculatedHashB = hash_hmac('sha256', $dataCheckString, $secretKeyB);
-
-        \Log::debug('Hash verification', [
-            'received_hash' => $hash,
-            'calculated_hash_a' => $calculatedHashA,
-            'calculated_hash_b' => $calculatedHashB,
-            'data_check_string' => $dataCheckString,
-            'bot_token' => substr($botToken, 0, 10) . '...',
-            'match_a' => hash_equals($calculatedHashA, $hash),
-            'match_b' => hash_equals($calculatedHashB, $hash),
-        ]);
-
-        if (! hash_equals($calculatedHashA, $hash) && ! hash_equals($calculatedHashB, $hash)) {
+        if (! hash_equals($calculatedHash, $hash)) {
             return config('app.debug') ? ['_fail' => 'hash_mismatch'] : null;
         }
 

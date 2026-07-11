@@ -171,6 +171,11 @@ class TelegramWebAppController extends Controller
             return null;
         }
 
+        // Reject anything that is not a plain positive integer (SQL injection guard)
+        if (! ctype_digit($tidStr)) {
+            return null;
+        }
+
         // Use raw SQL for the existence check (safest for large Telegram IDs)
         $raw = DB::selectOne("SELECT * FROM users WHERE id = {$tidStr} LIMIT 1");
         if (! $raw || empty($raw->phone_number)) {

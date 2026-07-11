@@ -15,16 +15,13 @@ class ManualTopupController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'amount'  => 'required|numeric|min:1000|max:50000000',
-            'receipt' => 'required|image|mimes:jpeg,png,webp|max:10240',
+            'amount' => 'required|numeric|min:1000|max:50000000',
         ]);
-
-        $path = $request->file('receipt')->store('topup-receipts', 'public');
 
         $topupId = DB::table('manual_topup_requests')->insertGetId([
             'user_id'        => auth()->id(),
             'amount'         => $data['amount'],
-            'photo_file_id'  => $path,
+            'photo_file_id'  => null,
             'status'         => 'pending',
             'admin_messages' => json_encode([]),
             'created_at'     => now(),

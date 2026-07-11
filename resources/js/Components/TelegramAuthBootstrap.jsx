@@ -8,7 +8,6 @@ const ATTEMPT_KEY = "__tg_auth_attempt";
 function getTelegramInitData() {
     if (typeof window === "undefined") return "";
     const tg = window.Telegram?.WebApp;
-    try { tg?.ready?.(); } catch (_) {}
     let initData = tg?.initData?.trim?.() ?? "";
     if (!initData && window.location.hash) {
         const match = window.location.hash.match(/tgWebAppData=([^&]+)/);
@@ -61,6 +60,11 @@ export default function TelegramAuthBootstrap({
     const [status, setStatus] = useState("idle");
     const [errorMessage, setErrorMessage] = useState("");
 
+    // Signal WebApp ready exactly once — calling multiple times confuses Android Telegram
+    useEffect(() => {
+        try { window.Telegram?.WebApp?.ready?.(); } catch (_) {}
+    }, []);
+
     const isTelegramWebView = useMemo(() => {
         if (typeof window === "undefined") return false;
         const hasInitData = getTelegramInitData().length > 0;
@@ -91,25 +95,29 @@ export default function TelegramAuthBootstrap({
             const initData = getTelegramInitData();
 
             if (initData) {
-                // Compare by telegram_id, not raw initData string.
-                // Raw initData changes every session (auth_date differs), but the
-                // user id stays the same. Comparing raw strings causes false positives.
                 const currentTgId = getTelegramIdFromInitData(initData);
                 const storedTgId = getTelegramIdFromInitData(
                     (() => { try { return sessionStorage.getItem(STORAGE_KEY) ?? ""; } catch (_) { return ""; } })()
                 );
+                // user.id IS the Telegram ID (users table uses telegram_id as PK)
+                const loggedInTgId = user?.id != null ? String(user.id) : null;
+                const curIdStr = currentTgId != null ? String(currentTgId) : null;
 
-                if (
-                    currentTgId &&
-                    storedTgId &&
-                    currentTgId !== storedTgId
-                ) {
-                    // Different Telegram account — re-authenticate
+                const accountMismatch = curIdStr && (
+                    // Case 1: sessionStorage has a different account stored
+                    (storedTgId && curIdStr !== String(storedTgId)) ||
+                    // Case 2: fresh WebView (sessionStorage empty) but logged-in user ≠ initData user
+                    // This is the Android account-switch bug: WebView reopens fresh, old session
+                    // cookie still active, but Telegram injected a different user's initData.
+                    (!storedTgId && loggedInTgId && curIdStr !== loggedInTgId)
+                );
+
+                if (accountMismatch) {
                     submitAuthForm(initData);
                     return;
                 }
 
-                // Same user or can't determine — update stored initData
+                // Same user — update stored initData (auth_date rotates each session)
                 try { sessionStorage.setItem(STORAGE_KEY, initData); } catch (_) {}
             }
 

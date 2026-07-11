@@ -13,8 +13,10 @@ use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SpinRuleController;
 use App\Http\Controllers\Admin\SpinSectorController;
+use App\Http\Controllers\Admin\SekaliProductController;
 use App\Http\Controllers\Admin\UcBundleController;
 use App\Http\Controllers\Admin\UcProductController;
+use App\Http\Controllers\User\SekaliShopController;
 use App\Http\Controllers\Api\TelegramWebAppController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Auth\LoginController;
@@ -146,6 +148,17 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/ml-products/{product}', [MlProductController::class, 'destroy'])
             ->name('ml-products.destroy');
 
+        Route::get('/sekali-products', [SekaliProductController::class, 'index'])
+            ->name('sekali-products.index');
+        Route::get('/sekali-products/variants', [SekaliProductController::class, 'variants'])
+            ->name('sekali-products.variants');
+        Route::put('/sekali-products/{sekaliProduct}', [SekaliProductController::class, 'update'])
+            ->name('sekali-products.update');
+        Route::post('/sekali-products/bulk-markup', [SekaliProductController::class, 'bulkMarkup'])
+            ->name('sekali-products.bulk-markup');
+        Route::post('/sekali-products/sync', [SekaliProductController::class, 'sync'])
+            ->name('sekali-products.sync');
+
         Route::get('/users', [UserController::class, 'index'])
             ->name('users.index');
         Route::put('/users/{userId}/role', [UserController::class, 'updateRole'])
@@ -247,6 +260,17 @@ Route::middleware(['auth'])->group(function () {
             ->name('user-telegram-premium.index');
         Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
             ->name('user-products-ml.index');
+
+        Route::get('/shop', [SekaliShopController::class, 'index'])
+            ->name('sekali-shop.index');
+        Route::get('/shop/variants', [SekaliShopController::class, 'variants'])
+            ->name('sekali-shop.variants');
+        Route::post('/shop/validate', [SekaliShopController::class, 'validate'])
+            ->middleware('throttle:30,1')
+            ->name('sekali-shop.validate');
+        Route::post('/shop/order', [SekaliShopController::class, 'order'])
+            ->middleware('throttle:10,1')
+            ->name('sekali-shop.order');
         Route::get('/user-spin', [SpinSectorController::class, 'SpinSector'])
             ->name('user-spin-sectors.index');
 

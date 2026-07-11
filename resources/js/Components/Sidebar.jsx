@@ -11,6 +11,7 @@ import {
     LuShieldCheck,
     LuShoppingCart,
     LuStar,
+    LuStore,
     LuUser,
 } from "react-icons/lu";
 
@@ -35,6 +36,7 @@ export function Sidebar({ isOpen = true, onClose }) {
         { href: "/products-uc",              label: "UC Products",        icon: LuBox,             roles: ["admin"] },
         { href: "/products-bundles",         label: "To'plamlar",         icon: LuBox,             roles: ["admin"] },
         { href: "/currencies",               label: "Currency Rates",     icon: FaDollarSign,      roles: ["admin"] },
+        { href: "/sekali-products",          label: "SekalıPay Shop",     icon: LuStore,           roles: ["admin"] },
         { href: "/spin-sectors",             label: "Spin Management",    icon: FaCog,             roles: ["admin"] },
         { href: "/tasks",                    label: "Tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
         { href: "/broadcast-notifications",  label: "Broadcast",          icon: LuBell,            roles: ["admin","worker"] },

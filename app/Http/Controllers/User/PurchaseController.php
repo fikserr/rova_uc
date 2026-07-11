@@ -112,9 +112,38 @@ class PurchaseController extends Controller
                 ];
             });
 
+        $sekaliOrders = DB::table('sekali_orders as o')
+            ->leftJoin('sekali_products as p', 'p.id', '=', 'o.sekali_product_id')
+            ->where('o.user_id', $userId)
+            ->select([
+                'o.id',
+                'o.ref_id',
+                'o.status',
+                'o.price_uzs',
+                'o.created_at',
+                'o.game_target',
+                'p.game_name',
+                'p.name as variant_name',
+            ])
+            ->get()
+            ->map(function ($o) {
+                return [
+                    'id'         => 'SK-' . $o->id,
+                    'order_type' => 'sekali',
+                    'title'      => $o->game_name ?: 'Game',
+                    'amount'     => $o->variant_name ?: '-',
+                    'price'      => (float) ($o->price_uzs ?? 0),
+                    'currency'   => 'UZS',
+                    'status'     => $o->status ?: 'pending',
+                    'target'     => $o->game_target ?: '-',
+                    'created_at' => $o->created_at,
+                ];
+            });
+
         $purchases = $ucOrders
             ->concat($mlOrders)
             ->concat($serviceOrders)
+            ->concat($sekaliOrders)
             ->sortByDesc('created_at')
             ->values();
 

@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { ShieldCheck, ShoppingBag, UserCircle, Wallet } from "lucide-react";
+import { ShieldCheck, ShoppingBag, Store, UserCircle, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 function Bar() {
@@ -28,6 +28,12 @@ function Bar() {
             href: "/user-purchases",
         },
         {
+            id: "shop",
+            label: `${t("bar.shop")}`,
+            icon: Store,
+            href: "/shop",
+        },
+        {
             id: "balnce_topup",
             label: `${t("bar.balanceTopup")}`,
             icon: Wallet,
@@ -46,7 +52,7 @@ function Bar() {
             className={`fixed bottom-0 left-0 right-0 border-t  z-50 transition-colors duration-300 bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-800 py-0 shadow-black pb-[env(safe-area-inset-bottom)] `}
         >
             <div className="max-w-7xl mx-auto px-1">
-                <div className="grid grid-cols-4 gap-1">
+                <div className="grid grid-cols-5 gap-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive =

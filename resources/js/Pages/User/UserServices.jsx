@@ -1,25 +1,18 @@
-import MlbbDesktop from "@images/mlbb_desktop.webp";
-import MlbbMobile from "@images/mlbb_mobile.webp";
-import PubgDesktop from "@images/pubg_desktop.webp";
-import PubgMobile from "@images/pubg_mobile.webp";
 import TelegramPremium from "@images/telegram_premium.webp";
 import TelegramStars from "@images/telegram_stars.webp";
 
 import { Head, Link } from "@inertiajs/react";
 import axios from "axios";
-import { ArrowRight, Gamepad2 ,Zap, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, Gamepad2, Zap, ShieldCheck, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
-import useDevice from "../../Hook/useDevice";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-import DiamondMain from "@images/mlbbIcon.webp";
-import UcImage from "@images/pubgmIcon.webp";
 import TgPremium from "@images/tgPremium.webp";
 import TgStars from "@images/tgStars.webp";
 const customPaginationStyles = `
@@ -106,29 +99,18 @@ function ServiceCard({
 
 function UserServices() {
     const { t } = useTranslation();
-    const mobile = useDevice() === "mobile";
     const [paymentNotice, setPaymentNotice] = useState("");
 
     const services = [
         {
-            id: "pubg",
-            title: "PUBG MOBILE",
-            subtitle: t("services.pubg_subtitle"),
-            category: "global",
-            image: UcImage,
+            id: "shop",
+            title: "GAME DO'KON",
+            subtitle: t("shop.subtitle", "Barcha o'yin mahsulotlari"),
+            category: "auto",
+            icon: <Gamepad2 className="size-16 text-white/90" />,
             badge: t("services.badge_popular"),
-            color: "from-orange-400 to-red-500",
-            href: "/user-products-uc",
-        },
-        {
-            id: "mlbb",
-            title: "MOBILE LEGENDS",
-            subtitle: t("services.mlbb_subtitle"),
-            category: "Global",
-            image: DiamondMain,
-            badge: t("services.badge_new"),
-            color: "from-purple-400 to-pink-500",
-            href: "/user-products-ml",
+            color: "from-violet-500 to-purple-700",
+            href: "/shop",
         },
         {
             id: "tg-stars",
@@ -153,13 +135,9 @@ function UserServices() {
     ];
 
     const Desktopimages = [
-        { img: MlbbDesktop, href: "/user-products-ml" },
-        { img: PubgDesktop, href: "/user-products-uc" },
         { img: TelegramStars, href: "/user-telegram-stars" },
         { img: TelegramPremium, href: "/user-telegram-premium" },
     ];
-    const Mobileimages = [MlbbMobile, PubgMobile];
-    const images = mobile ? Mobileimages : Desktopimages;
 
     useEffect(() => {
         const initStartParam =
@@ -251,7 +229,7 @@ function UserServices() {
                     <h1 className="text-xl 2xl:text-3xl text-black dark:text-white">
                         {t("services.title")}
                     </h1>
-                    <div className="w-full grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 sm:px-4 md:px-0 place-items-center">
+                    <div className="w-full grid grid-cols-3 sm:grid-cols-3 gap-4 sm:gap-6 sm:px-4 md:px-0 place-items-center">
                         {services.map((service) => (
                             <ServiceCard key={service.id} {...service} />
                         ))}

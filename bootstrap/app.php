@@ -5,6 +5,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnsureUserRole;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\VerifyTelegramWebApp;
+use App\Http\Middleware\VerifyTelegramWebhookSecret;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,8 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->alias([
-            'telegram.webapp' => VerifyTelegramWebApp::class,
-            'role' => EnsureUserRole::class,
+            'telegram.webapp'    => VerifyTelegramWebApp::class,
+            'telegram.webhook'   => VerifyTelegramWebhookSecret::class,
+            'role'               => EnsureUserRole::class,
         ]);
 
         // Telegram WebApp session auth is protected by Telegram initData HMAC verification.
