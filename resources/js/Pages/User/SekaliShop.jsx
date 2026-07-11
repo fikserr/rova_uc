@@ -343,11 +343,17 @@ export default function SekaliShop() {
                             return (
                                 <button key={game.name} onClick={() => setSelectedGame(game.name)}
                                     className="flex flex-col items-center gap-2 p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-center">
-                                    <div className={`size-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 ${img ? "bg-white dark:bg-slate-700" : `bg-linear-to-br ${grad}`}`}>
-                                        {img
-                                            ? <img src={img} alt={game.name} className="w-full h-full object-cover" />
-                                            : <Gamepad2 className="size-8 text-white" />
-                                        }
+                                    <div className={`relative size-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 bg-linear-to-br ${grad}`}>
+                                        <Gamepad2 className="size-8 text-white" />
+                                        {img && (
+                                            <img
+                                                src={img}
+                                                alt={game.name}
+                                                referrerPolicy="no-referrer"
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                                onError={e => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                        )}
                                     </div>
                                     <p className="font-semibold text-slate-800 dark:text-white text-sm leading-tight">{game.name}</p>
                                 </button>
