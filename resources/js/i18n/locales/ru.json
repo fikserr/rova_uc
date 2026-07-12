@@ -187,7 +187,12 @@
             "pending": "На рассмотрении",
             "approved": "Подтверждено",
             "rejected": "Отклонено"
-        }
+        },
+        "coming_soon": "Скоро",
+        "payment_cards_label": "Платежные карты",
+        "upload_label": "Загрузить",
+        "upload_hint": "Загрузите квитанцию ​​об оплате в виде изображения или файла (макс .10 МБ).",
+        "status_column": "статус"
     },
     "notifications": {
         "page_title": "Уведомления",

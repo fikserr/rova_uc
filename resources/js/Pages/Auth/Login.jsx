@@ -108,7 +108,10 @@ export default function Login({ status, canResetPassword }) {
                         )}
 
                         {/* Card */}
-                        <form onSubmit={handleSubmit} className="bg-white/5 rounded-2xl shadow-xl shadow-black/30 border border-white/10 p-8 space-y-5">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="bg-white/5 rounded-2xl shadow-xl shadow-black/30 border border-white/10 p-8 space-y-5"
+                        >
                             {/* Username */}
                             <div>
                                 <label

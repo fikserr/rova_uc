@@ -7,7 +7,7 @@ import {
     ShoppingCart,
     Star,
 } from "lucide-react";
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from "react-i18next";
 import { IoDiamondOutline } from "react-icons/io5";
 
 function getProductIcon(product) {
@@ -159,7 +159,7 @@ export default function UserProductCard({ product, onClick }) {
                         <p
                             className={`text-xs font-medium mb-0.5 ${isActive ? "text-slate-400 dark:text-slate-500" : "text-slate-400"}`}
                         >
-                            {t('others.price')}
+                            {t("others.price")}
                         </p>
                         <p
                             className={`text-base m:text-xl font-bold leading-none ${isActive ? accent.price : "text-slate-400 dark:text-slate-500"}`}
@@ -176,7 +176,9 @@ export default function UserProductCard({ product, onClick }) {
                             className={`flex items-center gap-2 px-3 h-9 rounded-xl ${accent.badge} text-white text-xs font-bold shadow-sm transition-all group-hover:scale-105`}
                         >
                             <ShoppingCart className="size-3.5" />
-                            <span className='text-xs lg:text-base' >{t('others.buy')}</span>
+                            <span className="text-xs lg:text-base">
+                                {t("others.buy")}
+                            </span>
                             <ArrowRight className="hidden lg:block size-3.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all" />
                         </div>
                     ) : (

@@ -187,7 +187,12 @@
             "pending": "Under Review",
             "approved": "Approved",
             "rejected": "Rejected"
-        }
+        },
+        "coming_soon": "Coming soon",
+        "payment_cards_label": "Payment cards",
+        "upload_label": "Upload",
+        "upload_hint": "Upload your payment receipt as an image or file (Max. 10MB)",
+        "status_column": "Status"
     },
     "notifications": {
         "page_title": "Notifications",

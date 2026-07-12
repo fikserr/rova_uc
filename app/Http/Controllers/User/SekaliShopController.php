@@ -69,6 +69,35 @@ class SekaliShopController extends Controller
         ]);
     }
 
+    public function search(Request $request)
+    {
+    $request->validate([
+        'q' => 'required|string|min:1|max:100',
+    ]);
+
+    $q = $request->q;
+
+    $rows = SekaliProduct::where('is_active', true)
+        ->where('game_name', 'like', "%{$q}%")
+        ->select('category', 'game_name', 'image_url')
+        ->orderBy('game_name')
+        ->limit(100)
+        ->get();
+
+    // Same "unique game per category, first image found" grouping as index()
+    $results = $rows
+        ->groupBy(fn ($p) => $p->category . '|' . $p->game_name)
+        ->map(fn ($group) => [
+            'category'  => $group->first()->category,
+            'name'      => $group->first()->game_name,
+            'image_url' => $group->first(fn ($g) => $g->image_url)?->image_url,
+        ])
+        ->values()
+        ->take(10);
+
+    return response()->json(['results' => $results]);
+    }
+
     public function validate(Request $request, SekaliPayService $api)
     {
         $data = $request->validate([

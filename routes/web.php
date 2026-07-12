@@ -58,7 +58,9 @@ Route::middleware(['auth'])->group(function () {
             return redirect()->route('admin.dashboard');
         }
 
-        return Inertia::render('User/UserServices');
+        return Inertia::render('User/UserServices', [
+        'games' => \App\Models\SekaliProduct::gamesForCategory('Game'),
+        ]);
     });
 
     Route::middleware(['role:admin'])->group(function () {
@@ -219,7 +221,9 @@ Route::middleware(['auth'])->group(function () {
             ->name('game.verify.mlegends');
 
         Route::get('/user-services', function () {
-            return Inertia::render('User/UserServices');
+        return Inertia::render('User/UserServices', [
+        'games' => \App\Models\SekaliProduct::gamesForCategory('Game'),
+        ]);
         });
         Route::get('/user-profile', [ProfileController::class, 'show'])
             ->name('user-profile.show');
@@ -261,16 +265,26 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/user-products-ml', [MlProductController::class, 'userIndex'])
             ->name('user-products-ml.index');
 
-        Route::get('/shop', [SekaliShopController::class, 'index'])
-            ->name('sekali-shop.index');
+        // Route::get('/shop', [SekaliShopController::class, 'index'])
+        //     ->name('sekali-shop.index');
+        // Route::get('/shop/variants', [SekaliShopController::class, 'variants'])
+        //     ->name('sekali-shop.variants');
+        // Route::post('/shop/validate', [SekaliShopController::class, 'validate'])
+        //     ->middleware('throttle:30,1')
+        //     ->name('sekali-shop.validate');
+        // Route::post('/shop/order', [SekaliShopController::class, 'order'])
+        //     ->middleware('throttle:10,1')
+        //     ->name('sekali-shop.order');
+        // Route::get('/shop/search', [SekaliShopController::class, 'search'])
+        //     ->name('sekali-shop.search');
         Route::get('/shop/variants', [SekaliShopController::class, 'variants'])
-            ->name('sekali-shop.variants');
+                ->name('sekali-shop.variants');
         Route::post('/shop/validate', [SekaliShopController::class, 'validate'])
-            ->middleware('throttle:30,1')
-            ->name('sekali-shop.validate');
+                ->middleware('throttle:30,1')
+                ->name('sekali-shop.validate');
         Route::post('/shop/order', [SekaliShopController::class, 'order'])
-            ->middleware('throttle:10,1')
-            ->name('sekali-shop.order');
+                ->middleware('throttle:10,1')
+                ->name('sekali-shop.order');
         Route::get('/user-spin', [SpinSectorController::class, 'SpinSector'])
             ->name('user-spin-sectors.index');
 

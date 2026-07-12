@@ -1,0 +1,417 @@
+import axios from "axios";
+import { CheckCircle, Info, Loader2, ShoppingCart, Zap } from "lucide-react";
+import { useState } from "react";
+
+/* ── Rang palitralari ─────────────────────────────────────────── */
+export const CAT_COLORS = {
+    Game: {
+        gradient: "from-violet-500 to-purple-700",
+        soft: "bg-violet-50 dark:bg-violet-500/10",
+        text: "text-violet-600 dark:text-violet-400",
+    },
+    "Aplikasi Premium": {
+        gradient: "from-blue-500 to-indigo-600",
+        soft: "bg-blue-50 dark:bg-blue-500/10",
+        text: "text-blue-600 dark:text-blue-400",
+    },
+    "E-Wallet": {
+        gradient: "from-emerald-500 to-teal-600",
+        soft: "bg-emerald-50 dark:bg-emerald-500/10",
+        text: "text-emerald-600 dark:text-emerald-400",
+    },
+    SMM: {
+        gradient: "from-pink-500 to-rose-600",
+        soft: "bg-pink-50 dark:bg-pink-500/10",
+        text: "text-pink-600 dark:text-pink-400",
+    },
+    "Top Up & Digital Services": {
+        gradient: "from-amber-500 to-orange-600",
+        soft: "bg-amber-50 dark:bg-amber-500/10",
+        text: "text-amber-600 dark:text-amber-400",
+    },
+    Tagihan: {
+        gradient: "from-slate-500 to-gray-600",
+        soft: "bg-slate-50 dark:bg-slate-500/10",
+        text: "text-slate-600 dark:text-slate-400",
+    },
+    Voucher: {
+        gradient: "from-cyan-500 to-sky-600",
+        soft: "bg-cyan-50 dark:bg-cyan-500/10",
+        text: "text-cyan-600 dark:text-cyan-400",
+    },
+};
+
+export const GAME_COLORS = [
+    "from-violet-500 to-purple-600",
+    "from-blue-500 to-indigo-600",
+    "from-amber-500 to-orange-600",
+    "from-emerald-500 to-teal-600",
+    "from-pink-500 to-rose-600",
+    "from-cyan-500 to-sky-600",
+    "from-red-500 to-orange-600",
+    "from-lime-500 to-green-600",
+];
+
+export function accent(cat) {
+    return (
+        CAT_COLORS[cat] ?? {
+            gradient: "from-slate-500 to-gray-600",
+            soft: "bg-slate-50 dark:bg-slate-500/10",
+            text: "text-slate-600 dark:text-slate-400",
+        }
+    );
+}
+
+export function formatUzs(n) {
+    return Number(n).toLocaleString("uz-UZ") + " UZS";
+}
+
+/* ── Mahsulot kartasi — endi modal ochmaydi, tanlanadi ──────────
+   Selected card gets a glowing ring in the category's accent color. */
+function VariantCard({ product, accentColors, selected, onSelect }) {
+    return (
+        <button
+            onClick={() => onSelect(product)}
+            className={`relative p-3 rounded-2xl border-2 text-left transition-all ${
+                selected
+                    ? `border-transparent bg-linear-to-br ${accentColors.gradient} shadow-lg scale-[1.02]`
+                    : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-600"
+            }`}
+        >
+            <div className="flex items-center gap-3">
+                <div className="size-11 rounded-xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-700">
+                    {product.image_url && (
+                        <img
+                            src={product.image_url}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                        />
+                    )}
+                </div>
+                <div className="min-w-0 flex-1">
+                    <p
+                        className={`font-semibold text-sm leading-tight truncate ${
+                            selected
+                                ? "text-white"
+                                : "text-slate-800 dark:text-white"
+                        }`}
+                    >
+                        {product.name}
+                    </p>
+                    <p
+                        className={`text-xs font-bold mt-0.5 ${
+                            selected ? "text-white/90" : accentColors.text
+                        }`}
+                    >
+                        {formatUzs(product.price_uzs)}
+                    </p>
+                </div>
+            </div>
+            {selected && (
+                <div className="absolute top-2 right-2 size-5 rounded-full bg-white flex items-center justify-center">
+                    <CheckCircle className={`size-4 ${accentColors.text}`} />
+                </div>
+            )}
+        </button>
+    );
+}
+
+/* ── Server/Type tablar + variantlar — asosiy eksport ───────────
+   Both SekaliShop.jsx and UserServices.jsx render this once a game
+   is picked; it fetches /shop/variants for that (category, game). */
+export function GameVariants({
+    category,
+    game,
+    gameImage,
+    accentColors,
+    userBalance,
+}) {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeType, setActiveType] = useState(null);
+
+    // Account fields, now shown up-front instead of inside a modal
+    const [target, setTarget] = useState("");
+    const [zoneId, setZoneId] = useState("");
+    const [verifiedName, setVerifiedName] = useState(null);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verifyError, setVerifyError] = useState("");
+
+    // Selected product + order submission
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orderError, setOrderError] = useState("");
+
+    useState(() => {
+        axios
+            .get("/shop/variants", { params: { category, game } })
+            .then((r) => {
+                setData(r.data);
+                setActiveType(r.data.types?.[0] ?? null);
+            })
+            .catch(() => setData({ grouped: {}, types: [] }))
+            .finally(() => setLoading(false));
+    });
+
+    if (loading)
+        return (
+            <div className="flex justify-center py-16">
+                <Loader2 className="size-8 animate-spin text-violet-500" />
+            </div>
+        );
+    if (!data || !data.types?.length)
+        return (
+            <div className="text-center py-16 text-slate-400">
+                Mahsulot topilmadi
+            </div>
+        );
+
+    const { grouped, types } = data;
+    const variants = grouped[activeType] ?? [];
+    const allProducts = Object.values(grouped).flat();
+
+    // Whether this game needs a Zone ID / account validation at all —
+    // derived from any product for this game, since it's the same game.
+    const needsZone = allProducts.some(
+        (p) =>
+            p.required_fields &&
+            JSON.stringify(p.required_fields).toLowerCase().includes("zone"),
+    );
+    const hasValidation = allProducts.some((p) => p.has_validation);
+
+    const canAfford = selectedProduct
+        ? userBalance >= selectedProduct.price_uzs
+        : true;
+
+    const handleVerify = async () => {
+        if (!target.trim()) return;
+        setIsVerifying(true);
+        setVerifyError("");
+        setVerifiedName(null);
+        try {
+            const res = await axios.post("/shop/validate", {
+                product_id: selectedProduct?.id ?? allProducts[0]?.id,
+                target: target.trim(),
+                zone_id: zoneId.trim() || null,
+            });
+            setVerifiedName(res.data.success ? (res.data.name ?? "✓") : null);
+            if (!res.data.success) setVerifyError("Akkaunt topilmadi");
+        } catch {
+            setVerifyError("Akkaunt topilmadi");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleOrder = async () => {
+        if (!selectedProduct) return;
+        if (hasValidation && !verifiedName) {
+            setVerifyError("Avval tasdiqlang");
+            return;
+        }
+        setIsSubmitting(true);
+        setOrderError("");
+        try {
+            await axios.post("/shop/order", {
+                product_id: selectedProduct.id,
+                target: target.trim(),
+                zone_id: zoneId.trim() || null,
+            });
+            window.location.href = "/user-purchases";
+        } catch (e) {
+            setOrderError(
+                e?.response?.data?.errors?.balance?.[0] ||
+                    e?.response?.data?.errors?.api?.[0] ||
+                    "Xatolik yuz berdi",
+            );
+            setIsSubmitting(false);
+        }
+    };
+
+    const canBuy =
+        !isSubmitting &&
+        !!selectedProduct &&
+        target.trim().length > 0 &&
+        canAfford &&
+        (!hasValidation || !!verifiedName);
+
+    return (
+        <div className="pb-28">
+            {/* Hero banner — game art + title, like the reference screenshot */}
+            {gameImage && (
+                <div
+                    className={`relative rounded-2xl overflow-hidden mb-5 h-28  `}
+                >
+                    <img
+                        src={gameImage}
+                        alt={game}
+                        className="absolute inset-0 w-full h-full object-cover opacity-30"
+                    />
+                    <div className={`absolute inset-0  opacity-80`} />
+                    <div className="relative h-full flex items-center gap-4 px-5">
+                        <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30 bg-white/10">
+                            <img
+                                src={gameImage}
+                                alt={game}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-white font-bold text-lg leading-tight truncate">
+                                {game}
+                            </h2>
+                            <p className="text-white/80 text-xs mt-0.5">
+                                {category}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Account fields */}
+            <div className="mb-5 space-y-3">
+                <div>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                        O'YINCHI ID
+                    </label>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={target}
+                            onChange={(e) => {
+                                setTarget(e.target.value);
+                                setVerifiedName(null);
+                                setVerifyError("");
+                            }}
+                            placeholder="O'yinchi ID kiriting"
+                            className="w-full px-4 py-3 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        />
+                        <Info className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                    </div>
+                </div>
+
+                {needsZone && (
+                    <div>
+                        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">
+                            SERVER ID
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={zoneId}
+                                onChange={(e) => setZoneId(e.target.value)}
+                                placeholder="Server ID kiriting"
+                                className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                            {hasValidation && (
+                                <button
+                                    onClick={handleVerify}
+                                    disabled={isVerifying || !target.trim()}
+                                    className={`shrink-0 px-4 rounded-xl font-semibold text-sm text-white flex items-center gap-1.5 disabled:opacity-50 bg-linear-to-r ${accentColors.gradient}`}
+                                >
+                                    {isVerifying ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <Zap className="size-4" />
+                                    )}
+                                    Tekshirish
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {hasValidation && !needsZone && (
+                    <button
+                        onClick={handleVerify}
+                        disabled={isVerifying || !target.trim()}
+                        className={`w-full py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-1.5 disabled:opacity-50 bg-linear-to-r ${accentColors.gradient}`}
+                    >
+                        {isVerifying ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <Zap className="size-4" />
+                        )}
+                        Tekshirish
+                    </button>
+                )}
+
+                {verifiedName && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2">
+                        <CheckCircle className="size-4 shrink-0" />
+                        <span className="font-semibold">{verifiedName}</span>
+                    </div>
+                )}
+                {verifyError && (
+                    <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+                        {verifyError}
+                    </p>
+                )}
+            </div>
+
+            {/* Region / server type tabs */}
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">
+                Mahsulotni tanlang
+            </p>
+            {types.length > 1 && (
+                <div className="flex gap-2 flex-wrap mb-4">
+                    {types.map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => setActiveType(type)}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                                activeType === type
+                                    ? `bg-linear-to-r ${accentColors.gradient} text-white shadow-md`
+                                    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-300"
+                            }`}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Product grid — tap to select, no modal */}
+            <div className="grid grid-cols-2 gap-3">
+                {variants.map((p) => (
+                    <VariantCard
+                        key={p.id}
+                        product={p}
+                        accentColors={accentColors}
+                        selected={selectedProduct?.id === p.id}
+                        onSelect={setSelectedProduct}
+                    />
+                ))}
+            </div>
+
+            {orderError && (
+                <p className="mt-4 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+                    {orderError}
+                </p>
+            )}
+            {selectedProduct && !canAfford && (
+                <p className="mt-4 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+                    Balansingiz yetarli emas ({formatUzs(userBalance)})
+                </p>
+            )}
+
+            {/* Sticky bottom buy bar */}
+            <div className="fixed bottom-16 sm:bottom-4 left-0 right-0 px-4 z-30">
+                <div className="max-w-lg mx-auto">
+                    <button
+                        onClick={handleOrder}
+                        disabled={!canBuy}
+                        className={`w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-linear-to-r ${accentColors.gradient}`}
+                    >
+                        {isSubmitting ? (
+                            <Loader2 className="size-5 animate-spin" />
+                        ) : (
+                            <ShoppingCart className="size-5" />
+                        )}
+                        Sotib olish
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

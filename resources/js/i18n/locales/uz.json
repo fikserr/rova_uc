@@ -187,7 +187,12 @@
             "pending": "Ko'rib chiqilmoqda",
             "approved": "Tasdiqlandi",
             "rejected": "Rad etildi"
-        }
+        },
+        "coming_soon": "Tez kunda",
+        "payment_cards_label": "To'lov kartalari",
+        "upload_label": "Yuklash",
+        "upload_hint": "To'lov chekini rasm yoki fayl ko'rinishida yuklang (Maks. 10MB)",
+        "status_column": "Holati"
     },
     "notifications": {
         "page_title": "Bildirishnomalar",
