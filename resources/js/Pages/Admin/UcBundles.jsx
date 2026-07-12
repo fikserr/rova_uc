@@ -1,5 +1,13 @@
 import { Head, router, usePage } from "@inertiajs/react";
-import { AlertCircle, CheckCircle, ImageIcon, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+    AlertCircle,
+    CheckCircle,
+    ImageIcon,
+    Pencil,
+    Plus,
+    Trash2,
+    X,
+} from "lucide-react";
 import { useRef, useState } from "react";
 
 export default function UcBundles() {
@@ -161,7 +169,10 @@ export default function UcBundles() {
                                     {bundle.title}
                                 </h3>
                                 <p className="text-base font-bold text-blue-600 dark:text-blue-400 mb-3">
-                                    {Number(bundle.sell_price).toLocaleString("fr-FR")} UZS
+                                    {Number(bundle.sell_price).toLocaleString(
+                                        "fr-FR",
+                                    )}{" "}
+                                    UZS
                                 </p>
                                 <div className="flex gap-2">
                                     <button
@@ -190,7 +201,8 @@ export default function UcBundles() {
                             To'plamlar yo'q
                         </p>
                         <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-                            Yangi to'plam qo'shish uchun "Yangi to'plam" tugmasini bosing
+                            Yangi to'plam qo'shish uchun "Yangi to'plam"
+                            tugmasini bosing
                         </p>
                     </div>
                 )}
@@ -209,11 +221,13 @@ export default function UcBundles() {
                         {/* Modal header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
                             <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm">
+                                <div className="size-8 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm">
                                     🎁
                                 </div>
                                 <h2 className="text-base font-bold text-slate-800 dark:text-white">
-                                    {editing ? "To'plamni tahrirlash" : "Yangi to'plam"}
+                                    {editing
+                                        ? "To'plamni tahrirlash"
+                                        : "Yangi to'plam"}
                                 </h2>
                             </div>
                             <button
@@ -259,7 +273,9 @@ export default function UcBundles() {
                                     onChange={handleFileChange}
                                 />
                                 {errors.image && (
-                                    <p className="text-xs text-rose-500 mt-1">{errors.image}</p>
+                                    <p className="text-xs text-rose-500 mt-1">
+                                        {errors.image}
+                                    </p>
                                 )}
                             </div>
 
@@ -274,12 +290,17 @@ export default function UcBundles() {
                                     value={form.title}
                                     required
                                     onChange={(e) =>
-                                        setForm((p) => ({ ...p, title: e.target.value }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            title: e.target.value,
+                                        }))
                                     }
                                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                                 />
                                 {errors.title && (
-                                    <p className="text-xs text-rose-500 mt-1">{errors.title}</p>
+                                    <p className="text-xs text-rose-500 mt-1">
+                                        {errors.title}
+                                    </p>
                                 )}
                             </div>
 
@@ -295,12 +316,17 @@ export default function UcBundles() {
                                         value={form.sell_price}
                                         required
                                         onChange={(e) =>
-                                            setForm((p) => ({ ...p, sell_price: e.target.value }))
+                                            setForm((p) => ({
+                                                ...p,
+                                                sell_price: e.target.value,
+                                            }))
                                         }
                                         className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                                     />
                                     {errors.sell_price && (
-                                        <p className="text-xs text-rose-500 mt-1">{errors.sell_price}</p>
+                                        <p className="text-xs text-rose-500 mt-1">
+                                            {errors.sell_price}
+                                        </p>
                                     )}
                                 </div>
                                 <div>
@@ -313,12 +339,17 @@ export default function UcBundles() {
                                         value={form.cost_price}
                                         required
                                         onChange={(e) =>
-                                            setForm((p) => ({ ...p, cost_price: e.target.value }))
+                                            setForm((p) => ({
+                                                ...p,
+                                                cost_price: e.target.value,
+                                            }))
                                         }
                                         className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                                     />
                                     {errors.cost_price && (
-                                        <p className="text-xs text-rose-500 mt-1">{errors.cost_price}</p>
+                                        <p className="text-xs text-rose-500 mt-1">
+                                            {errors.cost_price}
+                                        </p>
                                     )}
                                 </div>
                             </div>
@@ -332,7 +363,10 @@ export default function UcBundles() {
                                     value={form.cost_currency}
                                     required
                                     onChange={(e) =>
-                                        setForm((p) => ({ ...p, cost_currency: e.target.value }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            cost_currency: e.target.value,
+                                        }))
                                     }
                                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all cursor-pointer"
                                 >
@@ -344,7 +378,9 @@ export default function UcBundles() {
                                     ))}
                                 </select>
                                 {errors.cost_currency && (
-                                    <p className="text-xs text-rose-500 mt-1">{errors.cost_currency}</p>
+                                    <p className="text-xs text-rose-500 mt-1">
+                                        {errors.cost_currency}
+                                    </p>
                                 )}
                             </div>
 
@@ -358,7 +394,10 @@ export default function UcBundles() {
                                     placeholder="0"
                                     value={form.sort_order}
                                     onChange={(e) =>
-                                        setForm((p) => ({ ...p, sort_order: e.target.value }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            sort_order: e.target.value,
+                                        }))
                                     }
                                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                                 />
@@ -377,7 +416,10 @@ export default function UcBundles() {
                                 <button
                                     type="button"
                                     onClick={() =>
-                                        setForm((p) => ({ ...p, is_active: !p.is_active }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            is_active: !p.is_active,
+                                        }))
                                     }
                                     className={`relative w-12 h-6 rounded-full transition-colors ${form.is_active ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}
                                 >

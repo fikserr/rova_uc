@@ -121,7 +121,7 @@ function UserProfile() {
     const unreadCount = Number(stats.unread ?? 0);
 
     return (
-        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 bg-linear-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 from-slate-50 via-blue-50 to-indigo-50 transition-all">
+        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 transition-all">
             <Head>
                 <title>{t("profile.title")}</title>
             </Head>

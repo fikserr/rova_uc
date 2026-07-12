@@ -147,7 +147,7 @@ function UserPurchases() {
             if (prev === "delivered") return "canceled";
             return "all";
         });
-    };
+};
 
     const formatDateTime = (value) => {
         if (!value) return "-";
@@ -157,7 +157,7 @@ function UserPurchases() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)] bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 px-4 py-6 pb-24 lg:pb-8">
+        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-24 lg:pb-8">
             <Head title={t("purchases.page_title")} />
 
             <div className="max-w-4xl mx-auto">

@@ -1,8 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import laravel from "laravel-vite-plugin";
-import { defineConfig } from "vite";
 import path from "path";
+import { defineConfig } from "vite";
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -15,6 +16,11 @@ export default defineConfig({
     server: {
         host: "127.0.0.1", // ✅ tashqi tarmoqdan ham kirish uchun
         port: process.env.PORT || 5173, // Railway o'z portini o‘zi beradi
+
+        hmr: {
+            host: "localhost",
+        },
+        allowedHosts: [".ngrok-free.dev"],
     },
     resolve: {
         alias: {

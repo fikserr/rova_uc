@@ -1,5 +1,5 @@
-import { Head, router } from "@inertiajs/react"
-import axios from "axios"
+import { Head, router } from "@inertiajs/react";
+import axios from "axios";
 import {
     AlertCircle,
     Calendar,
@@ -12,9 +12,9 @@ import {
     TrendingUp,
     X,
     XCircle,
-    ZoomIn
-} from "lucide-react"
-import { useState } from "react"
+    ZoomIn,
+} from "lucide-react";
+import { useState } from "react";
 
 const STATUS_LABEL = {
     pending: {
@@ -48,19 +48,28 @@ function resolveReceiptUrl(raw) {
         return "/" + cleaned.replace("storage/app/public/", "storage/");
     if (cleaned.startsWith("storage/app/"))
         return "/" + cleaned.replace("storage/app/", "storage/");
-    if (cleaned.startsWith("storage/"))
-        return "/" + cleaned;
+    if (cleaned.startsWith("storage/")) return "/" + cleaned;
     return "/storage/" + cleaned;
 }
 
 function StatCard({ icon: Icon, label, value, color, sub }) {
     return (
-        <div className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 shadow-sm`}>
+        <div
+            className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 shadow-sm`}
+        >
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-white leading-none">{value}</p>
-                    {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{sub}</p>}
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                        {label}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-800 dark:text-white leading-none">
+                        {value}
+                    </p>
+                    {sub && (
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                            {sub}
+                        </p>
+                    )}
                 </div>
                 <div className={`p-2.5 rounded-xl ${color}`}>
                     <Icon className="size-5 text-white" />
@@ -84,17 +93,20 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
     const receiptUrl = resolveReceiptUrl(r.receipt_url);
 
     return (
-        <div className={`
+        <div
+            className={`
             bg-white dark:bg-slate-800/90 rounded-2xl border transition-all duration-200 overflow-hidden
-            ${isPending
-                ? "border-amber-200 dark:border-amber-700/40 shadow-md shadow-amber-50 dark:shadow-amber-900/10"
-                : "border-slate-100 dark:border-slate-700/60 shadow-sm"
+            ${
+                isPending
+                    ? "border-amber-200 dark:border-amber-700/40 shadow-md shadow-amber-50 dark:shadow-amber-900/10"
+                    : "border-slate-100 dark:border-slate-700/60 shadow-sm"
             }
             hover:shadow-md hover:-translate-y-px
-        `}>
+        `}
+        >
             {/* Pending top accent bar */}
             {isPending && (
-                <div className="h-0.5 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
+                <div className="h-0.5 w-full bg-linear-to-r from-amber-400 via-orange-400 to-amber-400" />
             )}
 
             {/* Card header */}
@@ -107,13 +119,21 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
             >
                 {/* Avatar with status dot */}
                 <div className="relative shrink-0">
-                    <div className={`size-9 rounded-xl flex items-center justify-center font-bold text-sm text-white
-                        ${r.status === 'pending' ? 'bg-gradient-to-br from-amber-400 to-orange-500' :
-                          r.status === 'approved' ? 'bg-gradient-to-br from-emerald-400 to-teal-500' :
-                          'bg-gradient-to-br from-rose-400 to-pink-500'}`}>
+                    <div
+                        className={`size-9 rounded-xl flex items-center justify-center font-bold text-sm text-white
+                        ${
+                            r.status === "pending"
+                                ? "bg-linear-to-br from-amber-400 to-orange-500"
+                                : r.status === "approved"
+                                  ? "bg-linear-to-br from-emerald-400 to-teal-500"
+                                  : "bg-linear-to-br from-rose-400 to-pink-500"
+                        }`}
+                    >
                         {(r.username || "?")[0].toUpperCase()}
                     </div>
-                    <span className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white dark:border-slate-800 ${s.dot}`} />
+                    <span
+                        className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white dark:border-slate-800 ${s.dot}`}
+                    />
                 </div>
 
                 {/* User + date */}
@@ -130,16 +150,27 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
                 {/* Desktop extras */}
                 <div className="hidden lg:flex items-center gap-6 mr-4">
                     <div className="text-center">
-                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mb-0.5">ID</p>
-                        <p className="text-sm font-mono font-semibold text-slate-500 dark:text-slate-400">#{r.id}</p>
+                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mb-0.5">
+                            ID
+                        </p>
+                        <p className="text-sm font-mono font-semibold text-slate-500 dark:text-slate-400">
+                            #{r.id}
+                        </p>
                     </div>
                     {receiptUrl ? (
                         <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); onLightbox(receiptUrl); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onLightbox(receiptUrl);
+                            }}
                             className="group relative block w-14 h-12 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition-all"
                         >
-                            <img src={receiptUrl} alt="Chek" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                            <img
+                                src={receiptUrl}
+                                alt="Chek"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                 <ZoomIn className="size-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -156,18 +187,25 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
                     <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base whitespace-nowrap">
                         {Number(r.amount).toLocaleString("fr-FR")}
                     </span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500 block">UZS</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 block">
+                        UZS
+                    </span>
                 </div>
 
                 {/* Status badge — hidden on xs */}
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 ${s.cls}`}>
+                <span
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 ${s.cls}`}
+                >
                     <span className={`size-1.5 rounded-full ${s.dot}`} />
                     {s.text}
                 </span>
 
                 {/* Desktop action buttons */}
                 {isPending && (
-                    <div className="hidden lg:flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div
+                        className="hidden lg:flex items-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <button
                             type="button"
                             onClick={() => onApprove(r.id)}
@@ -189,16 +227,24 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
                     </div>
                 )}
 
-                <ChevronDown className={`lg:hidden size-4 text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+                <ChevronDown
+                    className={`lg:hidden size-4 text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                />
             </div>
 
             {/* Expandable body — mobile */}
-            <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}>
+            <div
+                className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-150 opacity-100" : "max-h-0 opacity-0"}`}
+            >
                 <div className="mx-4 mb-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50 p-4 space-y-4">
                     {/* Mobile status */}
                     <div className="sm:hidden">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 ${s.cls}`}>
-                            <span className={`size-1.5 rounded-full ${s.dot}`} />
+                        <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 ${s.cls}`}
+                        >
+                            <span
+                                className={`size-1.5 rounded-full ${s.dot}`}
+                            />
                             {s.text}
                         </span>
                     </div>
@@ -206,14 +252,20 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
                     <div className="flex gap-4">
                         {/* Receipt */}
                         <div className="shrink-0">
-                            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Chek</p>
+                            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                                Chek
+                            </p>
                             {receiptUrl ? (
                                 <button
                                     type="button"
                                     onClick={() => onLightbox(receiptUrl)}
                                     className="group relative block w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-600 hover:border-blue-400 transition-all"
                                 >
-                                    <img src={receiptUrl} alt="Chek" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                    <img
+                                        src={receiptUrl}
+                                        alt="Chek"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                    />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                         <ZoomIn className="size-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
@@ -227,13 +279,21 @@ function TopupCard({ r, onApprove, onReject, loadingId, onLightbox }) {
 
                         <div className="flex-1 min-w-0 space-y-3">
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">So'rov ID</p>
-                                <p className="text-sm font-mono font-semibold text-slate-600 dark:text-slate-300">#{r.id}</p>
+                                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                                    So'rov ID
+                                </p>
+                                <p className="text-sm font-mono font-semibold text-slate-600 dark:text-slate-300">
+                                    #{r.id}
+                                </p>
                             </div>
                             {r.notes && (
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Izoh</p>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{r.notes}</p>
+                                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                                        Izoh
+                                    </p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        {r.notes}
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -308,7 +368,9 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
         if (!rejectId) return;
         setLoadingId(rejectId);
         try {
-            await axios.post(`/manual-topups/${rejectId}/reject`, { notes: rejectNote });
+            await axios.post(`/manual-topups/${rejectId}/reject`, {
+                notes: rejectNote,
+            });
             setRejectId(null);
             router.reload({ only: ["requests", "pending"] });
         } catch (e) {
@@ -320,7 +382,9 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
 
     const sorted = [...requests]
         .filter((r) => {
-            const matchName = r.username.toLowerCase().includes(search.trim().toLowerCase());
+            const matchName = r.username
+                .toLowerCase()
+                .includes(search.trim().toLowerCase());
             const created = new Date(r.created_at);
             const from = dateFrom ? new Date(dateFrom) : null;
             const to = dateTo ? new Date(dateTo + "T23:59:59") : null;
@@ -335,7 +399,9 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
         });
 
     const totalAmount = requests.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-    const approvedCount = requests.filter((r) => r.status === "approved").length;
+    const approvedCount = requests.filter(
+        (r) => r.status === "approved",
+    ).length;
 
     return (
         <>
@@ -350,8 +416,12 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                                 <XCircle className="size-5 text-rose-500" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800 dark:text-white">Rad etish</h3>
-                                <p className="text-xs text-slate-400 dark:text-slate-500">Sabab ko'rsating (ixtiyoriy)</p>
+                                <h3 className="font-bold text-slate-800 dark:text-white">
+                                    Rad etish
+                                </h3>
+                                <p className="text-xs text-slate-400 dark:text-slate-500">
+                                    Sabab ko'rsating (ixtiyoriy)
+                                </p>
                             </div>
                         </div>
                         <textarea
@@ -380,7 +450,9 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                                         <span className="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                         Yuklanmoqda
                                     </span>
-                                ) : "Rad etish"}
+                                ) : (
+                                    "Rad etish"
+                                )}
                             </button>
                         </div>
                     </div>
@@ -410,35 +482,42 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
             )}
 
             <div className="w-full min-w-0 space-y-5">
-
                 {/* ── Stats row ── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
                         icon={AlertCircle}
                         label="Kutilmoqda"
                         value={pending}
-                        color="bg-gradient-to-br from-amber-400 to-orange-500"
-                        sub={pending > 0 ? "Ko'rib chiqish kerak" : "Hammasini ko'rib chiqdingiz"}
+                        color="bg-linear-to-br from-amber-400 to-orange-500"
+                        sub={
+                            pending > 0
+                                ? "Ko'rib chiqish kerak"
+                                : "Hammasini ko'rib chiqdingiz"
+                        }
                     />
                     <StatCard
                         icon={Receipt}
                         label="Jami so'rovlar"
                         value={requests.length}
-                        color="bg-gradient-to-br from-blue-500 to-indigo-600"
-                        sub={hasActiveFilter ? `${sorted.length} ta filtrlangan` : "Barcha vaqt"}
+                        color="bg-linear-to-br from-blue-500 to-indigo-600"
+                        sub={
+                            hasActiveFilter
+                                ? `${sorted.length} ta filtrlangan`
+                                : "Barcha vaqt"
+                        }
                     />
                     <StatCard
                         icon={CheckCircle}
                         label="Tasdiqlangan"
                         value={approvedCount}
-                        color="bg-gradient-to-br from-emerald-400 to-teal-500"
+                        color="bg-linear-to-br from-emerald-400 to-teal-500"
                         sub={`${requests.length ? Math.round((approvedCount / requests.length) * 100) : 0}% tasdiqlangan`}
                     />
                     <StatCard
                         icon={TrendingUp}
                         label="Jami summa"
                         value={totalAmount.toLocaleString("fr-FR")}
-                        color="bg-gradient-to-br from-violet-500 to-purple-600"
+                        color="bg-linear-to-br from-violet-500 to-purple-600"
                         sub="UZS barcha so'rovlar"
                     />
                 </div>
@@ -448,7 +527,7 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                     {/* Title row */}
                     <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-slate-100 dark:border-slate-700/60">
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="size-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
+                            <div className="size-9 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
                                 <Receipt className="size-4 text-white" />
                             </div>
                             <div className="min-w-0">
@@ -457,9 +536,21 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                                 </h1>
                                 <p className="text-xs text-slate-400 dark:text-slate-500">
                                     {pending > 0 ? (
-                                        <span className="text-amber-500 font-semibold">{pending} ta kutilmoqda</span>
+                                        <span className="text-amber-500 font-semibold">
+                                            {pending} ta kutilmoqda
+                                        </span>
                                     ) : (
-                                        <span>Jami {requests.length} ta so'rov{hasActiveFilter && sorted.length !== requests.length && <span className="text-blue-500 ml-1">· {sorted.length} ta ko'rsatilmoqda</span>}</span>
+                                        <span>
+                                            Jami {requests.length} ta so'rov
+                                            {hasActiveFilter &&
+                                                sorted.length !==
+                                                    requests.length && (
+                                                    <span className="text-blue-500 ml-1">
+                                                        · {sorted.length} ta
+                                                        ko'rsatilmoqda
+                                                    </span>
+                                                )}
+                                        </span>
                                     )}
                                 </p>
                             </div>
@@ -471,9 +562,10 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                             onClick={() => setFiltersOpen((v) => !v)}
                             className={`
                                 lg:hidden relative flex items-center gap-1.5 px-3 h-8 rounded-xl border text-xs font-semibold transition-all shrink-0
-                                ${filtersOpen || hasActiveFilter
-                                    ? "border-blue-400 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-500"
-                                    : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                ${
+                                    filtersOpen || hasActiveFilter
+                                        ? "border-blue-400 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-500"
+                                        : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                                 }
                             `}
                         >
@@ -497,7 +589,11 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                                 className="bg-transparent outline-none text-sm text-slate-800 dark:text-white placeholder:text-slate-400 w-full"
                             />
                             {search && (
-                                <button type="button" onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                                >
                                     <X className="size-3.5" />
                                 </button>
                             )}
@@ -505,14 +601,28 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
 
                         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 h-9 focus-within:ring-2 focus-within:ring-blue-400 transition-all">
                             <Calendar className="size-3.5 text-slate-400 shrink-0" />
-                            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => setDateFrom(e.target.value)} className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 cursor-pointer" />
+                            <input
+                                type="date"
+                                value={dateFrom}
+                                max={dateTo || undefined}
+                                onChange={(e) => setDateFrom(e.target.value)}
+                                className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 cursor-pointer"
+                            />
                         </div>
 
-                        <span className="text-slate-300 dark:text-slate-600 text-sm">→</span>
+                        <span className="text-slate-300 dark:text-slate-600 text-sm">
+                            →
+                        </span>
 
                         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 h-9 focus-within:ring-2 focus-within:ring-blue-400 transition-all">
                             <Calendar className="size-3.5 text-slate-400 shrink-0" />
-                            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 cursor-pointer" />
+                            <input
+                                type="date"
+                                value={dateTo}
+                                min={dateFrom || undefined}
+                                onChange={(e) => setDateTo(e.target.value)}
+                                className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 cursor-pointer"
+                            />
                         </div>
 
                         {hasActiveFilter && (
@@ -528,39 +638,86 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                     </div>
 
                     {/* Mobile filter panel */}
-                    <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${filtersOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}`}>
+                    <div
+                        className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${filtersOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}`}
+                    >
                         <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 dark:border-slate-700/60">
                             <div>
-                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Foydalanuvchi</label>
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                                    Foydalanuvchi
+                                </label>
                                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 h-10 focus-within:ring-2 focus-within:ring-blue-400 transition-all">
                                     <Search className="size-4 text-slate-400 shrink-0" />
-                                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Foydalanuvchi nomi..." className="bg-transparent outline-none text-sm text-slate-800 dark:text-white placeholder:text-slate-400 w-full" />
-                                    {search && <button type="button" onClick={() => setSearch("")}><X className="size-4 text-slate-400" /></button>}
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) =>
+                                            setSearch(e.target.value)
+                                        }
+                                        placeholder="Foydalanuvchi nomi..."
+                                        className="bg-transparent outline-none text-sm text-slate-800 dark:text-white placeholder:text-slate-400 w-full"
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch("")}
+                                        >
+                                            <X className="size-4 text-slate-400" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Sana oralig'i</label>
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                                    Sana oralig'i
+                                </label>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-2 flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 h-10 focus-within:ring-2 focus-within:ring-blue-400 transition-all">
                                         <Calendar className="size-4 text-slate-400 shrink-0" />
-                                        <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => setDateFrom(e.target.value)} className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 w-full cursor-pointer" />
+                                        <input
+                                            type="date"
+                                            value={dateFrom}
+                                            max={dateTo || undefined}
+                                            onChange={(e) =>
+                                                setDateFrom(e.target.value)
+                                            }
+                                            className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 w-full cursor-pointer"
+                                        />
                                     </div>
-                                    <span className="text-slate-300 text-sm">→</span>
+                                    <span className="text-slate-300 text-sm">
+                                        →
+                                    </span>
                                     <div className="flex items-center gap-2 flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 h-10 focus-within:ring-2 focus-within:ring-blue-400 transition-all">
                                         <Calendar className="size-4 text-slate-400 shrink-0" />
-                                        <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 w-full cursor-pointer" />
+                                        <input
+                                            type="date"
+                                            value={dateTo}
+                                            min={dateFrom || undefined}
+                                            onChange={(e) =>
+                                                setDateTo(e.target.value)
+                                            }
+                                            className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 w-full cursor-pointer"
+                                        />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex gap-2 pt-1">
                                 {hasActiveFilter && (
-                                    <button type="button" onClick={clearFilters} className="flex items-center justify-center gap-1.5 flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                    <button
+                                        type="button"
+                                        onClick={clearFilters}
+                                        className="flex items-center justify-center gap-1.5 flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                    >
                                         <X className="size-4" /> Tozalash
                                     </button>
                                 )}
-                                <button type="button" onClick={() => setFiltersOpen(false)} className="flex items-center justify-center gap-1.5 flex-1 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => setFiltersOpen(false)}
+                                    className="flex items-center justify-center gap-1.5 flex-1 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
+                                >
                                     Qo'llash
                                 </button>
                             </div>
@@ -575,13 +732,21 @@ export default function ManualTopups({ requests = [], pending = 0 }) {
                             <Receipt className="size-7 text-slate-300 dark:text-slate-500" />
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 font-semibold mb-1">
-                            {hasActiveFilter ? "Filtr bo'yicha so'rovlar topilmadi" : "Hozircha so'rovlar yo'q"}
+                            {hasActiveFilter
+                                ? "Filtr bo'yicha so'rovlar topilmadi"
+                                : "Hozircha so'rovlar yo'q"}
                         </p>
                         <p className="text-slate-400 dark:text-slate-500 text-sm">
-                            {hasActiveFilter ? "Boshqa parametrlar bilan urinib ko'ring" : "Yangi so'rovlar bu yerda ko'rinadi"}
+                            {hasActiveFilter
+                                ? "Boshqa parametrlar bilan urinib ko'ring"
+                                : "Yangi so'rovlar bu yerda ko'rinadi"}
                         </p>
                         {hasActiveFilter && (
-                            <button type="button" onClick={clearFilters} className="mt-4 px-4 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="mt-4 px-4 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                            >
                                 Filterlarni tozalash
                             </button>
                         )}
