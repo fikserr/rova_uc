@@ -1,4 +1,5 @@
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
+import axios from "axios";
 import {
     CheckCircle,
     Clock,
@@ -8,7 +9,7 @@ import {
     ShoppingBag,
     XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 function StatusTracker({ status }) {
@@ -83,25 +84,26 @@ function StatusTracker({ status }) {
 
 function UserPurchases() {
     const { t } = useTranslation();
-    const { purchases = [], stats = {} } = usePage().props;
+    const { purchases: initPurchases = [], stats: initStats = {} } = usePage().props;
+    const [purchases, setPurchases] = useState(initPurchases);
+    const [stats, setStats]         = useState(initStats);
     const [filterStatus, setFilterStatus] = useState("all");
+    const intervalRef = useRef(null);
 
     useEffect(() => {
-        const refreshPurchases = () => {
-            router.reload({
-                only: ["purchases", "stats", "flash"],
-                preserveScroll: true,
-                preserveState: true,
-                showProgress: false,
-            });
+        const refresh = async () => {
+            try {
+                const res = await axios.get("/user-purchases/data");
+                setPurchases(res.data.purchases ?? []);
+                setStats(res.data.stats ?? {});
+            } catch (_) {}
         };
 
-        refreshPurchases();
-        const intervalId = setInterval(refreshPurchases, 2000);
-        window.addEventListener("focus", refreshPurchases);
+        intervalRef.current = setInterval(refresh, 5000);
+        window.addEventListener("focus", refresh);
         return () => {
-            clearInterval(intervalId);
-            window.removeEventListener("focus", refreshPurchases);
+            clearInterval(intervalRef.current);
+            window.removeEventListener("focus", refresh);
         };
     }, []);
 

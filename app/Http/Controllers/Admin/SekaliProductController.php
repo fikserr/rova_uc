@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CurrencyRate;
 use App\Models\SekaliProduct;
+use App\Models\TopGame;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class SekaliProductController extends Controller
@@ -28,9 +30,12 @@ class SekaliProductController extends Controller
             ->orderByDesc('created_at')
             ->value('rate_to_base') ?? 0);
 
+        $topGames = TopGame::orderBy('sort_order')->pluck('game_name')->toArray();
+
         return Inertia::render('Admin/SekaliProducts', [
-            'tree'     => $tree,
-            'idr_rate' => $idrRate,
+            'tree'      => $tree,
+            'idr_rate'  => $idrRate,
+            'top_games' => $topGames,
         ]);
     }
 
@@ -47,8 +52,9 @@ class SekaliProductController extends Controller
             ->orderBy('price_uzs')
             ->get([
                 'id', 'category', 'game_name', 'product_type', 'name',
-                'price_idr', 'price_uzs', 'markup_percent',
-                'order_process', 'has_validation', 'stock', 'is_active',
+                'price_idr', 'price_uzs', 'reseller_price_uzs', 'markup_percent',
+                'order_process', 'has_validation', 'stock',
+                'is_active', 'visible_to_users', 'visible_to_resellers',
             ]);
 
         $grouped = $products
@@ -65,16 +71,22 @@ class SekaliProductController extends Controller
     public function update(Request $request, SekaliProduct $sekaliProduct)
     {
         $data = $request->validate([
-            'price_uzs' => 'required|integer|min:100',
-            'is_active' => 'required|boolean',
+            'price_uzs'            => 'required|integer|min:100',
+            'reseller_price_uzs'   => 'nullable|integer|min:100',
+            'is_active'            => 'required|boolean',
+            'visible_to_users'     => 'required|boolean',
+            'visible_to_resellers' => 'required|boolean',
         ]);
 
         $idrRate = (float) (CurrencyRate::where('currency_code', 'IDR')
             ->orderByDesc('created_at')
             ->value('rate_to_base') ?? 0);
 
-        $sekaliProduct->price_uzs = $data['price_uzs'];
-        $sekaliProduct->is_active = $data['is_active'];
+        $sekaliProduct->price_uzs            = $data['price_uzs'];
+        $sekaliProduct->reseller_price_uzs   = $data['reseller_price_uzs'] ?? null;
+        $sekaliProduct->is_active            = $data['is_active'];
+        $sekaliProduct->visible_to_users     = $data['visible_to_users'];
+        $sekaliProduct->visible_to_resellers = $data['visible_to_resellers'];
 
         if ($idrRate > 0 && $sekaliProduct->price_idr > 0) {
             $costUzs = $sekaliProduct->price_idr * $idrRate;
@@ -86,7 +98,8 @@ class SekaliProductController extends Controller
         $sekaliProduct->save();
 
         return response()->json(['ok' => true, 'product' => $sekaliProduct->only([
-            'id', 'price_uzs', 'markup_percent', 'is_active',
+            'id', 'price_uzs', 'reseller_price_uzs', 'markup_percent',
+            'is_active', 'visible_to_users', 'visible_to_resellers',
         ])]);
     }
 
@@ -123,6 +136,37 @@ class SekaliProductController extends Controller
         }
 
         return response()->json(['ok' => true, 'count' => $count]);
+    }
+
+    public function toggleTopGame(Request $request)
+    {
+        $data = $request->validate([
+            'category'  => 'required|string',
+            'game_name' => 'required|string',
+        ]);
+
+        $existing = TopGame::where('category', $data['category'])
+            ->where('game_name', $data['game_name'])
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            return response()->json(['is_top' => false]);
+        }
+
+        $imageUrl = SekaliProduct::where('category', $data['category'])
+            ->where('game_name', $data['game_name'])
+            ->whereNotNull('image_url')
+            ->value('image_url');
+
+        TopGame::create([
+            'category'   => $data['category'],
+            'game_name'  => $data['game_name'],
+            'image_url'  => $imageUrl,
+            'sort_order' => (TopGame::max('sort_order') ?? 0) + 1,
+        ]);
+
+        return response()->json(['is_top' => true]);
     }
 
     public function sync()

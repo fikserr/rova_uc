@@ -103,7 +103,10 @@ function VariantCard({ product, accentColors, selected, onSelect }) {
                             selected ? "text-white/90" : accentColors.text
                         }`}
                     >
-                        {formatUzs(product.price_uzs)}
+                        {formatUzs(product.display_price ?? product.price_uzs)}
+                        {product.is_reseller_price && (
+                            <span className="ml-1 text-[10px] bg-emerald-500 text-white rounded px-1">R</span>
+                        )}
                     </p>
                 </div>
             </div>
@@ -170,21 +173,20 @@ export function GameVariants({
     const variants = grouped[activeType] ?? [];
     const allProducts = Object.values(grouped).flat();
 
-    // Whether this game needs a Zone ID / account validation at all —
-    // derived from any product for this game, since it's the same game.
+    // Whether this game needs a Zone ID — derived from any product for this game.
     const needsZone = allProducts.some(
         (p) =>
             p.required_fields &&
             JSON.stringify(p.required_fields).toLowerCase().includes("zone"),
     );
-    const hasValidation = allProducts.some((p) => p.has_validation);
 
     const canAfford = selectedProduct
-        ? userBalance >= selectedProduct.price_uzs
+        ? userBalance >= (selectedProduct.display_price ?? selectedProduct.price_uzs)
         : true;
 
     const handleVerify = async () => {
         if (!target.trim()) return;
+        if (needsZone && !zoneId.trim()) return;
         setIsVerifying(true);
         setVerifyError("");
         setVerifiedName(null);
@@ -205,7 +207,7 @@ export function GameVariants({
 
     const handleOrder = async () => {
         if (!selectedProduct) return;
-        if (hasValidation && !verifiedName) {
+        if (!verifiedName) {
             setVerifyError("Avval tasdiqlang");
             return;
         }
@@ -233,7 +235,7 @@ export function GameVariants({
         !!selectedProduct &&
         target.trim().length > 0 &&
         canAfford &&
-        (!hasValidation || !!verifiedName);
+        !!verifiedName;
 
     return (
         <div className="pb-28">
@@ -299,29 +301,31 @@ export function GameVariants({
                             <input
                                 type="text"
                                 value={zoneId}
-                                onChange={(e) => setZoneId(e.target.value)}
+                                onChange={(e) => {
+                                    setZoneId(e.target.value);
+                                    setVerifiedName(null);
+                                    setVerifyError("");
+                                }}
                                 placeholder="Server ID kiriting"
                                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                             />
-                            {hasValidation && (
-                                <button
-                                    onClick={handleVerify}
-                                    disabled={isVerifying || !target.trim()}
-                                    className={`shrink-0 px-4 rounded-xl font-semibold text-sm text-white flex items-center gap-1.5 disabled:opacity-50 bg-linear-to-r ${accentColors.gradient}`}
-                                >
-                                    {isVerifying ? (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    ) : (
-                                        <Zap className="size-4" />
-                                    )}
-                                    Tekshirish
-                                </button>
-                            )}
+                            <button
+                                onClick={handleVerify}
+                                disabled={isVerifying || !target.trim() || !zoneId.trim()}
+                                className={`shrink-0 px-4 rounded-xl font-semibold text-sm text-white flex items-center gap-1.5 disabled:opacity-50 bg-linear-to-r ${accentColors.gradient}`}
+                            >
+                                {isVerifying ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Zap className="size-4" />
+                                )}
+                                Tekshirish
+                            </button>
                         </div>
                     </div>
                 )}
 
-                {hasValidation && !needsZone && (
+                {!needsZone && (
                     <button
                         onClick={handleVerify}
                         disabled={isVerifying || !target.trim()}

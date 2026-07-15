@@ -1,47 +1,55 @@
 import { Link, usePage } from "@inertiajs/react";
+import { useT } from "@/Hook/useLanguage";
 import { FaChartLine, FaCog, FaDollarSign, FaLayerGroup } from "react-icons/fa";
-import { IoDiamondOutline } from "react-icons/io5";
 import {
+    LuActivity,
     LuBell,
     LuBox,
     LuCalendarCheck,
     LuCreditCard,
+    LuGift,
     LuLayoutDashboard,
     LuReceipt,
+    LuScrollText,
     LuShieldCheck,
     LuShoppingCart,
-    LuStar,
     LuStore,
+    LuTag,
     LuUser,
+    LuTrendingUp,
 } from "react-icons/lu";
 
 export function Sidebar({ isOpen = true, onClose }) {
     const { url, props } = usePage();
+    const t = useT();
     const authUser = props?.auth?.user ?? null;
     const role = authUser?.role ?? "worker";
     const displayName = authUser?.username || "Admin";
-    const subText = authUser?.phone_number || (role === "worker" ? "Worker" : "Administrator");
+    const subText = authUser?.phone_number || (role === "worker" ? "Worker" : role === "reseller" ? "Reseller" : "Administrator");
     const avatarLetter =
         String(displayName).trim().charAt(0).toUpperCase() || "A";
 
     const allMenuItems = [
-        { href: "/admin/dashboard",          label: "Dashboard",         icon: LuLayoutDashboard, roles: ["admin"] },
-        { href: "/uc-orders",                label: "UC Orders",          icon: LuShoppingCart,    roles: ["admin","worker"] },
-        { href: "/ml-orders",                label: "Diamond Orders",     icon: IoDiamondOutline,  roles: ["admin","worker"] },
-        { href: "/service-orders",           label: "Service Orders",     icon: LuStar,            roles: ["admin","worker"] },
-        { href: "/manual-topups",            label: "Manual Topuplar",    icon: LuReceipt,         roles: ["admin","worker"] },
-        { href: "/profit-analytics",         label: "Profit Analytics",   icon: FaChartLine,       roles: ["admin"] },
-        { href: "/referral-settings",        label: "Referral Settings",  icon: FaLayerGroup,      roles: ["admin"] },
-        { href: "/users",                    label: "Users",              icon: LuUser,            roles: ["admin"] },
-        { href: "/products-uc",              label: "UC Products",        icon: LuBox,             roles: ["admin"] },
-        { href: "/products-bundles",         label: "To'plamlar",         icon: LuBox,             roles: ["admin"] },
-        { href: "/currencies",               label: "Currency Rates",     icon: FaDollarSign,      roles: ["admin"] },
-        { href: "/sekali-products",          label: "SekalıPay Shop",     icon: LuStore,           roles: ["admin"] },
-        { href: "/spin-sectors",             label: "Spin Management",    icon: FaCog,             roles: ["admin"] },
-        { href: "/tasks",                    label: "Tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
-        { href: "/broadcast-notifications",  label: "Broadcast",          icon: LuBell,            roles: ["admin","worker"] },
-        { href: "/payment-cards",            label: "To'lov Kartalari",   icon: LuCreditCard,      roles: ["admin"] },
-        { href: "/admin/security",           label: "Xavfsizlik",         icon: LuShieldCheck,     roles: ["admin","worker"] },
+        { href: "/admin/dashboard",          tKey: "dashboard",          icon: LuLayoutDashboard, roles: ["admin"] },
+        { href: "/all-orders",               tKey: "sekali_orders",      icon: LuScrollText,      roles: ["admin"] },
+        { href: "/uc-orders",                tKey: "uc_service_orders",  icon: LuShoppingCart,    roles: ["admin"] },
+        { href: "/manual-topups",            tKey: "manual_topups",      icon: LuReceipt,         roles: ["admin"] },
+        { href: "/profit-analytics",         tKey: "profit_analytics",   icon: FaChartLine,       roles: ["admin"] },
+        { href: "/order-receipts",           tKey: "order_receipts",     icon: LuReceipt,         roles: ["admin"] },
+        { href: "/referral-settings",        tKey: "referral_settings",  icon: FaLayerGroup,      roles: ["admin"] },
+        { href: "/users",                    tKey: "users",              icon: LuUser,            roles: ["admin"] },
+        { href: "/products-uc",              tKey: "uc_products",        icon: LuBox,             roles: ["admin"] },
+        { href: "/currencies",               tKey: "currency_rates",     icon: FaDollarSign,      roles: ["admin"] },
+        { href: "/sekali-products",          tKey: "sekali_shop",        icon: LuStore,           roles: ["admin"] },
+        { href: "/spin-sectors",             tKey: "spin_management",    icon: FaCog,             roles: ["admin"] },
+        { href: "/tasks",                    tKey: "tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
+        { href: "/broadcast-notifications",  tKey: "broadcast",          icon: LuBell,            roles: ["admin"] },
+        { href: "/payment-cards",            tKey: "payment_cards",      icon: LuCreditCard,      roles: ["admin"] },
+        { href: "/promo-codes",              tKey: "promo_codes",        icon: LuTag,             roles: ["admin"] },
+        { href: "/promotions",               tKey: "promotions",         icon: LuGift,            roles: ["admin"] },
+        { href: "/audit-logs",               tKey: "audit_log",          icon: LuActivity,        roles: ["admin"] },
+        { href: "/admin/security",           tKey: "security",           icon: LuShieldCheck,     roles: ["admin"] },
+        { href: "/reseller",                 tKey: "reseller_dashboard", icon: LuTrendingUp,      roles: ["reseller"] },
     ];
 
     const menuItems = allMenuItems.filter(item => item.roles.includes(role));
@@ -147,7 +155,7 @@ export function Sidebar({ isOpen = true, onClose }) {
                                         </span>
 
                                         <span className="truncate">
-                                            {item.label}
+                                            {t(item.tKey)}
                                         </span>
 
                                         {/* Active dot indicator */}

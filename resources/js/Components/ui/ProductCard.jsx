@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react'
-import { Crown, Diamond, Edit2, Gamepad2, Star, Trash2, TrendingDown, TrendingUp } from "lucide-react"
+import { Crown, Diamond, Edit2, Eye, Gamepad2, Star, Trash2, TrendingDown, TrendingUp } from "lucide-react"
 
 function ProductCard({ product, onEdit, onDelete, cardFor }) {
     const { currency_rates: currencyRates = {} } = usePage().props;
@@ -139,6 +139,19 @@ function ProductCard({ product, onEdit, onDelete, cardFor }) {
                             {isProfitable ? "+" : ""}{profit.toLocaleString("fr-FR")} UZS
                         </span>
                     </div>
+
+                    {/* View count row */}
+                    {product.view_count !== undefined && (
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                                <Eye className="size-3.5 text-slate-400" />
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ko'rishlar</span>
+                            </div>
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                {Number(product.view_count).toLocaleString("fr-FR")}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions */}

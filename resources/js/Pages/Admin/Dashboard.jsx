@@ -5,6 +5,10 @@ function money(v) {
     return `${Number(v || 0).toLocaleString("fr-FR")} UZS`;
 }
 
+function idr(v) {
+    return `${Number(v || 0).toLocaleString("id-ID")} IDR`;
+}
+
 function SparkBars({ data = [], field, color = "#2563eb", height = 120 }) {
     const max = Math.max(...data.map((d) => Number(d[field] || 0)), 1);
 
@@ -34,6 +38,9 @@ export default function Dashboard() {
         statuses = [],
         trend = [],
         recentOrders = [],
+        sekaliBalance = null,
+        todayStats = {},
+        topProducts = [],
     } = usePage().props;
     const statusMax = Math.max(...statuses.map((s) => Number(s.count || 0)), 1);
 
@@ -42,6 +49,9 @@ export default function Dashboard() {
     const toggleRow = (id) => {
         setExpandedId(expandedId === id ? null : id);
     };
+
+    // Resolve SekalıPay balance value
+    const balanceValue = sekaliBalance?.data?.balance ?? null;
 
     return (
         /* padding adjusted for mobile-first */
@@ -56,6 +66,52 @@ export default function Dashboard() {
                 <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400">
                     Barcha asosiy statistika va diagrammalar
                 </p>
+            </div>
+
+            {/* SEKALI BALANCE + TODAY STATS ROW */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                {/* SekalıPay Balance */}
+                <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-900 border border-violet-200 dark:border-violet-800/50 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase text-violet-400 dark:text-violet-500 tracking-wider">
+                        SekalıPay Balans
+                    </p>
+                    <p className="font-black mt-0.5 md:mt-1 tracking-tighter truncate text-xs md:text-base text-violet-600 dark:text-violet-400">
+                        {balanceValue !== null ? idr(balanceValue) : "N/A"}
+                    </p>
+                    <p className="text-[8px] text-violet-300 dark:text-violet-600 mt-0.5 uppercase font-bold">
+                        {sekaliBalance?.success ? "Ulangan" : "Ulanmagan"}
+                    </p>
+                </div>
+
+                {/* Today Revenue */}
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-wider">
+                        Bugungi tushum
+                    </p>
+                    <p className="font-black mt-0.5 md:mt-1 tracking-tighter truncate text-xs md:text-base text-indigo-600 dark:text-indigo-400">
+                        {money(todayStats.revenue_uzs)}
+                    </p>
+                </div>
+
+                {/* Today Orders */}
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-wider">
+                        Bugungi buyurtmalar
+                    </p>
+                    <p className="font-black mt-0.5 md:mt-1 tracking-tighter text-lg md:text-2xl text-blue-600 dark:text-blue-400">
+                        {todayStats.orders_count || 0}
+                    </p>
+                </div>
+
+                {/* Today Profit */}
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-wider">
+                        Bugungi foyda
+                    </p>
+                    <p className="font-black mt-0.5 md:mt-1 tracking-tighter truncate text-xs md:text-base text-emerald-600 dark:text-emerald-400">
+                        {money(todayStats.profit_uzs)}
+                    </p>
+                </div>
             </div>
 
             {/* SUMMARY GRID - FIXED RESPONSIVE BREAKPOINTS */}
@@ -197,6 +253,64 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* TOP PRODUCTS */}
+            {topProducts.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm">
+                    <h2 className="font-bold text-gray-900 dark:text-slate-100 mb-4 text-sm md:text-base">
+                        Top mahsulotlar (SekalıPay)
+                    </h2>
+                    <div className="space-y-2">
+                        {topProducts.map((product, idx) => (
+                            <div
+                                key={product.id}
+                                className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/50 dark:bg-slate-950/50 border border-gray-100 dark:border-slate-800"
+                            >
+                                {/* Rank */}
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-[10px] font-black flex items-center justify-center">
+                                    {idx + 1}
+                                </span>
+
+                                {/* Image */}
+                                {product.image_url ? (
+                                    <img
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = "none";
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex-shrink-0" />
+                                )}
+
+                                {/* Name & game */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
+                                        {product.name}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">
+                                        {product.game_name}
+                                    </p>
+                                </div>
+
+                                {/* Views */}
+                                <div className="flex-shrink-0 text-right">
+                                    <p className="text-[9px] font-black uppercase text-gray-400 dark:text-slate-500">
+                                        Ko'rishlar
+                                    </p>
+                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">
+                                        {Number(
+                                            product.view_count || 0
+                                        ).toLocaleString("fr-FR")}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* RECENT ORDERS TABLE - FOR DESKTOP */}
             <div className="bg-white hidden lg:block dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">

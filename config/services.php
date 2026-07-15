@@ -64,6 +64,11 @@ return [
         'key' => env('RAPIDAPI_KEY'),
     ],
 
+    'binance' => [
+        'api_key'    => env('BINANCE_API_KEY', ''),
+        'secret_key' => env('BINANCE_SECRET_KEY', ''),
+    ],
+
     'sekalipay' => [
         'api_key'        => env('SEKALI_API_KEY', ''),
         'base_url'       => 'https://sekalipay.com/api',

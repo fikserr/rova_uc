@@ -1,5 +1,5 @@
 import { Link } from "@inertiajs/react";
-import { Diamond, Gamepad2, Plus, Zap } from "lucide-react";
+import { Gamepad2, Package, Plus, Zap } from "lucide-react";
 
 const TABS = [
     {
@@ -13,14 +13,14 @@ const TABS = [
         addBtn: "bg-blue-600 hover:bg-blue-700 shadow-blue-200 dark:shadow-blue-900/30",
     },
     {
-        page: "diamonds",
-        name: "Diamond Products",
-        href: "/products-ml",
-        icon: Diamond,
-        active: "bg-purple-600 text-white shadow-md shadow-purple-200 dark:shadow-purple-900/30",
+        page: "bundles",
+        name: "To'plamlar",
+        href: "/products-bundles",
+        icon: Package,
+        active: "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/30",
         inactive:
             "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white",
-        addBtn: "bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-purple-900/30",
+        addBtn: "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-indigo-900/30",
     },
     {
         page: "services",
@@ -99,21 +99,17 @@ function TopBar({ pageFor, setEditing, setFormOpen, reset }) {
                     className={`size-8 rounded-xl flex items-center justify-center text-white shrink-0
                     ${
                         pageFor === "uc"
-                            ? "bg-gradient-to-br from-blue-500 to-indigo-600"
-                            : pageFor === "diamonds"
-                              ? "bg-gradient-to-br from-purple-500 to-violet-600"
-                              : "bg-gradient-to-br from-amber-400 to-orange-500"
+                            ? "bg-linear-to-br from-blue-500 to-indigo-600"
+                            : pageFor === "bundles"
+                              ? "bg-linear-to-br from-indigo-500 to-violet-600"
+                              : "bg-linear-to-br from-amber-400 to-orange-500"
                     }`}
                 >
                     <Icon className="size-4" />
                 </div>
                 <div>
                     <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight capitalize">
-                        {pageFor === "uc"
-                            ? "UC Products"
-                            : pageFor === "diamonds"
-                              ? "Diamond Products"
-                              : "Service Products"}
+                        {pageFor === "uc" ? "UC Products" : pageFor === "bundles" ? "To'plamlar" : "Service Products"}
                     </p>
                     <p className="text-xs text-slate-400 dark:text-slate-500">
                         Active product listings

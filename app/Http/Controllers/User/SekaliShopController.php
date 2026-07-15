@@ -5,10 +5,14 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\SekaliOrder;
 use App\Models\SekaliProduct;
+use App\Models\UcBundle;
+use App\Models\UcProduct;
 use App\Services\SekaliPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -18,7 +22,8 @@ class SekaliShopController extends Controller
     {
         // category → game structure with one representative image per game
         $rows = SekaliProduct::where('is_active', true)
-            ->select('category', 'game_name', 'image_url')
+            ->where('visible_to_users', true)
+            ->select('category', 'game_name', 'image_url', 'view_count')
             ->orderBy('category')
             ->orderBy('game_name')
             ->get();
@@ -29,14 +34,37 @@ class SekaliShopController extends Controller
             ->map(fn($group) =>
                 $group->groupBy('game_name')
                     ->map(fn($games) => [
-                        'name'      => $games->first()->game_name,
-                        'image_url' => $games->first(fn($g) => $g->image_url)?->image_url,
+                        'name'       => $games->first()->game_name,
+                        'image_url'  => $games->first(fn($g) => $g->image_url)?->image_url,
+                        'view_count' => $games->max('view_count'),
                     ])
                     ->values()
             );
 
+        $userId = auth()->id();
+        $lastPubgAccount = $userId
+            ? DB::table('pubg_accounts')->where('user_id', $userId)->orderByDesc('id')->first(['pubg_player_id', 'pubg_name'])
+            : null;
+
+        $bundles = UcBundle::where('is_active', true)
+            ->orderBy('sort_order')->orderByDesc('id')->get()
+            ->map(fn($b) => array_merge($b->toArray(), [
+                'image_url' => $b->image_path ? Storage::disk('public')->url($b->image_path) : null,
+            ]));
+
+        $isReseller = auth()->user()?->role === 'reseller';
+        $ucProducts = UcProduct::where('is_active', true)->orderBy('sell_price')->get()
+            ->map(fn($p) => array_merge($p->toArray(), [
+                'sell_price'       => ($isReseller && $p->reseller_price) ? $p->reseller_price : $p->sell_price,
+                'is_reseller_price'=> $isReseller && $p->reseller_price,
+            ]));
+
         return Inertia::render('User/SekaliShop', [
-            'categories' => $categories,
+            'categories'      => $categories,
+            'ucProducts'      => $ucProducts,
+            'bundles'         => $bundles,
+            'lastPubgAccount' => $lastPubgAccount,
+            'isReseller'      => $isReseller,
         ]);
     }
 
@@ -47,20 +75,37 @@ class SekaliShopController extends Controller
             'game'     => 'required|string',
         ]);
 
+        // Increment view count whenever a user loads a specific game's variants
+        DB::table('sekali_products')
+            ->where('category', $request->category)
+            ->where('game_name', $request->game)
+            ->where('is_active', true)
+            ->increment('view_count');
+
+        $isReseller = auth()->user()?->role === 'reseller';
+
         $products = SekaliProduct::where('is_active', true)
+            ->where('visible_to_users', true)
             ->where('category', $request->category)
             ->where('game_name', $request->game)
             ->orderBy('product_type')
             ->orderBy('price_uzs')
             ->get([
                 'id', 'category', 'game_name', 'product_type', 'image_url', 'name',
-                'price_uzs', 'order_process', 'has_validation',
+                'price_uzs', 'reseller_price_uzs', 'order_process', 'has_validation',
                 'required_fields', 'stock',
-            ]);
+            ])
+            ->map(function ($p) use ($isReseller) {
+                $arr = $p->toArray();
+                $arr['display_price'] = ($isReseller && $p->reseller_price_uzs)
+                    ? $p->reseller_price_uzs
+                    : $p->price_uzs;
+                $arr['is_reseller_price'] = $isReseller && $p->reseller_price_uzs;
+                return $arr;
+            });
 
-        // Group by product_type
-        $grouped = $products
-            ->groupBy(fn($p) => $p->product_type ?? 'Standard')
+        $grouped = collect($products)
+            ->groupBy(fn($p) => $p['product_type'] ?? 'Standard')
             ->map(fn($items) => $items->values());
 
         return response()->json([
@@ -110,20 +155,78 @@ class SekaliShopController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        if (!$product->has_validation) {
-            return response()->json(['success' => true, 'name' => null]);
+        $gameName = strtolower($product->game_name ?? '');
+        $target   = $data['target'];
+        $zoneId   = $data['zone_id'] ?? null;
+
+        // 1. SekalıPay validation (confirms account exists)
+        if ($product->has_validation) {
+            $result = $api->validateAccount($product->sekali_item_id, $target, $zoneId);
+
+            if (!$result['success']) {
+                return response()->json(['success' => false, 'message' => 'Akkaunt topilmadi'], 422);
+            }
+
+            // Try to extract username from SekalıPay response
+            $d    = $result['data'];
+            $name = null;
+            foreach (['name', 'username', 'nickname', 'playerName', 'player_name',
+                      'char_name', 'user_name', 'charName', 'display_name', 'displayName'] as $field) {
+                if (!empty($d[$field]) && is_string($d[$field])) {
+                    $name = $d[$field];
+                    break;
+                }
+            }
+
+            // 2. If SekalıPay returned no username, try game-specific RapidAPI
+            if (!$name) {
+                $name = $this->fetchUsernameViaRapidApi($gameName, $target, $zoneId);
+            }
+
+            return response()->json(['success' => true, 'name' => $name]);
         }
 
-        $result = $api->validateAccount($product->sekali_item_id, $data['target'], $data['zone_id'] ?? null);
+        // No SekalıPay validation — still try RapidAPI for known games
+        $name = $this->fetchUsernameViaRapidApi($gameName, $target, $zoneId);
 
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'message' => 'Akkaunt topilmadi'], 422);
+        return response()->json(['success' => true, 'name' => $name]);
+    }
+
+    private function fetchUsernameViaRapidApi(string $gameName, string $target, ?string $zoneId): ?string
+    {
+        $rapidKey = config('services.rapidapi.key');
+        if (!$rapidKey) return null;
+
+        $headers = [
+            'x-rapidapi-key'  => $rapidKey,
+            'x-rapidapi-host' => 'check-id-game1.p.rapidapi.com',
+        ];
+
+        try {
+            if (str_contains($gameName, 'pubg')) {
+                $res  = Http::withHeaders($headers)->timeout(10)
+                    ->get('https://check-id-game1.p.rapidapi.com/api/game/pubg-mobile-global-vc', ['id' => $target]);
+                $json = $res->json();
+            } elseif (str_contains($gameName, 'legend') || str_contains($gameName, 'mlbb') || str_contains($gameName, 'mobile legend')) {
+                if (!$zoneId) return null;
+                $res  = Http::withHeaders($headers)->timeout(10)
+                    ->get('https://check-id-game1.p.rapidapi.com/api/game/cek-region-mlbb-m', ['id' => $target, 'zone' => $zoneId]);
+                $json = $res->json();
+            } else {
+                return null;
+            }
+
+            $d = $json['data'] ?? $json;
+            foreach (['username', 'name', 'nickname', 'playerName'] as $field) {
+                if (!empty($d[$field]) && is_string($d[$field])) {
+                    return $d[$field];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('RapidAPI username fetch failed', ['game' => $gameName, 'error' => $e->getMessage()]);
         }
 
-        return response()->json([
-            'success' => true,
-            'name'    => $result['data']['name'] ?? $result['data']['username'] ?? null,
-        ]);
+        return null;
     }
 
     public function order(Request $request, SekaliPayService $api)
@@ -135,11 +238,15 @@ class SekaliShopController extends Controller
         ]);
 
         $userId  = auth()->id();
+        $user    = auth()->user();
         $product = SekaliProduct::where('id', $data['product_id'])
             ->where('is_active', true)
             ->firstOrFail();
 
-        $priceUzs = $product->price_uzs;
+        $isReseller = $user->role === 'reseller';
+        $priceUzs   = ($isReseller && $product->reseller_price_uzs)
+            ? $product->reseller_price_uzs
+            : $product->price_uzs;
 
         $deducted = false;
         DB::transaction(function () use ($userId, $priceUzs, &$deducted) {
@@ -166,15 +273,16 @@ class SekaliShopController extends Controller
         $refId = (string) Str::uuid();
 
         $order = SekaliOrder::create([
-            'ref_id'            => $refId,
-            'user_id'           => $userId,
-            'sekali_product_id' => $product->id,
-            'game_target'       => $data['target'],
-            'zone_id'           => $data['zone_id'] ?? null,
-            'quantity'          => 1,
-            'price_uzs'         => $priceUzs,
-            'price_idr'         => $product->price_idr,
-            'status'            => 'pending',
+            'ref_id'             => $refId,
+            'user_id'            => $userId,
+            'sekali_product_id'  => $product->id,
+            'game_target'        => $data['target'],
+            'zone_id'            => $data['zone_id'] ?? null,
+            'quantity'           => 1,
+            'price_uzs'          => $priceUzs,
+            'regular_price_uzs'  => $isReseller ? $product->price_uzs : null,
+            'price_idr'          => $product->price_idr,
+            'status'             => 'pending',
         ]);
 
         $result = $api->createTransaction(

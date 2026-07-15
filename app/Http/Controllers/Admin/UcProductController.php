@@ -67,11 +67,12 @@ class UcProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title' => 'required|string',
-            'uc_amount' => 'required|integer',
-            'sell_price' => 'required|numeric',
-            'cost_price' => 'required|numeric',
-            'cost_currency' => 'required|string',
+            'title'          => 'required|string',
+            'uc_amount'      => 'required|integer',
+            'sell_price'     => 'required|numeric',
+            'reseller_price' => 'nullable|numeric',
+            'cost_price'     => 'required|numeric',
+            'cost_currency'  => 'required|string',
         ]);
 
         UcProduct::create([
@@ -87,12 +88,13 @@ class UcProductController extends Controller
     public function update(Request $request, UcProduct $product)
     {
         $data = $request->validate([
-            'title' => 'required|string',
-            'uc_amount' => 'required|integer',
-            'sell_price' => 'required|numeric',
-            'cost_price' => 'required|numeric',
-            'cost_currency' => 'required|string',
-            'is_active' => 'boolean',
+            'title'          => 'required|string',
+            'uc_amount'      => 'required|integer',
+            'sell_price'     => 'required|numeric',
+            'reseller_price' => 'nullable|numeric',
+            'cost_price'     => 'required|numeric',
+            'cost_currency'  => 'required|string',
+            'is_active'      => 'boolean',
         ]);
 
         $product->update($data);

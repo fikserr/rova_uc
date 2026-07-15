@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 
@@ -54,3 +55,88 @@ Schedule::call(function () {
         );
     }
 })->everyMinute()->name('send-tg-notifications')->withoutOverlapping();
+
+// SekalıPay processing orderlarini avtomatik tekshirish
+Schedule::call(function () {
+    if (!Schema::hasTable('sekali_orders')) return;
+
+    $api            = app(\App\Services\SekaliPayService::class);
+    $receiptService = app(\App\Services\ReceiptService::class);
+
+    // 2 daqiqadan oshgan processing orderlarni tekshir
+    $orders = DB::table('sekali_orders')
+        ->where('status', 'processing')
+        ->where('created_at', '<', now()->subMinutes(2))
+        ->orderBy('id')
+        ->limit(30)
+        ->get(['id', 'ref_id', 'user_id', 'price_uzs', 'sekali_invoice']);
+
+    $completedStatuses = ['completed', 'success', 'delivered', 'paid'];
+    $canceledStatuses  = ['canceled', 'failed', 'refunded'];
+
+    foreach ($orders as $order) {
+        try {
+            $result = $api->getTransaction($order->ref_id);
+
+            // Raw response logini yozish
+            Log::info("SekaliPay poller getTransaction #{$order->ref_id}", [
+                'success' => $result['success'],
+                'data'    => $result['data'],
+            ]);
+
+            if (!$result['success']) continue;
+
+            $status  = $result['data']['status'] ?? $result['data']['transaction']['status'] ?? null;
+            $invoice = $result['data']['invoice'] ?? $result['data']['transaction']['invoice'] ?? $order->sekali_invoice;
+
+            if (in_array($status, $completedStatuses)) {
+                $alreadyDone = false;
+
+                DB::transaction(function () use ($order, $invoice, &$alreadyDone) {
+                    $row = DB::table('sekali_orders')
+                        ->where('ref_id', $order->ref_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$row || $row->status === 'completed') {
+                        $alreadyDone = true;
+                        return;
+                    }
+
+                    DB::table('sekali_orders')->where('ref_id', $order->ref_id)->update([
+                        'status'         => 'completed',
+                        'sekali_invoice' => $invoice,
+                    ]);
+                });
+
+                if (!$alreadyDone) {
+                    Log::info("SekaliPay poller: #{$order->ref_id} completed");
+                    $receiptService->record('sekali', $order->ref_id);
+                }
+
+            } elseif (in_array($status, ['failed', 'canceled', 'refunded'])) {
+                DB::transaction(function () use ($order, $status) {
+                    $row = DB::table('sekali_orders')
+                        ->where('ref_id', $order->ref_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$row || in_array($row->status, ['completed', 'canceled', 'failed'])) return;
+
+                    DB::table('user_balances')
+                        ->where('user_id', $order->user_id)
+                        ->increment('balance', $order->price_uzs);
+
+                    DB::table('sekali_orders')->where('ref_id', $order->ref_id)->update([
+                        'status' => 'canceled',
+                        'notes'  => "Avtomatik bekor: SekalıPay status={$status}",
+                    ]);
+                });
+
+                Log::info("SekaliPay poller: #{$order->ref_id} bekor qilindi ({$status}), balans qaytarildi.");
+            }
+        } catch (\Throwable $e) {
+            Log::warning("SekaliPay poller xatolik #{$order->ref_id}: " . $e->getMessage());
+        }
+    }
+})->everyMinute()->name('sekali-order-poller')->withoutOverlapping();

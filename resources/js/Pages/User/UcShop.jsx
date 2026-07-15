@@ -14,11 +14,51 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { accent, GameVariants } from "../../Components/user/GameVariants";
 import UserProductCard from "../../Components/ui/UserProductCard";
+
+function IdVerifyBlock({ pubgId, setPubgId, pubgName, verified, verifying, error, onVerify }) {
+    return (
+        <div className="mb-5 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
+                O'yinchi ID
+            </label>
+            <div className="flex gap-2">
+                <input
+                    value={pubgId}
+                    onChange={(e) => setPubgId(e.target.value)}
+                    placeholder="PUBG ID kiriting"
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                    onClick={onVerify}
+                    disabled={verifying || !pubgId.trim()}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-blue-500 to-indigo-600 disabled:opacity-60 shrink-0"
+                >
+                    {verifying ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
+                    Tekshirish
+                </button>
+            </div>
+            {verified && pubgName && (
+                <div className="flex items-center gap-1.5 mt-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
+                    <CheckCircle className="size-4 shrink-0" /> {pubgName}
+                </div>
+            )}
+            {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        </div>
+    );
+}
 
 function UcShop() {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState("uc");
+    const [activeTab, setActiveTab] = useState("sekali");
+
+    // Shared PUBG ID state for uc/bundle tabs
+    const [sharedPubgId,   setSharedPubgId]   = useState("");
+    const [sharedPubgName, setSharedPubgName] = useState("");
+    const [idVerified,     setIdVerified]     = useState(false);
+    const [idVerifying,    setIdVerifying]    = useState(false);
+    const [idError,        setIdError]        = useState("");
 
     // UC product purchase state
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -42,6 +82,26 @@ function UcShop() {
     } = usePage().props;
     const userBalance = Number(user?.balance ?? 0);
 
+    // Init shared ID from last known account
+    useEffect(() => {
+        if (lastPubgAccount?.pubg_player_id && !sharedPubgId) {
+            setSharedPubgId(lastPubgAccount.pubg_player_id);
+            setSharedPubgName(lastPubgAccount.pubg_name ?? "");
+        }
+    }, [lastPubgAccount]);
+
+    const handleSharedVerify = async () => {
+        if (!sharedPubgId.trim()) return;
+        setIdVerifying(true); setIdError(""); setSharedPubgName(""); setIdVerified(false);
+        try {
+            const res = await axios.post("/game/verify/pubg", { id: sharedPubgId.trim() });
+            const name = res?.data?.username ?? null;
+            if (name) { setSharedPubgName(name); setIdVerified(true); }
+            else { setIdError("Akkaunt topilmadi"); }
+        } catch { setIdError("Tekshirishda xatolik"); }
+        finally  { setIdVerifying(false); }
+    };
+
     const activeItem = selectedProduct || selectedBundle;
     const activeItemType = selectedProduct ? "uc" : "bundle";
     const activeItemPrice = activeItem ? Number(activeItem.sell_price ?? 0) : 0;
@@ -52,14 +112,16 @@ function UcShop() {
         setPaymentMethod(userBalance >= activeItemPrice ? "balance" : "click");
     }, [activeItem, userBalance, activeItemPrice]);
 
-    // Prefill PUBG ID when modal opens
+    // Prefill PUBG ID when modal opens — prefer shared tab state, then last account
     useEffect(() => {
         if (!activeItem) return;
-        setPubgPlayerId(lastPubgAccount?.pubg_player_id ?? "");
-        setPubgName(lastPubgAccount?.pubg_name ?? "");
-        setVerifyStatus(null);
-        setVerifyMessage("");
-    }, [activeItem, lastPubgAccount]);
+        const fillId = sharedPubgId || lastPubgAccount?.pubg_player_id || "";
+        const fillName = sharedPubgName || lastPubgAccount?.pubg_name || "";
+        setPubgPlayerId(fillId);
+        setPubgName(fillName);
+        setVerifyStatus(fillName ? "success" : null);
+        setVerifyMessage(fillName);
+    }, [activeItem]);
 
     const closeModal = () => {
         setSelectedProduct(null);
@@ -210,31 +272,48 @@ function UcShop() {
 
                 {/* Tabs */}
                 <div className="flex gap-1 mb-6 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1">
-                    <button
-                        onClick={() => setActiveTab("uc")}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
-                            activeTab === "uc"
-                                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                        }`}
-                    >
-                        AVTO 24/7
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("bundle")}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
-                            activeTab === "bundle"
-                                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                        }`}
-                    >
-                        To'plamlar
-                    </button>
+                    {[
+                        { key: "sekali", label: "24/7 SekalıPay" },
+                        { key: "uc",     label: "Admin orqali" },
+                        { key: "bundle", label: "To'plamlar" },
+                    ].map(({ key, label }) => (
+                        <button
+                            key={key}
+                            onClick={() => setActiveTab(key)}
+                            className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all ${
+                                activeTab === key
+                                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
+
+                {/* 24/7 SekalıPay Tab */}
+                {activeTab === "sekali" && (
+                    <GameVariants
+                        category="Game"
+                        game="Pubg Mobile"
+                        gameImage={PubgMobileBg}
+                        accentColors={accent("Game")}
+                        userBalance={userBalance}
+                    />
+                )}
 
                 {/* UC Products Tab */}
                 {activeTab === "uc" && (
                     <div className="mb-8">
+                        <IdVerifyBlock
+                            pubgId={sharedPubgId}
+                            setPubgId={setSharedPubgId}
+                            pubgName={sharedPubgName}
+                            verified={idVerified}
+                            verifying={idVerifying}
+                            error={idError}
+                            onVerify={handleSharedVerify}
+                        />
                         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
                             {t("shop.select_package")}
                         </h2>
@@ -264,6 +343,15 @@ function UcShop() {
                 {/* Bundles Tab */}
                 {activeTab === "bundle" && (
                     <div className="mb-8">
+                        <IdVerifyBlock
+                            pubgId={sharedPubgId}
+                            setPubgId={setSharedPubgId}
+                            pubgName={sharedPubgName}
+                            verified={idVerified}
+                            verifying={idVerifying}
+                            error={idError}
+                            onVerify={handleSharedVerify}
+                        />
                         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
                             To'plamlar
                         </h2>

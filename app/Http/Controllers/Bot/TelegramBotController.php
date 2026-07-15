@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Bot;
 
 use App\Http\Controllers\Controller;
+use App\Services\BotTranslator;
+use App\Services\ReceiptService;
 use App\Services\WorkerNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -69,13 +71,16 @@ class TelegramBotController extends Controller
         $dbUser = DB::selectOne("SELECT * FROM users WHERE id = {$telegramId}");
         $role   = $dbUser?->role ?? 'guest';
 
-        // Worker yoki Admin xabari
         if (in_array($role, ['worker', 'admin'], true)) {
             $this->handleWorkerMessage($chatId, $telegramId, $message);
             return response('', 200);
         }
 
-        // Oddiy foydalanuvchi
+        if ($role === 'reseller') {
+            $this->handleResellerMessage($chatId, $telegramId, $message);
+            return response('', 200);
+        }
+
         $this->handleUserMessage($chatId, $telegramId, $username, $message);
 
         return response('', 200);
@@ -89,6 +94,7 @@ class TelegramBotController extends Controller
     {
         $text  = trim($message['text'] ?? '');
         $state = $this->getBotState($workerId);
+        $t     = new BotTranslator('uz');
 
         if ($state) {
             if ($text === '' || $text === '/start') {
@@ -102,9 +108,9 @@ class TelegramBotController extends Controller
 
         $webAppUrl = rtrim(config('app.url'), '/');
         $this->send($chatId,
-            "👷 Worker bot faol.\n\nYangi buyurtma yoki chek kelganda siz bu yerda bildirishnoma olasiz.",
+            $t->get('worker_greeting'),
             ['inline_keyboard' => [[
-                ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
+                ['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]],
             ]]]
         );
     }
@@ -145,19 +151,21 @@ class TelegramBotController extends Controller
     private function handleUserMessage(int $chatId, int $telegramId, ?string $username, array $message): void
     {
         $webAppUrl = rtrim(config('app.url'), '/');
+        $tid       = (int) $telegramId;
+
+        // Detect language from Telegram or existing DB record
+        $tgLang  = $message['from']['language_code'] ?? 'uz';
+        $dbUser  = DB::selectOne("SELECT language FROM users WHERE id = {$tid}");
+        $lang    = $dbUser?->language ?? (in_array($tgLang, ['uz', 'ru', 'en']) ? $tgLang : 'uz');
+        $t       = new BotTranslator($lang);
 
         if (($message['text'] ?? null) === '/start') {
             if (!$username) {
-                $this->send($chatId,
-                    "❗ Ilovadan foydalanish uchun Telegram username o'rnatishingiz kerak.\n\n" .
-                    "Sozlamalar → Profilni tahrirlash → Username qo'shing, keyin /start bosing."
-                );
+                $this->send($chatId, $t->get('need_username'));
                 return;
             }
 
-            // Literal ID in SQL to avoid PDO 32-bit truncation for large Telegram IDs
-            $tid = (int) $telegramId;
-            DB::statement("INSERT IGNORE INTO users (id, username, role, created_at) VALUES ({$tid}, ?, 'user', NOW())", [$username]);
+            DB::statement("INSERT IGNORE INTO users (id, username, role, language, created_at) VALUES ({$tid}, ?, 'user', ?, NOW())", [$username, $lang]);
             DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
 
             $user = DB::selectOne("SELECT * FROM users WHERE id = {$tid}");
@@ -169,23 +177,16 @@ class TelegramBotController extends Controller
             $needPhone = empty($user->phone_number ?? null);
 
             if ($needPhone) {
-                $this->send($chatId,
-                    "Assalomu alaykum!\nDavom etish uchun telefon raqamingizni yuboring.",
-                    ['keyboard' => [[[
-                        'text'            => 'Telefon raqamni yuborish',
-                        'request_contact' => true,
-                    ]]],
-                        'resize_keyboard'   => true,
-                        'one_time_keyboard' => true,
-                    ]
-                );
+                $this->send($chatId, $t->get('need_phone'), [
+                    'keyboard' => [[['text' => $t->get('phone_button'), 'request_contact' => true]]],
+                    'resize_keyboard'   => true,
+                    'one_time_keyboard' => true,
+                ]);
             } else {
-                $balance = (float) DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0;
+                $balance = (float) (DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0);
                 $this->send($chatId,
-                    "Xush kelibsiz! 👋\nBalansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
-                    ['inline_keyboard' => [[
-                        ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
-                    ]]]
+                    $t->get('welcome_back', number_format($balance, 0, '.', ' ')),
+                    ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
                 );
             }
             return;
@@ -193,10 +194,9 @@ class TelegramBotController extends Controller
 
         if (isset($message['contact'])) {
             if ($message['contact']['user_id'] != $telegramId) {
-                $this->send($chatId, "Iltimos, o'zingizning telefon raqamingizni yuboring.");
+                $this->send($chatId, $t->get('wrong_contact'));
                 return;
             }
-            $tid         = (int) $telegramId;
             $phoneNumber = $message['contact']['phone_number'];
             $phoneExists = DB::selectOne(
                 "SELECT id FROM users WHERE phone_number = ? AND id != {$tid} LIMIT 1",
@@ -205,24 +205,19 @@ class TelegramBotController extends Controller
             if (!$phoneExists) {
                 DB::statement("UPDATE users SET phone_number = ? WHERE id = {$tid} AND phone_number IS NULL", [$phoneNumber]);
             }
-            $this->send($chatId, "Ro'yxatdan muvaffaqiyatli o'tdingiz! ✅", ['remove_keyboard' => true]);
+            $this->send($chatId, $t->get('registered'), ['remove_keyboard' => true]);
             $this->send($chatId,
-                "Ilovani ochish uchun quyidagi tugmani bosing:",
-                ['inline_keyboard' => [[
-                    ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
-                ]]]
+                "👇",
+                ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
             );
             return;
         }
 
         if (($message['text'] ?? null) === 'Balans') {
-            $balance = (float) (DB::table('user_balances')
-                ->where('user_id', $telegramId)->value('balance') ?? 0);
+            $balance = (float) (DB::table('user_balances')->where('user_id', $telegramId)->value('balance') ?? 0);
             $this->send($chatId,
-                "💰 Balansingiz: " . number_format($balance, 0, '.', ' ') . " so'm",
-                ['inline_keyboard' => [[
-                    ['text' => '🛒 Ilovani ochish', 'web_app' => ['url' => $webAppUrl]],
-                ]]]
+                $t->get('balance', number_format($balance, 0, '.', ' ')),
+                ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
             );
             return;
         }
@@ -259,6 +254,12 @@ class TelegramBotController extends Controller
 
         $dbUser = DB::selectOne("SELECT * FROM users WHERE id = {$workerId}");
         $role   = $dbUser?->role ?? 'guest';
+
+        if ($role === 'reseller' && str_starts_with($data, 'rs:')) {
+            $this->answerCallback($callbackId);
+            $this->handleResellerCallback($chatId, $workerId, $data);
+            return;
+        }
 
         if (!in_array($role, ['worker', 'admin'], true)) {
             $this->answerCallback($callbackId, "❌ Ruxsat yo'q.");
@@ -331,6 +332,16 @@ class TelegramBotController extends Controller
             title:     $this->orderDeliveredTitle($type),
             message:   $this->orderDeliveredMessage($type)
         );
+
+        // Chek yozish va Telegram orqali mijozga yuborish
+        $receiptType = match ($type) {
+            'uc'  => 'uc',
+            'ml'  => 'ml',
+            'srv' => 'srv',
+            'bnd' => 'bundle',
+            default => $type,
+        };
+        app(ReceiptService::class)->record($receiptType, $orderId);
 
         $this->send($chatId, "✅ Buyurtma #{$orderId} tasdiqlandi.");
     }
@@ -678,6 +689,7 @@ class TelegramBotController extends Controller
             'uc'  => 'uc_orders',
             'ml'  => 'ml_orders',
             'srv' => 'service_orders',
+            'bnd' => 'bundle_orders',
             default => null,
         };
     }
@@ -688,6 +700,7 @@ class TelegramBotController extends Controller
             'uc'  => 'uc',
             'ml'  => 'ml',
             'srv' => 'service',
+            'bnd' => 'uc',
             default => $type,
         };
     }
@@ -698,6 +711,7 @@ class TelegramBotController extends Controller
             'uc'  => 'UC tushdi ✅',
             'ml'  => 'Almaz tushdi ✅',
             'srv' => 'Xizmat bajarildi ✅',
+            'bnd' => "To'plam tushdi ✅",
             default => 'Buyurtma bajarildi ✅',
         };
     }
@@ -708,6 +722,7 @@ class TelegramBotController extends Controller
             'uc'  => 'Buyurtmangiz bajarildi. UC hisobingizga tushirildi.',
             'ml'  => 'Buyurtmangiz bajarildi. Almaz hisobingizga tushirildi.',
             'srv' => 'Buyurtmangiz bajarildi.',
+            'bnd' => "Buyurtmangiz bajarildi. To'plam hisobingizga tushirildi.",
             default => 'Buyurtmangiz bajarildi.',
         };
     }
@@ -719,8 +734,9 @@ class TelegramBotController extends Controller
     private function send(int $chatId, string $text, ?array $replyMarkup = null): void
     {
         $data = [
-            'chat_id' => $chatId,
-            'text'    => $text,
+            'chat_id'    => $chatId,
+            'text'       => $text,
+            'parse_mode' => 'HTML',
         ];
         if ($replyMarkup !== null) {
             $data['reply_markup'] = json_encode($replyMarkup);
@@ -741,5 +757,294 @@ class TelegramBotController extends Controller
         } catch (\Throwable $e) {
             // ignore
         }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // RESELLER
+    // ══════════════════════════════════════════════════════════
+
+    private function resellerLang(int $userId): BotTranslator
+    {
+        $lang = DB::table('users')->where('id', $userId)->value('language') ?? 'uz';
+        return new BotTranslator((string) $lang);
+    }
+
+    private function handleResellerMessage(int $chatId, int $userId, array $message): void
+    {
+        $text  = trim($message['text'] ?? '');
+        $state = $this->getBotState($userId);
+        $t     = $this->resellerLang($userId);
+
+        if ($state && !str_starts_with($text, '/')) {
+            $this->handleResellerState($chatId, $userId, $text, $state);
+            return;
+        }
+
+        if ($state) $this->clearBotState($userId);
+
+        if ($text === '/start' || $text === '') {
+            $this->sendResellerMenu($chatId, $userId);
+            return;
+        }
+
+        if ($text === '/balance') {
+            $balance = (float) (DB::table('user_balances')->where('user_id', $userId)->value('balance') ?? 0);
+            $this->send($chatId, $t->get('balance', number_format($balance, 0, '.', ' ')));
+            return;
+        }
+
+        if ($text === '/orders') {
+            $this->sendResellerOrders($chatId, $userId);
+            return;
+        }
+
+        $this->sendResellerMenu($chatId, $userId);
+    }
+
+    private function handleResellerState(int $chatId, int $userId, string $text, object $state): void
+    {
+        $payload = is_string($state->payload) ? json_decode($state->payload, true) : (array) $state->payload;
+
+        // Waiting for player ID
+        if ($state->state === 'rs_player_id') {
+            $productId = (int) ($payload['product_id'] ?? 0);
+            $product   = DB::table('sekali_products')->where('id', $productId)->first();
+            if (!$product) { $this->clearBotState($userId); return; }
+
+            $needsZone = str_contains(strtolower($product->required_fields ?? ''), 'zone');
+
+            if ($needsZone) {
+                $this->setBotState($userId, 'rs_zone_id', array_merge($payload, ['player_id' => $text]));
+                $this->send($chatId, "🌐 <b>Server ID</b> kiriting:\n<i>Masalan: 1234</i>");
+                return;
+            }
+
+            $this->placeResellerOrder($chatId, $userId, $productId, $text, null);
+            return;
+        }
+
+        // Waiting for zone ID
+        if ($state->state === 'rs_zone_id') {
+            $productId = (int) ($payload['product_id'] ?? 0);
+            $playerId  = $payload['player_id'] ?? '';
+            $this->placeResellerOrder($chatId, $userId, $productId, $playerId, $text);
+            return;
+        }
+
+        $this->clearBotState($userId);
+    }
+
+    private function handleResellerCallback(int $chatId, int $userId, string $data): void
+    {
+        $t = $this->resellerLang($userId);
+
+        if ($data === 'rs:menu') {
+            $this->sendResellerMenu($chatId, $userId);
+            return;
+        }
+
+        if ($data === 'rs:games') {
+            $games = DB::table('sekali_products')
+                ->where('is_active', true)
+                ->whereNotNull('reseller_price_uzs')
+                ->select('game_name')->distinct()->orderBy('game_name')->pluck('game_name');
+
+            if ($games->isEmpty()) {
+                $this->send($chatId, $t->get('rs_no_products'));
+                return;
+            }
+
+            $buttons   = $games->map(fn($g) => [['text' => "🎮 {$g}", 'callback_data' => "rs:game:{$g}"]])->values()->all();
+            $buttons[] = [['text' => $t->get('rs_back_menu'), 'callback_data' => 'rs:menu']];
+            $this->send($chatId, $t->get('rs_select_game'), ['inline_keyboard' => $buttons]);
+            return;
+        }
+
+        if (str_starts_with($data, 'rs:game:')) {
+            $game     = substr($data, 8);
+            $products = DB::table('sekali_products')
+                ->where('is_active', true)
+                ->where('game_name', $game)
+                ->whereNotNull('reseller_price_uzs')
+                ->orderBy('reseller_price_uzs')
+                ->get(['id', 'name', 'reseller_price_uzs', 'price_uzs']);
+
+            if ($products->isEmpty()) {
+                $this->send($chatId, $t->get('rs_game_no_items'));
+                return;
+            }
+
+            $buttons = $products->map(fn($p) => [[
+                'text'          => $p->name . ' — ' . number_format($p->reseller_price_uzs, 0, '.', ' ') . ' UZS',
+                'callback_data' => 'rs:buy:' . $p->id,
+            ]])->values()->all();
+            $buttons[] = [['text' => $t->get('rs_back_games'), 'callback_data' => 'rs:games']];
+
+            $this->send($chatId, $t->get('rs_game_products', $game), ['inline_keyboard' => $buttons]);
+            return;
+        }
+
+        if (str_starts_with($data, 'rs:buy:')) {
+            $productId = (int) substr($data, 7);
+            $product   = DB::table('sekali_products')->where('id', $productId)->first();
+            if (!$product) return;
+
+            $this->setBotState($userId, 'rs_player_id', ['product_id' => $productId]);
+            $this->send($chatId, $t->get(
+                'rs_enter_player',
+                $product->game_name,
+                $product->name,
+                number_format($product->reseller_price_uzs, 0, '.', ' ')
+            ));
+            return;
+        }
+
+        if ($data === 'rs:orders') {
+            $this->sendResellerOrders($chatId, $userId);
+            return;
+        }
+    }
+
+    private function placeResellerOrder(int $chatId, int $userId, int $productId, string $playerId, ?string $zoneId): void
+    {
+        $this->clearBotState($userId);
+        $t = $this->resellerLang($userId);
+
+        $product = DB::table('sekali_products')->where('id', $productId)->where('is_active', true)->first();
+        if (!$product) {
+            $this->send($chatId, "❌ Mahsulot topilmadi.");
+            return;
+        }
+
+        $priceUzs     = (int) $product->reseller_price_uzs;
+        $regularPrice = (int) $product->price_uzs;
+
+        $balance = (float) (DB::table('user_balances')->where('user_id', $userId)->value('balance') ?? 0);
+        if ($balance < $priceUzs) {
+            $this->send($chatId, $t->get(
+                'rs_no_balance',
+                number_format($balance, 0, '.', ' '),
+                number_format($priceUzs, 0, '.', ' '),
+                number_format($priceUzs - $balance, 0, '.', ' ')
+            ));
+            return;
+        }
+
+        $deducted = false;
+        DB::transaction(function () use ($userId, $priceUzs, &$deducted) {
+            $row = DB::table('user_balances')->where('user_id', $userId)->lockForUpdate()->first();
+            if (!$row || (float) $row->balance < $priceUzs) return;
+            DB::table('user_balances')->where('user_id', $userId)
+                ->update(['balance' => DB::raw("balance - {$priceUzs}"), 'updated_at' => now()]);
+            $deducted = true;
+        });
+
+        if (!$deducted) {
+            $this->send($chatId, $t->get('rs_no_balance',
+                number_format($balance, 0, '.', ' '),
+                number_format($priceUzs, 0, '.', ' '),
+                number_format($priceUzs - $balance, 0, '.', ' ')
+            ));
+            return;
+        }
+
+        $refId   = (string) \Illuminate\Support\Str::uuid();
+        $orderId = DB::table('sekali_orders')->insertGetId([
+            'ref_id'            => $refId,
+            'user_id'           => $userId,
+            'sekali_product_id' => $productId,
+            'game_target'       => $playerId,
+            'zone_id'           => $zoneId,
+            'quantity'          => 1,
+            'price_uzs'         => $priceUzs,
+            'regular_price_uzs' => $regularPrice,
+            'price_idr'         => $product->price_idr,
+            'status'            => 'pending',
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
+
+        try {
+            $api    = app(\App\Services\SekaliPayService::class);
+            $result = $api->createTransaction($refId, $product->sekali_item_id, $playerId, $zoneId);
+
+            if ($result['success']) {
+                DB::table('sekali_orders')->where('id', $orderId)->update([
+                    'status'         => 'processing',
+                    'sekali_invoice' => $result['data']['invoice'] ?? null,
+                    'updated_at'     => now(),
+                ]);
+                $zoneStr = $zoneId ? "\n🌐 Zone: <code>{$zoneId}</code>" : '';
+                $this->send($chatId,
+                    $t->get('rs_order_ok',
+                        $product->game_name,
+                        $product->name,
+                        $playerId,
+                        $zoneStr,
+                        number_format($priceUzs, 0, '.', ' '),
+                        number_format($regularPrice - $priceUzs, 0, '.', ' '),
+                        $orderId
+                    ),
+                    ['inline_keyboard' => [[['text' => $t->get('rs_my_orders_btn'), 'callback_data' => 'rs:orders']]]]
+                );
+            } else {
+                DB::table('user_balances')->where('user_id', $userId)->increment('balance', $priceUzs);
+                DB::table('sekali_orders')->where('id', $orderId)->update(['status' => 'failed', 'updated_at' => now()]);
+                $this->send($chatId, $t->get('rs_order_fail', $result['message'] ?? ''));
+            }
+        } catch (\Throwable $e) {
+            DB::table('user_balances')->where('user_id', $userId)->increment('balance', $priceUzs);
+            DB::table('sekali_orders')->where('id', $orderId)->update(['status' => 'failed', 'updated_at' => now()]);
+            $this->send($chatId, $t->get('rs_order_err'));
+            Log::error('Reseller bot order error', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function sendResellerMenu(int $chatId, int $userId): void
+    {
+        $t       = $this->resellerLang($userId);
+        $balance = (float) (DB::table('user_balances')->where('user_id', $userId)->value('balance') ?? 0);
+        $webUrl  = rtrim(config('app.url'), '/') . '/reseller/balance';
+
+        $this->send($chatId,
+            $t->get('rs_menu', number_format($balance, 0, '.', ' ')),
+            ['inline_keyboard' => [
+                [['text' => $t->get('rs_buy_order'),  'callback_data' => 'rs:games']],
+                [['text' => $t->get('rs_my_orders'),  'callback_data' => 'rs:orders']],
+                [['text' => $t->get('rs_top_up'),     'web_app'       => ['url' => $webUrl]]],
+            ]]
+        );
+    }
+
+    private function sendResellerOrders(int $chatId, int $userId): void
+    {
+        $t      = $this->resellerLang($userId);
+        $orders = DB::table('sekali_orders as o')
+            ->leftJoin('sekali_products as p', 'p.id', '=', 'o.sekali_product_id')
+            ->where('o.user_id', $userId)
+            ->orderByDesc('o.created_at')
+            ->limit(5)
+            ->get(['o.id', 'o.status', 'o.price_uzs', 'o.game_target', 'o.created_at', 'p.game_name', 'p.name as variant']);
+
+        if ($orders->isEmpty()) {
+            $this->send($chatId, $t->get('rs_no_orders'),
+                ['inline_keyboard' => [[['text' => $t->get('rs_back_menu'), 'callback_data' => 'rs:menu']]]]);
+            return;
+        }
+
+        $text = $t->get('rs_orders_title');
+        foreach ($orders as $o) {
+            $status = $t->statusText($o->status);
+            $price  = number_format($o->price_uzs, 0, '.', ' ');
+            $date   = date('d.m H:i', strtotime($o->created_at));
+            $text  .= "<b>SK-{$o->id}</b> {$status}\n";
+            $text  .= "🎮 {$o->game_name} — {$o->variant}\n";
+            $text  .= "👤 <code>{$o->game_target}</code>  💰 {$price} UZS\n";
+            $text  .= "🕐 {$date}\n";
+            $text  .= "─────────────────\n";
+        }
+
+        $this->send($chatId, $text,
+            ['inline_keyboard' => [[['text' => $t->get('rs_back_menu'), 'callback_data' => 'rs:menu']]]]);
     }
 }

@@ -20,8 +20,12 @@ class EnsureUserRole
             return $next($request);
         }
 
+        if ($userRole === 'reseller') {
+            return redirect('/reseller');
+        }
+
         if ($userRole === 'worker') {
-            return redirect('/uc-orders');
+            return redirect('/user-services');
         }
 
         if ($userRole === 'user') {

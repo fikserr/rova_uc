@@ -15,6 +15,7 @@ class SekaliOrder extends Model
         'zone_id',
         'quantity',
         'price_uzs',
+        'regular_price_uzs',
         'price_idr',
         'status',
         'sekali_invoice',

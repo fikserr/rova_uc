@@ -1,5 +1,6 @@
 import { toggleTheme } from "@/Hook/theme";
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import axios from "axios";
 import {
     Bell,
     Calendar,
@@ -36,6 +37,7 @@ function UserProfile() {
     const changeLanguage = (code) => {
         i18n.changeLanguage(code);
         localStorage.setItem("lang", code);
+        axios.patch("/user/language", { language: code }).catch(() => {});
     };
 
     const referralLink = referral?.link || "https://t.me/yourbot?start=ref";

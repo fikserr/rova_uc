@@ -23,17 +23,21 @@ class SekaliProduct extends Model
         'has_validation',
         'stock',
         'is_active',
+        'visible_to_users',
+        'visible_to_resellers',
         'synced_at',
     ];
 
     protected $casts = [
-        'required_fields' => 'array',
-        'has_validation'  => 'boolean',
-        'is_active'       => 'boolean',
-        'synced_at'       => 'datetime',
-        'price_idr'       => 'integer',
-        'price_uzs'       => 'integer',
-        'markup_percent'  => 'float',
+        'required_fields'      => 'array',
+        'has_validation'       => 'boolean',
+        'is_active'            => 'boolean',
+        'visible_to_users'     => 'boolean',
+        'visible_to_resellers' => 'boolean',
+        'synced_at'            => 'datetime',
+        'price_idr'            => 'integer',
+        'price_uzs'            => 'integer',
+        'markup_percent'       => 'float',
     ];
 
     public function orders(): HasMany
