@@ -2,7 +2,7 @@
     "common": { "back": "Orqaga" },
     "profile": {
         "title": "Foydalanuvchi profili",
-        "member_since": "A'zo",
+        "member_since": "A'zo bo'lgan",
         "balance": "Hisobingiz",
         "top_up": "To'ldirish",
         "stats": {
@@ -74,7 +74,9 @@
         "secure_payment_desc": "To'liq himoyalangan",
         "best_price": "Eng yaxshi narx",
         "best_price_desc": "Bozordagi eng arzon",
-        "why_us_subtitle": "Tez, xavfsiz va arzon — har doim."
+        "why_us_subtitle": "Tez, xavfsiz va arzon — har doim.",
+        "top_games": "Eng mashhur o'yinlar",
+        "payment_ways": "To'lov usullari"
     },
     "shop": {
         "uc_page_title": "UC do'koni",
@@ -125,7 +127,6 @@
         "ml_account_id": "ML Account ID",
         "ml_server_id": "Server ID",
         "account_id_placeholder": "Account ID",
-        "server_id_placeholder": "Server ID",
         "tg_username_label": "Target Telegram Username",
         "tg_username_placeholder": "Masalan: username yoki @username",
         "verify_btn": "Tekshir",
@@ -145,14 +146,26 @@
         "verify": "Akkauntni tasdiqlash",
         "insufficient": "Balansingiz yetarli emas",
         "order": "Buyurtma berish",
-        "ordering": "Buyurtma berilmoqda..."
+        "ordering": "Buyurtma berilmoqda...",
+        "not_found": "Mahsulot topilmadi",
+        "player_id_label": "O'YINCHI ID",
+        "player_id_placeholder": "O'yinchi ID kiriting",
+        "server_id_label": "SERVER ID",
+        "server_id_placeholder": "Server ID kiriting",
+        "check_btn": "Tekshirish",
+        "account_not_found": "Akkaunt topilmadi",
+        "verify_first": "Avval tasdiqlang",
+        "select_product": "Mahsulotni tanlang",
+        "insufficient_balance_amount": "Balansingiz yetarli emas ({{balance}})"
     },
     "bar": {
         "services": "Xizmatlar",
         "balanceTopup": "Balans to'ldirish",
         "purchases": "Xaridlar",
         "shop": "Do'kon",
-        "profile": "Profil"
+        "profile": "Profil",
+        "dashboard": "Dashboard",
+        "balance": "Balans"
     },
     "others": {
         "loading": "Yuklanmoqda...",
@@ -174,9 +187,9 @@
         "pay_btn": "to'lash",
         "click_error": "To'lov yaratishda xatolik",
         "manual_title": "Karta orqali to'ldirish",
-        "manual_step1": "Quyidagi kartaga pul o'tkazing",
-        "manual_step2": "Summani kiriting",
-        "manual_step3": "\"So'rov yuborish\" tugmasini bosing — to'lov avtomatik aniqlanadi",
+        "manual_step1": "Quyidagi kartaga pul o'tkazing va chek rasmini yuboing (Screenshot)",
+        "manual_step2": "O'tkazilgan Summani kiriting",
+        "manual_step3": "\"So'rov yuborish\" tugmasini bosing — to'lov tez orada aniqlanadi",
         "auto_detect_info": "To'lov avtomatik aniqlanadi. Pul o'tkazgandan so'ng bir necha soniya ichida balansingiz yangilanadi.",
         "transferred_amount": "O'tkazilgan summa (so'm)",
         "check_success": "So'rovingiz qabul qilindi! To'lov aniqlanishi bilanoq balansingiz yangilanadi.",
@@ -192,7 +205,8 @@
         "payment_cards_label": "To'lov kartalari",
         "upload_label": "Yuklash",
         "upload_hint": "To'lov chekini rasm yoki fayl ko'rinishida yuklang (Maks. 10MB)",
-        "status_column": "Holati"
+        "status_column": "Holati",
+        "how_to_do_it": "Qanday amalga oshirish kerak?"
     },
     "notifications": {
         "page_title": "Bildirishnomalar",
@@ -286,5 +300,18 @@
         "verified_success": "Email muvaffaqiyatli tasdiqlandi!",
         "verify_error": "Kod noto'g'ri.",
         "security_footer": "Hisobingizning xavfsizligi biz uchun muhimdir. Raqamlar va maxsus belgilar bilan kuchli parol ishlating."
+    },
+    "reseller": {
+        "today": "bugun",
+        "this_month": "bu oy",
+        "saved": "tejaldi",
+        "orders": "buyurtmalar",
+        "lastOrders": "So'nggi 20 ta",
+        "noOrdersYet": "Hali buyurtma yo'q.",
+        "makeYourFirstPurchase": "Do'kondan birinchi xaridingizni qiling",
+        "noProduct": "Reseller uchun mahsulot yo'q",
+        "betterCallAdmin": "Admin bilan bog'laning",
+        "amount": "miqdor",
+        "payWith": "To'lov usuli"
     }
 }

@@ -14,6 +14,7 @@ import axios from "axios";
 
 import { route } from "ziggy-js";
 import { Ziggy } from "./ziggy";
+import ResellerLayout from './Pages/Layout/ResellerLayout.jsx'
 
 if (typeof window !== "undefined") {
     Ziggy.url = window.location.origin;
@@ -61,7 +62,7 @@ createInertiaApp({
                         return <AdminLayout>{pageElement}</AdminLayout>;
                     }
                     if (role === "reseller") {
-                        return pageElement;
+                        return <ResellerLayout>{pageElement}</ResellerLayout>;
                     }
                     return <UserLayout>{pageElement}</UserLayout>;
                 } else {

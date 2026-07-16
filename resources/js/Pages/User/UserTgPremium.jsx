@@ -19,7 +19,7 @@ function UserTgPremium() {
     const service = {
         title: t("shop.tg_premium_title"),
         subtitle: t("shop.tg_premium_subtitle"),
-        icon: "🎮",
+        icon: "⭐",
         color: "from-blue-500 to-blue-500",
     };
 
@@ -70,7 +70,7 @@ function UserTgPremium() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 lg:pb-8 dark:bg-slate-900">
+        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 lg:pb-8">
             <Head title={t("shop.premium_page_title")} />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">

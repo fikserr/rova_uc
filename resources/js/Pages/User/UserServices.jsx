@@ -19,7 +19,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import { accent, GameVariants } from "../../Components/user/GameVariants";
-import PaymentCardsSwiper from "../../Components/user/PaymentCardsSwiper";
+// import PaymentCardsSwiper from "../../Components/user/PaymentCardsSwiper";
 
 import TgPremium from "@images/tgPremium.webp";
 import TgStars from "@images/tgStars.webp";
@@ -99,8 +99,8 @@ function ServiceCard({
 
             {/* Content */}
             <div className="p-3 pb-1 sm:p-4 bg-white dark:bg-white/5">
-                <h3 className="uppercase text-[10px] sm:text-sm md:text-lg mb-1 leading-snug transition group-hover:text-violet-500 dark:text-slate-100 dark:group-hover:text-violet-400">
-                    {title.length > 12 ? `${title.substring(0, 12)}...` : title}
+                <h3 className="uppercase text-[10px] sm:text-sm md:text-lg mb-1 leading-snug transition group-hover:text-violet-500 dark:text-slate-100 truncate dark:group-hover:text-violet-400">
+                    {title}
                 </h3>
                 {subtitle && (
                     <p className="text-[10px] sm:text-xs text-gray-500 mb-3 truncate dark:text-slate-400">
@@ -313,7 +313,7 @@ function UserServices() {
                     /* ── Inline game detail with tabs ─────────────────── */
                     <div>
                         {/* Back + tabs header */}
-                        <div className="sticky top-0 z-20 bg-white/90 dark:bg-[#0b0a12]/95 backdrop-blur-md -mx-4 px-4 pt-3 pb-2 mb-3">
+                        <div className="sticky top-15 lg:-top-6 z-20 bg-white/90 dark:bg-[#0b0a12]/95 backdrop-blur-md -mx-4 px-4 pt-3 pb-2 mb-3">
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setSelectedGame(null)}
@@ -324,7 +324,7 @@ function UserServices() {
                                 {/pubg/i.test(selectedGame.name) ? (
                                     <div className="flex flex-1 gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
                                         {[
-                                            { key: "sekali", label: "24/7 SekalıPay" },
+                                            { key: "sekali", label: "24/7 autopay" },
                                             { key: "uc",     label: "Admin orqali" },
                                             { key: "bundle", label: "To'plamlar" },
                                         ].map(({ key, label }) => (
@@ -343,7 +343,7 @@ function UserServices() {
                                     </div>
                                 ) : (
                                     <span className="font-semibold text-slate-900 dark:text-white truncate">
-                                        {selectedGame.name}
+                                        {t("common.back")}
                                     </span>
                                 )}
                             </div>
@@ -485,10 +485,10 @@ function UserServices() {
                                 <div className="flex items-center gap-2 mb-3">
                                     <Flame className="size-4 text-orange-500" />
                                     <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wide">
-                                        Top O'yinlar
+                                        {t("services.top_games")}
                                     </h2>
                                 </div>
-                                <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+                                <div className="scrollx flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
                                     {topGames.map((game, idx) => {
                                         const GAME_CARD_COLORS_TOP = [
                                             "from-violet-500 to-purple-600",
@@ -552,12 +552,12 @@ function UserServices() {
                         </div>
 
                         {/* Payment methods */}
-                        <div className="mt-10">
+                        {/* <div className="mt-10">
                             <h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4">
-                                To'lov usullari
+                                {t('services.payment_ways')}
                             </h2>
                             <PaymentCardsSwiper />
-                        </div>
+                        </div> */}
 
                         {/* Trust section */}
                         <div className="mt-16 rounded-3xl bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm p-8 sm:p-10 text-center">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ImageProxyController;
 use App\Http\Controllers\Admin\AdminSecurityController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OrderReceiptController;
@@ -59,6 +60,7 @@ Route::post('/click/complete', [ClickController::class, 'complete'])->middleware
 Route::post('/binance/webhook', [BinanceController::class, 'webhook'])->middleware('throttle:120,1');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/img', [ImageProxyController::class, 'show'])->name('img.proxy');
     Route::post('/password', [PasswordController::class, 'store']);
     Route::put('/password/{user}', [PasswordController::class, 'update']);
 

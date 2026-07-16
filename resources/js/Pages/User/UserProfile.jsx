@@ -264,43 +264,49 @@ function UserProfile() {
 
             {/* Settings Modal */}
             {showSettings && (
-                <div className="fixed inset-0 bg-black/50 z-9999 flex items-center justify-center animate-fade-in">
-                    <div className="border-2 border-blue-400 w-full md:max-w-md max-w-90 bg-white dark:bg-zinc-900 rounded-3xl sm:rounded-3xl h-max overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b border-zinc-400 dark:border-zinc-400 sticky top-0 bg-white dark:bg-zinc-900">
-                            <h2 className="text-lg font-bold dark:text-white">
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-9999 flex items-center justify-center p-4 animate-fade-in"
+                    onClick={() => setShowSettings(false)}
+                >
+                    <div
+                        className="w-full md:max-w-md max-w-90 bg-white/90 dark:bg-[#0f0f1a]/90 backdrop-blur-xl border border-slate-200/60 dark:border-white/8 rounded-3xl h-max max-h-[85vh] overflow-y-auto shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b border-slate-200/60 dark:border-white/8 sticky top-0 bg-white/90 dark:bg-[#0f0f1a]/90 backdrop-blur-xl">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 {t("settings.title")}
                             </h2>
                             <button
                                 onClick={() => setShowSettings(false)}
-                                className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-800 dark:text-white"
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-white transition-colors"
                             >
                                 <X className="size-5" />
                             </button>
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-3">
                             {/* Theme Toggle */}
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border-zinc-300 border dark:border-zinc-700 dark:text-white">
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/8 text-slate-900 dark:text-white">
                                 <div className="flex items-center gap-3">
-                                    <Moon className="dark:hidden" />
-                                    <Sun className="hidden dark:block" />
-                                    <span className="font-semibold">
+                                    <Moon className="size-4 dark:hidden" />
+                                    <Sun className="size-4 hidden dark:block" />
+                                    <span className="font-semibold text-sm">
                                         {t("settings.theme")}
                                     </span>
                                 </div>
                                 <button
                                     onClick={toggleTheme}
-                                    className="relative w-14 h-8 rounded-full bg-slate-300 dark:bg-blue-600"
+                                    className="relative w-14 h-8 rounded-full bg-slate-300 dark:bg-violet-600 transition-colors"
                                 >
                                     <div className="absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform dark:translate-x-6" />
                                 </button>
                             </div>
 
                             {/* Language Switcher */}
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 dark:text-white">
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/8 text-slate-900 dark:text-white">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <Globe className="size-5" />
-                                    <span className="font-semibold">
+                                    <Globe className="size-4" />
+                                    <span className="font-semibold text-sm">
                                         {t("settings.language")}
                                     </span>
                                 </div>
@@ -311,10 +317,10 @@ function UserProfile() {
                                             onClick={() =>
                                                 changeLanguage(lang.code)
                                             }
-                                            className={`py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                            className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                                                 i18n.language === lang.code
-                                                    ? "bg-blue-600 text-white shadow-md"
-                                                    : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-white opacity-70 hover:opacity-100"
+                                                    ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                                                    : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/8 text-slate-600 dark:text-slate-300 hover:border-violet-300 dark:hover:border-white/20"
                                             }`}
                                         >
                                             <span>{lang.label}</span>
@@ -335,20 +341,20 @@ function UserProfile() {
                                             onClick={handleLogout}
                                         >
                                             <div
-                                                className={`w-full flex gap-4 p-4 mt-3 cursor-pointer rounded-2xl border dark:text-white ${
+                                                className={`w-full flex gap-4 p-4 cursor-pointer rounded-2xl border transition-colors ${
                                                     opt.danger
-                                                        ? "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-500/40"
-                                                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
-                                                }`}
+                                                        ? "bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10"
+                                                        : "bg-slate-50 dark:bg-white/5 border-slate-200/60 dark:border-white/8"
+                                                } text-slate-900 dark:text-white`}
                                             >
-                                                <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 shrink-0">
+                                                <div className="p-3 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shrink-0">
                                                     <Icon className="size-5 text-white" />
                                                 </div>
                                                 <div className="flex flex-col justify-center min-w-0">
-                                                    <div className="font-semibold truncate">
+                                                    <div className="font-semibold text-sm truncate">
                                                         {opt.label}
                                                     </div>
-                                                    <div className="text-xs opacity-70 truncate">
+                                                    <div className="text-xs opacity-60 truncate">
                                                         {opt.description}
                                                     </div>
                                                 </div>
@@ -372,22 +378,21 @@ function UserProfile() {
 
                                 return (
                                     <Wrapper key={opt.id} {...wrapperProps}>
-                                        <div className="w-full flex items-center justify-between gap-4 mt-3 p-4 cursor-pointer rounded-2xl border bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 dark:text-white hover:bg-slate-100/70 dark:hover:bg-zinc-800/70 transition-colors">
+                                        <div className="w-full flex items-center justify-between gap-4 p-4 cursor-pointer rounded-2xl border bg-slate-50 dark:bg-white/5 border-slate-200/60 dark:border-white/8 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/8 transition-colors">
                                             <div className="flex gap-4 min-w-0">
-                                                <div className="p-3 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 shrink-0">
+                                                <div className="p-3 rounded-xl bg-linear-to-br from-violet-600 to-indigo-600 shrink-0">
                                                     <Icon className="size-5 text-white" />
                                                 </div>
                                                 <div className="flex flex-col justify-center min-w-0">
-                                                    <div className="font-semibold truncate">
+                                                    <div className="font-semibold text-sm truncate">
                                                         {opt.label}
                                                     </div>
-                                                    <div className="text-xs opacity-70 truncate">
+                                                    <div className="text-xs opacity-60 truncate">
                                                         {opt.description}
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Dynamic verification of unread counter updates seamlessly inside map structure */}
                                             {opt.id === "notifications" &&
                                                 unreadCount > 0 && (
                                                     <span className="flex items-center justify-center min-w-6 h-6 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shrink-0 animate-pulse shadow-md shadow-red-500/20">

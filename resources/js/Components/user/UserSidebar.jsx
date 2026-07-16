@@ -11,18 +11,19 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getTheme, toggleTheme } from "../../Hook/theme";
-
-const NAV_ITEMS = [
-    { href: "/user-services", label: "Bosh sahifa", icon: Home },
-    { href: "/user-profile/user-balance", label: "Top-up", icon: Wallet },
-    { href: "/user-purchases", label: "Tarix", icon: History },
-    { href: "/user-notifications", label: "Xabarlar", icon: Bell },
-    { href: "/user-profile", label: "Profil", icon: CircleUser },
-];
+import { useTranslation } from 'react-i18next'
 
 export default function UserSidebar() {
+    const {t} = useTranslation()
     const { url } = usePage();
     const [isDark, setIsDark] = useState(true);
+
+    const NAV_ITEMS = [
+    { href: "/user-services", label: t("bar.services"), icon: Home },
+    { href: "/user-profile/user-balance", label: t("bar.balanceTopup"), icon: Wallet },
+    { href: "/user-purchases", label: t("bar.purchases"), icon: History },
+    { href: "/user-profile", label: t("bar.profile"), icon: CircleUser },
+];
 
     useEffect(() => {
         setIsDark(getTheme() === "dark");

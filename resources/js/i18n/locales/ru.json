@@ -74,7 +74,9 @@
         "secure_payment_desc": "Полная защита",
         "best_price": "Лучшая цена",
         "best_price_desc": "Самые низкие цены на рынке",
-        "why_us_subtitle": "Быстро, безопасно и выгодно — всегда."
+        "why_us_subtitle": "Быстро, безопасно и выгодно — всегда.",
+        "top_games": "Самые популярные игры",
+        "payment_ways": "Способы оплаты"
     },
     "shop": {
         "uc_page_title": "Магазин UC",
@@ -125,7 +127,6 @@
         "ml_account_id": "ML Account ID",
         "ml_server_id": "Server ID",
         "account_id_placeholder": "Account ID",
-        "server_id_placeholder": "Server ID",
         "tg_username_label": "Целевой Telegram Username",
         "tg_username_placeholder": "Например: username или @username",
         "verify_btn": "Проверить",
@@ -145,14 +146,26 @@
         "verify": "Проверить аккаунт",
         "insufficient": "Недостаточно баланса",
         "order": "Оформить заказ",
-        "ordering": "Оформляется..."
+        "ordering": "Оформляется...",
+        "not_found": "Товар не найден",
+        "player_id_label": "ИГРОВОЙ ID",
+        "player_id_placeholder": "Введите игровой ID",
+        "server_id_label": "SERVER ID",
+        "server_id_placeholder": "Введите Server ID",
+        "check_btn": "Проверить",
+        "account_not_found": "Аккаунт не найден",
+        "verify_first": "Сначала подтвердите",
+        "select_product": "Выберите товар",
+        "insufficient_balance_amount": "Недостаточно средств ({{balance}})"
     },
     "bar": {
         "services": "Услуги",
         "balanceTopup": "Пополнение баланса",
         "purchases": "Покупки",
         "shop": "Магазин",
-        "profile": "Профиль"
+        "profile": "Профиль",
+        "dashboard": "Дашбоард",
+        "balance": "Баланс"
     },
     "others": {
         "loading": "Загрузка...",
@@ -174,9 +187,9 @@
         "pay_btn": "оплатить",
         "click_error": "Ошибка при создании платежа",
         "manual_title": "Пополнение через карту",
-        "manual_step1": "Переведите деньги на карту ниже",
+        "manual_step1": "Переведите деньги на указанную ниже карту и загрузите фотографию чека (скриншот).",
         "manual_step2": "Введите переведённую сумму",
-        "manual_step3": "Нажмите «Отправить запрос» — платёж определится автоматически",
+        "manual_step3": "Нажмите кнопку «Отправить запрос» — оплата будет обработана в ближайшее время.",
         "auto_detect_info": "Платёж определяется автоматически. Баланс обновится в течение нескольких секунд после перевода.",
         "transferred_amount": "Переведённая сумма (сум)",
         "check_success": "Запрос принят! Баланс обновится как только платёж будет обнаружен.",
@@ -192,7 +205,8 @@
         "payment_cards_label": "Платежные карты",
         "upload_label": "Загрузить",
         "upload_hint": "Загрузите квитанцию ​​об оплате в виде изображения или файла (макс .10 МБ).",
-        "status_column": "статус"
+        "status_column": "статус",
+        "how_to_do_it": "Как это сделать?"
     },
     "notifications": {
         "page_title": "Уведомления",
@@ -286,5 +300,18 @@
         "verified_success": "Электронная почта успешно проверена!",
         "verify_error": "Неверный код.",
         "security_footer": "Безопасность вашего аккаунта для нас важна. Используйте надежный пароль с цифрами и специальными символами."
+    },
+    "reseller": {
+        "today": "сегодня",
+        "this_month": "этом месяце",
+        "saved": "Сэкономлен",
+        "orders": "заказы",
+        "lastOrders": "Последние 20",
+        "noOrdersYet": "Заказов пока нет.",
+        "makeYourFirstPurchase": "Совершите свою первую покупку в магазине.",
+        "noProduct": "Нет товаров для реселлеров",
+        "betterCallAdmin": "Связаться с администратором",
+        "amount": "количество",
+        "payWith": "Оплата через"
     }
 }

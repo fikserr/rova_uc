@@ -10,7 +10,7 @@ const Header = () => {
         .replace(/\s/g, " ");
 
     return (
-        <nav className="w-full transition-colors duration-300 bg-white border-b border-slate-200 dark:bg-[#0b0a12]/95 dark:backdrop-blur dark:border-white/5">
+        <nav className="w-full transition-colors duration-300 bg-white border-b border-slate-200 dark:bg-[#0b0a12]/95 dark:backdrop-blur dark:border-white/5 z-9999">
             <div className="w-full flex items-center justify-between px-4 py-3">
                 <Link href="/user-services" className="flex items-center gap-2">
                     <img
