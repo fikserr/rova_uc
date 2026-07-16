@@ -1,7 +1,8 @@
 import axios from "axios";
 import { CheckCircle, Info, Loader2, ShoppingCart, Zap } from "lucide-react";
 import { useState } from "react";
-
+import { useTranslation } from "react-i18next";
+import { imgProxy } from "../../Utils/ImgProxy";
 /* ── Rang palitralari ─────────────────────────────────────────── */
 export const CAT_COLORS = {
     Game: {
@@ -82,7 +83,7 @@ function VariantCard({ product, accentColors, selected, onSelect }) {
                 <div className="size-11 rounded-xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-700">
                     {product.image_url && (
                         <img
-                            src={product.image_url}
+                            src={imgProxy(product.image_url)}
                             alt={product.name}
                             className="w-full h-full object-cover"
                         />
@@ -105,7 +106,9 @@ function VariantCard({ product, accentColors, selected, onSelect }) {
                     >
                         {formatUzs(product.display_price ?? product.price_uzs)}
                         {product.is_reseller_price && (
-                            <span className="ml-1 text-[10px] bg-emerald-500 text-white rounded px-1">R</span>
+                            <span className="ml-1 text-[10px] bg-emerald-500 text-white rounded px-1">
+                                R
+                            </span>
                         )}
                     </p>
                 </div>
@@ -129,6 +132,7 @@ export function GameVariants({
     accentColors,
     userBalance,
 }) {
+    const { t } = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeType, setActiveType] = useState(null);
@@ -165,7 +169,7 @@ export function GameVariants({
     if (!data || !data.types?.length)
         return (
             <div className="text-center py-16 text-slate-400">
-                Mahsulot topilmadi
+                {t("shop.not_found")}
             </div>
         );
 
@@ -181,7 +185,8 @@ export function GameVariants({
     );
 
     const canAfford = selectedProduct
-        ? userBalance >= (selectedProduct.display_price ?? selectedProduct.price_uzs)
+        ? userBalance >=
+          (selectedProduct.display_price ?? selectedProduct.price_uzs)
         : true;
 
     const handleVerify = async () => {
@@ -197,9 +202,9 @@ export function GameVariants({
                 zone_id: zoneId.trim() || null,
             });
             setVerifiedName(res.data.success ? (res.data.name ?? "✓") : null);
-            if (!res.data.success) setVerifyError("Akkaunt topilmadi");
+            if (!res.data.success) setVerifyError(t("shop.account_not_found"));
         } catch {
-            setVerifyError("Akkaunt topilmadi");
+            setVerifyError(t("shop.account_not_found"));
         } finally {
             setIsVerifying(false);
         }
@@ -208,7 +213,7 @@ export function GameVariants({
     const handleOrder = async () => {
         if (!selectedProduct) return;
         if (!verifiedName) {
-            setVerifyError("Avval tasdiqlang");
+            setVerifyError(t("shop.verify_first"));
             return;
         }
         setIsSubmitting(true);
@@ -224,7 +229,7 @@ export function GameVariants({
             setOrderError(
                 e?.response?.data?.errors?.balance?.[0] ||
                     e?.response?.data?.errors?.api?.[0] ||
-                    "Xatolik yuz berdi",
+                    t("shop.order_error"),
             );
             setIsSubmitting(false);
         }
@@ -245,7 +250,7 @@ export function GameVariants({
                     className={`relative rounded-2xl overflow-hidden mb-5 h-28  `}
                 >
                     <img
-                        src={gameImage}
+                        src={imgProxy(gameImage)}
                         alt={game}
                         className="absolute inset-0 w-full h-full object-cover opacity-30"
                     />
@@ -253,7 +258,7 @@ export function GameVariants({
                     <div className="relative h-full flex items-center gap-4 px-5">
                         <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30 bg-white/10">
                             <img
-                                src={gameImage}
+                                src={imgProxy(gameImage)}
                                 alt={game}
                                 className="w-full h-full object-cover"
                             />
@@ -274,7 +279,7 @@ export function GameVariants({
             <div className="mb-5 space-y-3">
                 <div>
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
-                        O'YINCHI ID
+                        {t("shop.player_id_label")}
                     </label>
                     <div className="relative">
                         <input
@@ -285,7 +290,7 @@ export function GameVariants({
                                 setVerifiedName(null);
                                 setVerifyError("");
                             }}
-                            placeholder="O'yinchi ID kiriting"
+                            placeholder={t("shop.player_id_placeholder")}
                             className="w-full px-4 py-3 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                         />
                         <Info className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
@@ -295,7 +300,7 @@ export function GameVariants({
                 {needsZone && (
                     <div>
                         <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">
-                            SERVER ID
+                            {t("shop.server_id_label")}
                         </label>
                         <div className="flex gap-2">
                             <input
@@ -306,12 +311,16 @@ export function GameVariants({
                                     setVerifiedName(null);
                                     setVerifyError("");
                                 }}
-                                placeholder="Server ID kiriting"
+                                placeholder={t("shop.server_id_placeholder")}
                                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                             />
                             <button
                                 onClick={handleVerify}
-                                disabled={isVerifying || !target.trim() || !zoneId.trim()}
+                                disabled={
+                                    isVerifying ||
+                                    !target.trim() ||
+                                    !zoneId.trim()
+                                }
                                 className={`shrink-0 px-4 rounded-xl font-semibold text-sm text-white flex items-center gap-1.5 disabled:opacity-50 bg-linear-to-r ${accentColors.gradient}`}
                             >
                                 {isVerifying ? (
@@ -319,7 +328,7 @@ export function GameVariants({
                                 ) : (
                                     <Zap className="size-4" />
                                 )}
-                                Tekshirish
+                                {t("shop.check_btn")}
                             </button>
                         </div>
                     </div>
@@ -336,7 +345,7 @@ export function GameVariants({
                         ) : (
                             <Zap className="size-4" />
                         )}
-                        Tekshirish
+                        {t("shop.check_btn")}
                     </button>
                 )}
 
@@ -355,7 +364,7 @@ export function GameVariants({
 
             {/* Region / server type tabs */}
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">
-                Mahsulotni tanlang
+                {t("shop.select_product")}
             </p>
             {types.length > 1 && (
                 <div className="flex gap-2 flex-wrap mb-4">
@@ -395,7 +404,9 @@ export function GameVariants({
             )}
             {selectedProduct && !canAfford && (
                 <p className="mt-4 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
-                    Balansingiz yetarli emas ({formatUzs(userBalance)})
+                    {t("shop.insufficient_balance_amount", {
+                        balance: formatUzs(userBalance),
+                    })}
                 </p>
             )}
 
@@ -412,7 +423,7 @@ export function GameVariants({
                         ) : (
                             <ShoppingCart className="size-5" />
                         )}
-                        Sotib olish
+                        {t("others.buy")}
                     </button>
                 </div>
             </div>

@@ -74,7 +74,9 @@
         "secure_payment_desc": "Fully protected",
         "best_price": "Best Price",
         "best_price_desc": "Cheapest on the market",
-        "why_us_subtitle": "Fast, safe, and affordable — always."
+        "why_us_subtitle": "Fast, safe, and affordable — always.",
+        "top_games": "Top Games",
+        "payment_ways": "Payment methods"
     },
     "shop": {
         "uc_page_title": "UC Shop",
@@ -125,7 +127,6 @@
         "ml_account_id": "ML Account ID",
         "ml_server_id": "Server ID",
         "account_id_placeholder": "Account ID",
-        "server_id_placeholder": "Server ID",
         "tg_username_label": "Target Telegram Username",
         "tg_username_placeholder": "e.g. username or @username",
         "verify_btn": "Verify",
@@ -145,14 +146,26 @@
         "verify": "Verify Account",
         "insufficient": "Insufficient balance",
         "order": "Place Order",
-        "ordering": "Placing order..."
+        "ordering": "Placing order...",
+        "not_found": "No products found",
+        "player_id_label": "PLAYER ID",
+        "player_id_placeholder": "Enter Player ID",
+        "server_id_label": "SERVER ID",
+        "server_id_placeholder": "Enter Server ID",
+        "check_btn": "Verify",
+        "account_not_found": "Account not found",
+        "verify_first": "Please verify first",
+        "select_product": "Select a product",
+        "insufficient_balance_amount": "Insufficient balance ({{balance}})"
     },
     "bar": {
         "services": "Services",
         "balanceTopup": "Balance top-up",
         "purchases": "Purchases",
         "shop": "Shop",
-        "profile": "Profile"
+        "profile": "Profile",
+        "dashboard": "Dashboard",
+        "balance": "Balance"
     },
     "others": {
         "loading": "Loading...",
@@ -174,9 +187,9 @@
         "pay_btn": "pay",
         "click_error": "Error creating payment",
         "manual_title": "Top Up via Card",
-        "manual_step1": "Transfer money to the card below",
+        "manual_step1": "Transfer money to the card below and upload a picture of the check (Screenshot)",
         "manual_step2": "Enter the transferred amount",
-        "manual_step3": "Tap \"Send Request\" — payment is detected automatically",
+        "manual_step3": "Click the \"Send request\" button — payment will be determined shortly",
         "auto_detect_info": "Payment is detected automatically. Your balance will update within seconds after the transfer.",
         "transferred_amount": "Transferred amount (UZS)",
         "check_success": "Request accepted! Your balance will update as soon as the payment is detected.",
@@ -192,7 +205,8 @@
         "payment_cards_label": "Payment cards",
         "upload_label": "Upload",
         "upload_hint": "Upload your payment receipt as an image or file (Max. 10MB)",
-        "status_column": "Status"
+        "status_column": "Status",
+        "how_to_do_it": "How to do it?"
     },
     "notifications": {
         "page_title": "Notifications",
@@ -286,5 +300,18 @@
         "verified_success": "Email verified successfully!",
         "verify_error": "Invalid code.",
         "security_footer": "Your account security is important to us. Use a strong password with numbers and special characters."
+    },
+    "reseller": {
+        "today": "today",
+        "this_month": "This month",
+        "saved": "Saved",
+        "orders": "Orders",
+        "lastOrders": "Last 20",
+        "noOrdersYet": "No orders yet.",
+        "makeYourFirstPurchase": "Make your first purchase at the store",
+        "noProduct": "No products for resellers",
+        "betterCallAdmin": "Contact admin",
+        "amount": "amount",
+        "payWith": "Pay via"
     }
 }

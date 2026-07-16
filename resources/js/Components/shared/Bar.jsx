@@ -49,7 +49,7 @@ function Bar() {
 
     return (
         <nav
-            className={`fixed bottom-0 left-0 right-0 border-t  z-50 transition-colors duration-300 bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-800 py-0 shadow-black pb-[env(safe-area-inset-bottom)] `}
+            className={`fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 dark:border-white/5 bg-white/70 dark:bg-gray-900/60 backdrop-blur-lg transition-colors duration-300 py-0 pb-[env(safe-area-inset-bottom)] rounded-t-3xl`}
         >
             <div className="max-w-7xl mx-auto px-1">
                 <div className="grid grid-cols-4 gap-1">

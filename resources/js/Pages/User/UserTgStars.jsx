@@ -70,7 +70,7 @@ function UserTgStars() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 lg:pb-8 dark:bg-slate-900">
+        <div className="min-h-[calc(100vh-140px)] px-4 py-6 pb-8 lg:pb-8">
             <Head title={t("shop.stars_page_title")} />
             {flash?.success && (
                 <div className="p-3 bg-green-100 text-green-700 rounded">

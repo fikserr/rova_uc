@@ -37,8 +37,8 @@ function LangToggle() {
                                     : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                                 }`}
                             >
-                                <span>{l.flag}</span>
-                                <span>{l.label}</span>
+                                <p className='text-sm lg:text-lg'>{l.flag}</p>
+                                <p className='text-sm lg:text-lg'>{l.label}</p>
                                 {l.code === lang && <span className="ml-auto size-1.5 rounded-full bg-blue-500" />}
                             </button>
                         ))}

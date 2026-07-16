@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('order_receipts')) {
+            return;
+        }
+
         Schema::create('order_receipts', function (Blueprint $table) {
             $table->id();
             $table->string('order_type', 20);       // sekali, uc, ml, bundle, srv

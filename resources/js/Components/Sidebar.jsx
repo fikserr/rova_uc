@@ -1,5 +1,5 @@
-import { Link, usePage } from "@inertiajs/react";
 import { useT } from "@/Hook/useLanguage";
+import { Link, usePage } from "@inertiajs/react";
 import { FaChartLine, FaCog, FaDollarSign, FaLayerGroup } from "react-icons/fa";
 import {
     LuActivity,
@@ -15,8 +15,8 @@ import {
     LuShoppingCart,
     LuStore,
     LuTag,
-    LuUser,
     LuTrendingUp,
+    LuUser,
 } from "react-icons/lu";
 
 export function Sidebar({ isOpen = true, onClose }) {
@@ -25,34 +25,135 @@ export function Sidebar({ isOpen = true, onClose }) {
     const authUser = props?.auth?.user ?? null;
     const role = authUser?.role ?? "worker";
     const displayName = authUser?.username || "Admin";
-    const subText = authUser?.phone_number || (role === "worker" ? "Worker" : role === "reseller" ? "Reseller" : "Administrator");
+    const subText =
+        authUser?.phone_number ||
+        (role === "worker"
+            ? "Worker"
+            : role === "reseller"
+              ? "Reseller"
+              : "Administrator");
     const avatarLetter =
         String(displayName).trim().charAt(0).toUpperCase() || "A";
 
     const allMenuItems = [
-        { href: "/admin/dashboard",          tKey: "dashboard",          icon: LuLayoutDashboard, roles: ["admin"] },
-        { href: "/all-orders",               tKey: "sekali_orders",      icon: LuScrollText,      roles: ["admin"] },
-        { href: "/uc-orders",                tKey: "uc_service_orders",  icon: LuShoppingCart,    roles: ["admin"] },
-        { href: "/manual-topups",            tKey: "manual_topups",      icon: LuReceipt,         roles: ["admin"] },
-        { href: "/profit-analytics",         tKey: "profit_analytics",   icon: FaChartLine,       roles: ["admin"] },
-        { href: "/order-receipts",           tKey: "order_receipts",     icon: LuReceipt,         roles: ["admin"] },
-        { href: "/referral-settings",        tKey: "referral_settings",  icon: FaLayerGroup,      roles: ["admin"] },
-        { href: "/users",                    tKey: "users",              icon: LuUser,            roles: ["admin"] },
-        { href: "/products-uc",              tKey: "uc_products",        icon: LuBox,             roles: ["admin"] },
-        { href: "/currencies",               tKey: "currency_rates",     icon: FaDollarSign,      roles: ["admin"] },
-        { href: "/sekali-products",          tKey: "sekali_shop",        icon: LuStore,           roles: ["admin"] },
-        { href: "/spin-sectors",             tKey: "spin_management",    icon: FaCog,             roles: ["admin"] },
-        { href: "/tasks",                    tKey: "tasks",              icon: LuCalendarCheck,   roles: ["admin"] },
-        { href: "/broadcast-notifications",  tKey: "broadcast",          icon: LuBell,            roles: ["admin"] },
-        { href: "/payment-cards",            tKey: "payment_cards",      icon: LuCreditCard,      roles: ["admin"] },
-        { href: "/promo-codes",              tKey: "promo_codes",        icon: LuTag,             roles: ["admin"] },
-        { href: "/promotions",               tKey: "promotions",         icon: LuGift,            roles: ["admin"] },
-        { href: "/audit-logs",               tKey: "audit_log",          icon: LuActivity,        roles: ["admin"] },
-        { href: "/admin/security",           tKey: "security",           icon: LuShieldCheck,     roles: ["admin"] },
-        { href: "/reseller",                 tKey: "reseller_dashboard", icon: LuTrendingUp,      roles: ["reseller"] },
+        {
+            href: "/admin/dashboard",
+            tKey: "dashboard",
+            icon: LuLayoutDashboard,
+            roles: ["admin"],
+        },
+        {
+            href: "/all-orders",
+            tKey: "sekali_orders",
+            icon: LuScrollText,
+            roles: ["admin"],
+        },
+        {
+            href: "/uc-orders",
+            tKey: "uc_service_orders",
+            icon: LuShoppingCart,
+            roles: ["admin"],
+        },
+        {
+            href: "/manual-topups",
+            tKey: "manual_topups",
+            icon: LuReceipt,
+            roles: ["admin"],
+        },
+        {
+            href: "/profit-analytics",
+            tKey: "profit_analytics",
+            icon: FaChartLine,
+            roles: ["admin"],
+        },
+        {
+            href: "/order-receipts",
+            tKey: "order_receipts",
+            icon: LuReceipt,
+            roles: ["admin"],
+        },
+        {
+            href: "/referral-settings",
+            tKey: "referral_settings",
+            icon: FaLayerGroup,
+            roles: ["admin"],
+        },
+        { href: "/users", tKey: "users", icon: LuUser, roles: ["admin"] },
+        {
+            href: "/products-uc",
+            tKey: "uc_products",
+            icon: LuBox,
+            roles: ["admin"],
+        },
+        {
+            href: "/currencies",
+            tKey: "currency_rates",
+            icon: FaDollarSign,
+            roles: ["admin"],
+        },
+        {
+            href: "/sekali-products",
+            tKey: "sekali_shop",
+            icon: LuStore,
+            roles: ["admin"],
+        },
+        {
+            href: "/spin-sectors",
+            tKey: "spin_management",
+            icon: FaCog,
+            roles: ["admin"],
+        },
+        {
+            href: "/tasks",
+            tKey: "tasks",
+            icon: LuCalendarCheck,
+            roles: ["admin"],
+        },
+        {
+            href: "/broadcast-notifications",
+            tKey: "broadcast",
+            icon: LuBell,
+            roles: ["admin"],
+        },
+        {
+            href: "/payment-cards",
+            tKey: "payment_cards",
+            icon: LuCreditCard,
+            roles: ["admin"],
+        },
+        {
+            href: "/promo-codes",
+            tKey: "promo_codes",
+            icon: LuTag,
+            roles: ["admin"],
+        },
+        {
+            href: "/promotions",
+            tKey: "promotions",
+            icon: LuGift,
+            roles: ["admin"],
+        },
+        {
+            href: "/audit-logs",
+            tKey: "audit_log",
+            icon: LuActivity,
+            roles: ["admin"],
+        },
+        {
+            href: "/admin/security",
+            tKey: "security",
+            icon: LuShieldCheck,
+            roles: ["admin"],
+        },
+        {
+            href: "/reseller",
+            tKey: "reseller_dashboard",
+            icon: LuTrendingUp,
+            roles: ["reseller"],
+        },
     ];
 
-    const menuItems = allMenuItems.filter(item => item.roles.includes(role));
+    const menuItems = allMenuItems.filter((item) => item.roles.includes(role));
 
     return (
         <>
@@ -112,7 +213,9 @@ export function Sidebar({ isOpen = true, onClose }) {
                                     url === "/admin/dashboard" ||
                                     url.startsWith("/admin/dashboard/");
                             } else if (item.href === "/products-uc") {
-                                isActive = url === "/products-uc" || url.startsWith("/uc-products");
+                                isActive =
+                                    url === "/products-uc" ||
+                                    url.startsWith("/uc-products");
                             } else if (item.href.startsWith("/spin-sectors")) {
                                 isActive = url.startsWith("/spin-");
                             } else {
@@ -127,7 +230,7 @@ export function Sidebar({ isOpen = true, onClose }) {
                                         href={item.href}
                                         onClick={onClose}
                                         className={`
-                                            relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                                            relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm lg:text-lg font-medium transition-all duration-150
                                             ${
                                                 isActive
                                                     ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"

@@ -52,3 +52,13 @@ main.overflow-y-scroll {
     scrollbar-width: none; /* Tells Firefox not to render the bar */
     -ms-overflow-style: none; /* Legacy support for IE/Edge */
 }
+
+.scrollx::-webkit-scrollbar {
+    display: none; /* This completely hides the scrollbar element */
+}
+
+/* For Firefox and Standard Engines */
+.scrollx {
+    scrollbar-width: none; /* Tells Firefox not to render the bar */
+    -ms-overflow-style: none; /* Legacy support for IE/Edge */
+}
