@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useDevice from "../../Hook/useDevice";
+import { imgFallback, imgProxy } from "../../utils/imgProxy";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -88,8 +89,12 @@ function ServiceCard({
                     {image ? (
                         <img
                             src={image}
-                            alt={title}
-                            className="w-full h-full object-cover rounded-t-2xl"
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-t-2xl transition-opacity duration-500"
+                            style={{ opacity: 0 }}
+                            onLoad={(e) => (e.currentTarget.style.opacity = "1")}
+                            onError={imgFallback}
                         />
                     ) : (
                         <div className="rounded-2xl">{icon}</div>
@@ -238,7 +243,7 @@ function UserServices() {
         id: `game-${game.name}`,
         title: game.name,
         category: "Game",
-        image: game.image_url,
+        image: imgProxy(game.image_url),
         color: GAME_CARD_COLORS[i % GAME_CARD_COLORS.length],
         onClick: () =>
             setSelectedGame({
@@ -374,10 +379,10 @@ function UserServices() {
                                 />
                                 {selectedGame.image && (
                                     <div className="relative rounded-2xl overflow-hidden mb-5 h-28">
-                                        <img src={selectedGame.image} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                                        <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
                                         <div className="relative h-full flex items-center gap-4 px-5">
                                             <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
-                                                <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover" />
+                                                <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div>
                                                 <h2 className="text-white font-bold text-lg">{selectedGame.name}</h2>
@@ -427,7 +432,7 @@ function UserServices() {
                                                 <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
                                                 <div className="h-28 bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                                     {b.image_url
-                                                        ? <img src={b.image_url} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                        ? <img src={imgProxy(b.image_url)} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                                         : <div className="w-full h-full flex items-center justify-center text-2xl">🎁</div>
                                                     }
                                                 </div>
@@ -508,7 +513,7 @@ function UserServices() {
                                                 <div className={`relative h-20 bg-linear-to-br ${gradColor} overflow-hidden`}>
                                                     {game.image_url ? (
                                                         <img
-                                                            src={game.image_url}
+                                                            src={imgProxy(game.image_url)}
                                                             alt={game.name}
                                                             className="w-full h-full object-cover"
                                                         />

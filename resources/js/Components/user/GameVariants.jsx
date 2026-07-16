@@ -2,7 +2,7 @@ import axios from "axios";
 import { CheckCircle, Info, Loader2, ShoppingCart, Zap } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { imgProxy } from "../../Utils/ImgProxy";
+import { imgFallback, imgProxy } from "../../Utils/ImgProxy";
 /* ── Rang palitralari ─────────────────────────────────────────── */
 export const CAT_COLORS = {
     Game: {
@@ -86,6 +86,7 @@ function VariantCard({ product, accentColors, selected, onSelect }) {
                             src={imgProxy(product.image_url)}
                             alt={product.name}
                             className="w-full h-full object-cover"
+                            onError={imgFallback}
                         />
                     )}
                 </div>
@@ -253,6 +254,7 @@ export function GameVariants({
                         src={imgProxy(gameImage)}
                         alt={game}
                         className="absolute inset-0 w-full h-full object-cover opacity-30"
+                        onError={imgFallback}
                     />
                     <div className={`absolute inset-0  opacity-80`} />
                     <div className="relative h-full flex items-center gap-4 px-5">
@@ -261,6 +263,7 @@ export function GameVariants({
                                 src={imgProxy(gameImage)}
                                 alt={game}
                                 className="w-full h-full object-cover"
+                                onError={imgFallback}
                             />
                         </div>
                         <div className="min-w-0">

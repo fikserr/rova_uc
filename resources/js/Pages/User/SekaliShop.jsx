@@ -1,6 +1,7 @@
 import UcIcon from "@images/ucMain.webp";
 import { Head, usePage } from "@inertiajs/react";
 import axios from "axios";
+import { imgFallback, imgProxy } from "../../utils/imgProxy";
 import {
     ArrowLeft,
     CheckCircle,
@@ -131,7 +132,7 @@ function PurchaseModal({ item, itemType, user, userBalance, lastPubgAccount, onC
                     ) : (
                         <>
                             {item.image_url
-                                ? <img src={item.image_url} alt={item.title} className="size-9 rounded-lg object-cover" />
+                                ? <img src={imgProxy(item.image_url)} alt={item.title} className="size-9 rounded-lg object-cover" />
                                 : <div className="size-9 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><ImageIcon className="size-4 text-slate-400" /></div>
                             }
                             <p className="font-semibold text-slate-900 dark:text-white text-sm">{item.title}</p>
@@ -346,8 +347,15 @@ export default function SekaliShop() {
                                                     )}
                                                     <div className={`relative size-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 bg-linear-to-br ${grad}`}>
                                                         {img && (
-                                                            <img src={img} alt={game.name} className="absolute inset-0 w-full h-full object-cover"
-                                                                onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                                            <img
+                                                                src={imgProxy(img)}
+                                                                alt=""
+                                                                loading="lazy"
+                                                                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                                                                style={{ opacity: 0 }}
+                                                                onLoad={(e) => (e.currentTarget.style.opacity = "1")}
+                                                                onError={imgFallback}
+                                                            />
                                                         )}
                                                     </div>
                                                     <p className="font-semibold text-slate-800 dark:text-white text-sm leading-tight">{game.name}</p>
@@ -394,10 +402,10 @@ export default function SekaliShop() {
                                 {/* Game hero */}
                                 {selectedGame.image && (
                                     <div className="relative rounded-2xl overflow-hidden mb-5 h-28">
-                                        <img src={selectedGame.image} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                                        <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
                                         <div className="relative h-full flex items-center gap-4 px-5">
                                             <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
-                                                <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover" />
+                                                <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div>
                                                 <h2 className="text-white font-bold text-lg">{selectedGame.name}</h2>
@@ -450,10 +458,10 @@ export default function SekaliShop() {
 
                                 {selectedGame.image && (
                                     <div className="relative rounded-2xl overflow-hidden mb-5 h-28">
-                                        <img src={selectedGame.image} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                                        <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
                                         <div className="relative h-full flex items-center gap-4 px-5">
                                             <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
-                                                <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover" />
+                                                <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div>
                                                 <h2 className="text-white font-bold text-lg">{selectedGame.name}</h2>
@@ -480,7 +488,7 @@ export default function SekaliShop() {
                                                 <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
                                                 <div className="h-28 bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                                     {b.image_url
-                                                        ? <img src={b.image_url} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                        ? <img src={imgProxy(b.image_url)} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                                         : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="size-8 text-slate-300 dark:text-slate-600" /></div>
                                                     }
                                                 </div>

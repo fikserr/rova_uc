@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { imgFallback, imgProxy } from "../../utils/imgProxy";
 
 function fmt(n) {
     return Number(n ?? 0).toLocaleString("fr-FR");
@@ -158,9 +159,13 @@ export default function ResellerShop() {
                                         >
                                             {game.image_url ? (
                                                 <img
-                                                    src={game.image_url}
-                                                    alt={game.name}
-                                                    className="w-full aspect-square object-cover opacity-75 group-hover:opacity-95 transition-opacity"
+                                                    src={imgProxy(game.image_url)}
+                                                    alt=""
+                                                    loading="lazy"
+                                                    className="w-full aspect-square object-cover transition-opacity duration-500"
+                                                    style={{ opacity: 0 }}
+                                                    onLoad={(e) => (e.currentTarget.style.opacity = "0.75")}
+                                                    onError={imgFallback}
                                                 />
                                             ) : (
                                                 <div className="w-full aspect-square bg-violet-500/10 flex items-center justify-center">

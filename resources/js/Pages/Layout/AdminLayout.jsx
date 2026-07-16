@@ -1,7 +1,8 @@
 import { toggleTheme } from "@/Hook/theme";
 import { LanguageProvider, useLanguage } from "@/Hook/useLanguage";
 import { LANGUAGES } from "@/lang/translations";
-import { Moon, Sun } from "lucide-react";
+import { router } from "@inertiajs/react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { Sidebar } from "../../Components/Sidebar";
 
@@ -74,6 +75,14 @@ function AdminLayoutInner({ children }) {
                         >
                             <Moon className="dark:hidden" />
                             <Sun className="hidden dark:block" />
+                        </button>
+
+                        <button
+                            onClick={() => router.post('/logout')}
+                            className="rounded-full flex items-center justify-center w-10 h-10 bg-gray-200 dark:bg-gray-600 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 cursor-pointer transition-colors"
+                            title="Chiqish"
+                        >
+                            <LogOut className="size-4" />
                         </button>
                     </div>
                 </header>

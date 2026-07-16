@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import axios from "axios";
+import { imgProxy } from "../../utils/imgProxy";
 import {
     BarChart3,
     ChevronRight,
@@ -219,7 +220,7 @@ export default function ResellerDashboard() {
                                         >
                                             {o.image_url ? (
                                                 <img
-                                                    src={o.image_url}
+                                                    src={imgProxy(o.image_url)}
                                                     alt=""
                                                     className="size-10 rounded-xl object-cover shrink-0 opacity-90"
                                                 />
@@ -304,7 +305,7 @@ export default function ResellerDashboard() {
                                     <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
                                         {variants[0]?.image_url && (
                                             <img
-                                                src={variants[0].image_url}
+                                                src={imgProxy(variants[0].image_url)}
                                                 alt={game}
                                                 className="size-6 rounded-lg object-cover"
                                             />

@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import {
     HandCoins,
     LayoutDashboard,
@@ -24,9 +24,6 @@ function isNavActive(url, href) {
 export default function ResellerBar() {
     const { url } = usePage();
     const { t } = useTranslation();
-    const csrfToken = document.querySelector(
-        'meta[name="csrf-token"]',
-    )?.content;
 
     const NAV = [
         { href: "/reseller", icon: LayoutDashboard, label: t("bar.dashboard") },
@@ -72,13 +69,13 @@ export default function ResellerBar() {
                 </nav>
 
                 <div className="px-3 pb-6">
-                    <form method="POST" action="/logout">
-                        <input type="hidden" name="_token" value={csrfToken} />
-                        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-rose-400 hover:bg-rose-500/5 transition-all">
-                            <LogOut className="size-4" />
-                            Chiqish
-                        </button>
-                    </form>
+                    <button
+                        onClick={() => router.post('/logout')}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-rose-400 hover:bg-rose-500/5 transition-all"
+                    >
+                        <LogOut className="size-4" />
+                        Chiqish
+                    </button>
                 </div>
             </aside>
 
