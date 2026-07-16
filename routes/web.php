@@ -60,7 +60,7 @@ Route::post('/click/complete', [ClickController::class, 'complete'])->middleware
 Route::post('/binance/webhook', [BinanceController::class, 'webhook'])->middleware('throttle:120,1');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/img', [ImageProxyController::class, 'show'])->name('img.proxy');
+    Route::get('/img', [ImageProxyController::class, 'show'])->middleware('throttle:120,1')->name('img.proxy');
     Route::post('/password', [PasswordController::class, 'store']);
     Route::put('/password/{user}', [PasswordController::class, 'update']);
 
@@ -249,6 +249,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reseller/shop', [ResellerShopController::class, 'index'])
             ->name('reseller.shop');
         Route::get('/reseller/shop/variants', [ResellerShopController::class, 'variants'])
+            ->middleware('throttle:60,1')
             ->name('reseller.shop.variants');
         Route::post('/reseller/shop/validate', [ResellerShopController::class, 'validateAccount'])
             ->middleware('throttle:30,1')
@@ -335,6 +336,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/shop', [SekaliShopController::class, 'index'])
             ->name('sekali-shop.index');
         Route::get('/shop/variants', [SekaliShopController::class, 'variants'])
+            ->middleware('throttle:60,1')
             ->name('sekali-shop.variants');
         Route::post('/shop/validate', [SekaliShopController::class, 'validate'])
             ->middleware('throttle:30,1')
