@@ -62,8 +62,10 @@ Route::post('/click/prepare', [ClickController::class, 'prepare'])->middleware('
 Route::post('/click/complete', [ClickController::class, 'complete'])->middleware('throttle:60,1');
 Route::post('/binance/webhook', [BinanceController::class, 'webhook'])->middleware('throttle:120,1');
 
+// Image proxy – must be outside auth so images load even before session is fully established
+Route::get('/img', [ImageProxyController::class, 'show'])->middleware('throttle:200,1')->name('img.proxy');
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/img', [ImageProxyController::class, 'show'])->middleware('throttle:120,1')->name('img.proxy');
     Route::post('/password', [PasswordController::class, 'store']);
     Route::put('/password/{user}', [PasswordController::class, 'update']);
 

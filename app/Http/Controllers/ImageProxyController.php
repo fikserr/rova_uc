@@ -3,60 +3,95 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ImageProxyController extends Controller
 {
+    private const CACHE_DIR  = 'image-proxy';
+    private const TIMEOUT    = 15;
+
     public function show(Request $request)
     {
         $url = $request->query('url');
 
         if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
-            return response('Bad Request', 400);
+            return $this->placeholder();
         }
 
         $scheme = parse_url($url, PHP_URL_SCHEME);
         if (!in_array($scheme, ['http', 'https'])) {
-            return response('Bad Request', 400);
+            return $this->placeholder();
         }
 
-        $cacheKey = 'imgp_' . md5($url);
+        $hash     = md5($url);
+        $filePath = self::CACHE_DIR . '/' . $hash;
+        $metaPath = self::CACHE_DIR . '/' . $hash . '.type';
 
-        $cached = Cache::get($cacheKey);
-        if ($cached) {
-            return response(base64_decode($cached['body']), 200, [
-                'Content-Type'  => $cached['type'],
-                'Cache-Control' => 'public, max-age=604800',
+        // ── Disk cache hit ─────────────────────────────────────
+        if (Storage::disk('local')->exists($filePath)) {
+            $type = Storage::disk('local')->exists($metaPath)
+                ? trim(Storage::disk('local')->get($metaPath))
+                : 'image/jpeg';
+
+            return response(Storage::disk('local')->get($filePath), 200, [
+                'Content-Type'  => $type,
+                'Cache-Control' => 'public, max-age=2592000',
+                'X-Cache'       => 'HIT',
             ]);
         }
 
+        // ── Fetch from origin ───────────────────────────────────
         try {
-            $res = Http::timeout(12)
+            $res = Http::timeout(self::TIMEOUT)
                 ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Referer'    => 'https://sekalipay.com/',
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'Referer'    => rtrim(config('app.url'), '/') . '/',
+                    'Accept'     => 'image/webp,image/avif,image/apng,image/*,*/*;q=0.8',
                 ])
                 ->get($url);
-        } catch (\Throwable) {
-            return response('Gateway Timeout', 502);
+        } catch (\Throwable $e) {
+            Log::warning('ImageProxy: fetch failed', ['url' => $url, 'error' => $e->getMessage()]);
+            return $this->placeholder();
         }
 
         if (!$res->ok()) {
-            return response('Not Found', 404);
+            return $this->placeholder();
         }
 
-        $type = $res->header('Content-Type') ?? 'image/jpeg';
-        if (!str_starts_with($type, 'image/')) {
-            $type = 'image/jpeg';
+        $contentType = $res->header('Content-Type') ?? 'image/jpeg';
+        $contentType = trim(explode(';', $contentType)[0]);
+        if (!str_starts_with($contentType, 'image/')) {
+            $contentType = 'image/jpeg';
         }
 
-        $data = ['body' => base64_encode($res->body()), 'type' => $type];
-        Cache::put($cacheKey, $data, now()->addWeek());
+        $body = $res->body();
 
-        return response($data['body'], 200, [
-            'Content-Type'  => $type,
-            'Cache-Control' => 'public, max-age=604800',
+        if (strlen($body) < 64) {
+            return $this->placeholder();
+        }
+
+        // Save raw bytes to disk
+        Storage::disk('local')->put($filePath, $body);
+        Storage::disk('local')->put($metaPath, $contentType);
+
+        return response($body, 200, [
+            'Content-Type'  => $contentType,
+            'Cache-Control' => 'public, max-age=2592000',
+            'X-Cache'       => 'MISS',
+        ]);
+    }
+
+    private function placeholder()
+    {
+        // 1×1 transparent PNG
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+        );
+        return response($png, 200, [
+            'Content-Type'  => 'image/png',
+            'Cache-Control' => 'no-store',
         ]);
     }
 }
