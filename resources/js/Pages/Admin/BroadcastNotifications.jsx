@@ -1,4 +1,6 @@
 import { Head, useForm, usePage } from "@inertiajs/react";
+import { ImageIcon, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 export default function BroadcastNotifications() {
     const { flash, stats = {} } = usePage().props;
@@ -6,13 +8,39 @@ export default function BroadcastNotifications() {
         title: "",
         message: "",
         description: "",
+        image: null,
     });
+
+    const fileRef = useRef(null);
+    const [preview, setPreview] = useState(null);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0] ?? null;
+        setData("image", file);
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setPreview(url);
+        } else {
+            setPreview(null);
+        }
+    };
+
+    const removeImage = () => {
+        setData("image", null);
+        setPreview(null);
+        if (fileRef.current) fileRef.current.value = "";
+    };
 
     const submit = (e) => {
         e.preventDefault();
         post("/broadcast-notifications", {
+            forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setPreview(null);
+                if (fileRef.current) fileRef.current.value = "";
+            },
         });
     };
 
@@ -64,9 +92,9 @@ export default function BroadcastNotifications() {
                         placeholder="Masalan: Texnik yangilanish"
                         required
                     />
-                    {errors.title ? (
+                    {errors.title && (
                         <p className="mt-1 text-xs text-rose-600">{errors.title}</p>
-                    ) : null}
+                    )}
                 </div>
 
                 <div>
@@ -80,9 +108,9 @@ export default function BroadcastNotifications() {
                         placeholder="Barcha userlarga boradigan asosiy matn"
                         required
                     />
-                    {errors.message ? (
+                    {errors.message && (
                         <p className="mt-1 text-xs text-rose-600">{errors.message}</p>
-                    ) : null}
+                    )}
                 </div>
 
                 <div>
@@ -95,9 +123,53 @@ export default function BroadcastNotifications() {
                         className="w-full min-h-20 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-200"
                         placeholder="Masalan: 15 daqiqa ichida xizmat tiklanadi"
                     />
-                    {errors.description ? (
+                    {errors.description && (
                         <p className="mt-1 text-xs text-rose-600">{errors.description}</p>
-                    ) : null}
+                    )}
+                </div>
+
+                {/* Image upload */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                        Rasm (ixtiyoriy)
+                    </label>
+
+                    {preview ? (
+                        <div className="relative inline-block">
+                            <img
+                                src={preview}
+                                alt="preview"
+                                className="max-h-48 rounded-xl border border-slate-200 dark:border-slate-700 object-cover"
+                            />
+                            <button
+                                type="button"
+                                onClick={removeImage}
+                                className="absolute -top-2 -right-2 size-6 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition shadow"
+                            >
+                                <X size={13} />
+                            </button>
+                        </div>
+                    ) : (
+                        <label className="flex flex-col items-center justify-center gap-2 w-full h-32 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
+                            <ImageIcon className="size-7 text-slate-400" />
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                                Rasm yuklash uchun bosing
+                            </span>
+                            <span className="text-xs text-slate-400">
+                                JPG, PNG, WEBP · max 5 MB
+                            </span>
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg,image/webp"
+                                onChange={handleImageChange}
+                                className="hidden"
+                            />
+                        </label>
+                    )}
+                    {errors.image && (
+                        <p className="mt-1 text-xs text-rose-600">{errors.image}</p>
+                    )}
                 </div>
 
                 <button
@@ -111,4 +183,3 @@ export default function BroadcastNotifications() {
         </div>
     );
 }
-

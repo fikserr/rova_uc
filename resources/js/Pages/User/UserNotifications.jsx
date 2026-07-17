@@ -253,6 +253,14 @@ function UserNotifications() {
                                             </p>
                                         )}
 
+                                        {item.image_url && (
+                                            <img
+                                                src={item.image_url}
+                                                alt=""
+                                                className="mt-3 rounded-xl max-h-64 w-full object-cover border border-slate-100 dark:border-slate-700"
+                                            />
+                                        )}
+
                                         <div className="text-xs text-slate-400 dark:text-slate-500 mt-3 flex items-center gap-1.5">
                                             <CalendarClock className="size-3.5 shrink-0" />
                                             {formatDateTime(item.created_at)}
