@@ -61,6 +61,9 @@ class UcProductController extends Controller
             'products'        => UcProduct::where('is_active', true)->orderByDesc('id')->get(),
             'bundles'         => $bundles,
             'lastPubgAccount' => $lastPubgAccount,
+            'promotions'      => \App\Models\Promotion::active()
+                ->where(fn ($q) => $q->where('applies_to', 'uc')->orWhere('applies_to', 'all'))
+                ->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']),
         ]);
     }
 

@@ -27,6 +27,11 @@ class TelegramBotController extends Controller
             return response('', 200);
         }
 
+        $webhookSecret = config('services.telegram.webhook_secret', '');
+        if ($webhookSecret && $request->header('X-Telegram-Bot-Api-Secret-Token') !== $webhookSecret) {
+            return response('', 401);
+        }
+
         $update = $request->all();
 
         // Callback tugma bosildi (worker approve/reject)
@@ -145,11 +150,22 @@ class TelegramBotController extends Controller
         $lang    = $dbUser?->language ?? (in_array($tgLang, ['uz', 'ru', 'en']) ? $tgLang : 'uz');
         $t       = new BotTranslator($lang);
 
-        if (($message['text'] ?? null) === '/start') {
+        $msgText = $message['text'] ?? '';
+        if ($msgText === '/start' || str_starts_with($msgText, '/start ')) {
             if (!$username) {
                 $this->send($chatId, $t->get('need_username'));
                 return;
             }
+
+            // Extract referrer ID from "/start ref_12345"
+            $referrerId = 0;
+            if (str_starts_with($msgText, '/start ref_')) {
+                $refPart    = substr($msgText, strlen('/start ref_'));
+                $referrerId = (int) $refPart;
+                if ($referrerId === $tid) $referrerId = 0;
+            }
+
+            $existsBefore = DB::selectOne("SELECT id FROM users WHERE id = {$tid}");
 
             DB::statement("INSERT IGNORE INTO users (id, username, role, language, created_at) VALUES ({$tid}, ?, 'user', ?, NOW())", [$username, $lang]);
             DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
@@ -158,6 +174,23 @@ class TelegramBotController extends Controller
 
             if ($user && $username && $user->username !== $username) {
                 DB::statement("UPDATE users SET username = ? WHERE id = {$tid}", [$username]);
+            }
+
+            // Save referral if this is a new user
+            if (!$existsBefore && $referrerId > 0) {
+                $referrerExists = DB::selectOne("SELECT id FROM users WHERE id = {$referrerId}");
+                if ($referrerExists) {
+                    DB::table('referrals')->updateOrInsert(
+                        ['referred_user_id' => $tid],
+                        [
+                            'referrer_id'   => $referrerId,
+                            'reward_amount' => 0,
+                            'reward_currency' => 'UZS',
+                            'rewarded_at'   => null,
+                            'created_at'    => now(),
+                        ]
+                    );
+                }
             }
 
             $needPhone = empty($user->phone_number ?? null);

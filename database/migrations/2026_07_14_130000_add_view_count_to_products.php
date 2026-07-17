@@ -8,10 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('sekali_products', function (Blueprint $table) {
-            $table->unsignedBigInteger('view_count')->default(0);
-        });
-
         Schema::table('uc_products', function (Blueprint $table) {
             $table->unsignedBigInteger('view_count')->default(0);
         });
@@ -19,10 +15,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('sekali_products', function (Blueprint $table) {
-            $table->dropColumn('view_count');
-        });
-
         Schema::table('uc_products', function (Blueprint $table) {
             $table->dropColumn('view_count');
         });

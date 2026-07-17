@@ -211,10 +211,13 @@ export default function Services() {
                                     <input
                                         type="number"
                                         placeholder="0"
+                                        required
+                                        min="0"
                                         value={data.sell_price}
                                         onChange={(e) => setData("sell_price", e.target.value)}
                                         className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                                     />
+                                    {errors.sell_price && <p className="text-xs text-rose-500 mt-1">{errors.sell_price}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
@@ -223,10 +226,13 @@ export default function Services() {
                                     <input
                                         type="number"
                                         placeholder="0"
+                                        required
+                                        min="0"
                                         value={data.cost_price}
                                         onChange={(e) => setData("cost_price", e.target.value)}
                                         className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                                     />
+                                    {errors.cost_price && <p className="text-xs text-rose-500 mt-1">{errors.cost_price}</p>}
                                 </div>
                             </div>
 

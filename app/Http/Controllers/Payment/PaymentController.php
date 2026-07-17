@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessFragmentServiceOrder;
+use App\Models\PromoCode;
+use App\Models\Promotion;
 use App\Services\AdminOrderNotificationService;
 use App\Services\WorkerNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +29,7 @@ class PaymentController extends Controller
             'service_id'                => 'nullable|integer',
             'target_telegram_username'  => 'nullable|string|max:64',
             'payment_method'            => 'nullable|in:balance,click,auto',
+            'promo_code'                => 'nullable|string|max:50',
         ]);
 
         $userId = Auth::id();
@@ -47,6 +50,45 @@ class PaymentController extends Controller
         }
 
         $amount = $context['amount'];
+
+        // Apply promo code or active promotion discount
+        $promoCodeId   = null;
+        $discountLabel = null;
+        $promoCodeStr  = trim((string) ($validated['promo_code'] ?? ''));
+
+        if ($promoCodeStr !== '' && $orderType !== 'topup') {
+            $promo = PromoCode::where('code', strtoupper($promoCodeStr))->first();
+            if (!$promo || !$promo->isValid($amount)) {
+                return response()->json(['message' => "Promo kod yaroqsiz yoki muddati o'tgan"], 422);
+            }
+            $discount = $promo->discount_type === 'percent'
+                ? $amount * $promo->discount_value / 100
+                : (float) $promo->discount_value;
+            $discount      = min($discount, $amount);
+            $amount        = round($amount - $discount, 2);
+            $promoCodeId   = $promo->id;
+            $discountLabel = $promo->discount_type === 'percent'
+                ? "{$promo->discount_value}% promo kod chegirmasi"
+                : number_format($promo->discount_value, 0, '.', ' ') . " UZS promo kod chegirmasi";
+        } elseif ($orderType !== 'topup') {
+            $promoType  = match ($orderType) {
+                'uc', 'bundle' => 'uc',
+                'service'      => 'service',
+                default        => null,
+            };
+            if ($promoType) {
+                $promotion = Promotion::active()
+                    ->where(fn ($q) => $q->where('applies_to', $promoType)->orWhere('applies_to', 'all'))
+                    ->orderByDesc('discount_percent')
+                    ->first();
+                if ($promotion) {
+                    $discount      = $amount * $promotion->discount_percent / 100;
+                    $amount        = round(max(0, $amount - $discount), 2);
+                    $discountLabel = "Aksiya: {$promotion->title} ({$promotion->discount_percent}%)";
+                }
+            }
+        }
+
         $currentBalance = (float) (DB::table('user_balances')->where('user_id', $userId)->value('balance') ?? 0);
         $hasEnoughBalance = $currentBalance >= $amount;
 
@@ -62,10 +104,18 @@ class PaymentController extends Controller
         }
 
         if ($resolvedMethod === 'balance') {
-            return $this->payWithBalance($userId, $orderType, $context, $amount);
+            $response = $this->payWithBalance($userId, $orderType, $context, $amount);
+            if ($promoCodeId && $response->getStatusCode() === 200) {
+                DB::table('promo_codes')->where('id', $promoCodeId)->increment('uses_count');
+            }
+            return $response;
         }
 
-        return $this->payWithClick($userId, $orderType, $context, $amount);
+        $response = $this->payWithClick($userId, $orderType, $context, $amount);
+        if ($promoCodeId && $response->getStatusCode() === 200) {
+            DB::table('promo_codes')->where('id', $promoCodeId)->increment('uses_count');
+        }
+        return $response;
     }
 
     private function buildOrderContext(string $orderType, array $validated, int $userId): array

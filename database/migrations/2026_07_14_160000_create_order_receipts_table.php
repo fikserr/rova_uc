@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('order_type', 20);       // sekali, uc, ml, bundle, srv
             $table->string('order_ref', 100);        // UUID (sekali) yoki numeric id
+            $table->string('external_ref', 255)->nullable();
             $table->unsignedBigInteger('user_id');
             $table->string('product_name', 255)->nullable();
             $table->decimal('sell_price_uzs', 15, 2)->default(0);  // Mijoz to'lagan narx

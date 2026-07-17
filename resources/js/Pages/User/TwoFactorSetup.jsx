@@ -79,7 +79,7 @@ function QrSection({ qrUrl }) {
             <div className="flex justify-center">
                 <div className="p-3 bg-white rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm inline-flex">
                     <img
-                        src={`https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=${encodeURIComponent(qrUrl)}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&data=${encodeURIComponent(qrUrl)}`}
                         alt="QR kod"
                         width={200}
                         height={200}

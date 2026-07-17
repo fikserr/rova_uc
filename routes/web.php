@@ -33,6 +33,7 @@ use App\Http\Controllers\User\GameVerifyController;
 use App\Http\Controllers\User\ManualTopupController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\NotificationController;
+use App\Http\Controllers\User\PromoCodeController as UserPromoCodeController;
 use App\Http\Controllers\User\PurchaseController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserTodoController;
@@ -54,6 +55,8 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:10,1');
+Route::get('/2fa/challenge', [TwoFactorController::class, 'showChallenge'])->name('2fa.challenge');
+Route::post('/2fa/challenge', [TwoFactorController::class, 'challenge'])->middleware('throttle:10,1');
 Route::post('/logout', [LoginController::class, 'destroy']);
 Route::post('/click/prepare', [ClickController::class, 'prepare'])->middleware('throttle:60,1');
 Route::post('/click/complete', [ClickController::class, 'complete'])->middleware('throttle:60,1');
@@ -292,6 +295,9 @@ Route::middleware(['auth'])->group(function () {
 
     // User & worker only — reseller is BLOCKED from these UI pages
     Route::middleware(['role:user,worker'])->group(function () {
+        Route::post('/user/promo/check', [UserPromoCodeController::class, 'check'])
+            ->middleware('throttle:20,1')
+            ->name('user.promo.check');
         Route::post('/game/verify/pubg', [GameVerifyController::class, 'verifyPubg'])
             ->middleware('throttle:30,1')
             ->name('game.verify.pubg');
@@ -305,6 +311,7 @@ Route::middleware(['auth'])->group(function () {
                 'bundles'         => \App\Models\UcBundle::where('is_active', true)->orderBy('sort_order')->orderByDesc('id')->get()->map(fn($b) => array_merge($b->toArray(), ['image_url' => $b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null])),
                 'lastPubgAccount' => $uid ? \Illuminate\Support\Facades\DB::table('pubg_accounts')->where('user_id', $uid)->orderByDesc('id')->first(['pubg_player_id','pubg_name']) : null,
                 'topGames'        => \App\Models\TopGame::orderBy('sort_order')->get(['game_name', 'category', 'image_url'])->map(fn($g) => ['name' => $g->game_name, 'category' => $g->category, 'image_url' => $g->image_url]),
+                'promotions'      => \App\Models\Promotion::active()->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']),
             ]);
         });
         Route::get('/user-profile', [ProfileController::class, 'show'])

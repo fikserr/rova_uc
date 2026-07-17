@@ -81,16 +81,16 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    /** Generate a new TOTP secret and redirect back to setup. */
+    /** Generate (or regenerate) a TOTP secret. Resets enabled flag if regenerated. */
     public function generate()
     {
-        $user    = auth()->user();
-        $existing = DB::table('users')->where('id', $user->id)->value('two_factor_secret');
+        $user   = auth()->user();
+        $secret = $this->generateSecret();
 
-        if (!$existing) {
-            $secret = $this->generateSecret();
-            DB::table('users')->where('id', $user->id)->update(['two_factor_secret' => $secret]);
-        }
+        DB::table('users')->where('id', $user->id)->update([
+            'two_factor_secret'  => $secret,
+            'two_factor_enabled' => false,
+        ]);
 
         return redirect()->route('2fa.setup');
     }
@@ -130,5 +130,40 @@ class TwoFactorController extends Controller
             ->update(['two_factor_enabled' => false, 'two_factor_secret' => null]);
 
         return back()->with('success', "2FA o'chirildi");
+    }
+
+    /** Show 2FA challenge page after password login. */
+    public function showChallenge(): \Inertia\Response|\Illuminate\Http\RedirectResponse
+    {
+        if (!session()->has('2fa_pending_user_id')) {
+            return redirect()->route('login');
+        }
+
+        return \Inertia\Inertia::render('Auth/TwoFactorChallenge');
+    }
+
+    /** Verify the TOTP code submitted on the challenge page. */
+    public function challenge(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        if (!session()->has('2fa_pending_user_id')) {
+            return redirect()->route('login');
+        }
+
+        $request->validate(['code' => 'required|string|size:6']);
+
+        $userId = (int) session('2fa_pending_user_id');
+        $secret = DB::table('users')->where('id', $userId)->value('two_factor_secret');
+
+        if (!$secret || !$this->verifyTotp($secret, $request->code)) {
+            return back()->withErrors(['code' => "Noto'g'ri kod yoki kod muddati o'tgan"]);
+        }
+
+        $remember = (bool) session('2fa_remember', false);
+        session()->forget(['2fa_pending_user_id', '2fa_remember']);
+
+        \Illuminate\Support\Facades\Auth::loginUsingId($userId, $remember);
+        $request->session()->regenerate();
+
+        return redirect()->intended('/');
     }
 }

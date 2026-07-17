@@ -110,6 +110,7 @@ class ReceiptService
         $order = DB::table('uc_orders')->where('id', $id)->first();
         if (!$order) return null;
 
+
         $product = DB::table('uc_products')->where('id', $order->product_id)->first();
         $uc      = $product ? (int) $product->uc_amount : 0;
         $bonus   = $product ? (int) ($product->bonus ?? 0) : 0;
@@ -204,11 +205,11 @@ class ReceiptService
         if (empty($this->token) || $userId <= 0) return;
 
         $typeEmoji = match ($type) {
-            'sekali' => '⚡',
+            'sekali' => '⚡️',
             'uc'     => '🎮',
             'ml'     => '💎',
             'bundle' => '🎁',
-            'srv'    => '⭐',
+            'srv'    => '⭐️',
             default  => '📦',
         };
 
@@ -221,6 +222,7 @@ class ReceiptService
             default  => '#' . $ref,
         };
 
+
         $sell   = number_format((float) $data['sell_price_uzs'], 0, '.', ' ');
         $date   = now()->timezone('Asia/Tashkent')->format('d.m.Y, H:i');
 
@@ -228,14 +230,11 @@ class ReceiptService
         $text .= "━━━━━━━━━━━━━━━━━━━━━\n";
         $text .= "{$typeEmoji} <b>Xizmat:</b> {$data['product_name']}\n";
         $text .= "🔖 <b>Buyurtma №:</b> {$orderNo}\n";
-        if (!empty($data['external_ref'])) {
-            $text .= "🧾 <b>SekalıPay №:</b> <code>{$data['external_ref']}</code>\n";
-        }
         $text .= "💰 <b>To'langan:</b> {$sell} UZS\n";
         $text .= "📅 <b>Sana:</b> {$date}\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━━\n";
         $text .= "✅ <b>Muvaffaqiyatli bajarildi</b>\n";
-        $text .= "<i>Rova UC xizmatidan foydalanganingiz uchun rahmat!</i>";
+        $text .= "<i>Valler Game xizmatidan foydalanganingiz uchun rahmat!</i>";
 
         try {
             Http::timeout(10)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [

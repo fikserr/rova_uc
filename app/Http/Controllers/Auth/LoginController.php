@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
@@ -38,6 +39,14 @@ class LoginController extends Controller
             return back()->withErrors([
                 'password' => "Parol noto'g'ri",
             ]);
+        }
+
+        $twoFaEnabled = (bool) DB::table('users')->where('id', $user->id)->value('two_factor_enabled');
+
+        if ($twoFaEnabled) {
+            $request->session()->put('2fa_pending_user_id', $user->id);
+            $request->session()->put('2fa_remember', $request->boolean('remember'));
+            return redirect()->route('2fa.challenge');
         }
 
         Auth::login($user, $request->boolean('remember'));

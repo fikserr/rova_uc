@@ -48,9 +48,14 @@ class ServiceController extends Controller
             }
         }
 
+        $servicePromos = \App\Models\Promotion::active()
+            ->where(fn ($q) => $q->where('applies_to', 'service')->orWhere('applies_to', 'all'))
+            ->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']);
+
         return Inertia::render('User/UserTgStars', [
-            'services' => Service::where('is_active', true)->where('service_type', 'stars')->orderByDesc('id')->get(),
+            'services'                  => Service::where('is_active', true)->where('service_type', 'stars')->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
+            'promotions'                => $servicePromos,
         ]);
     }
 
@@ -70,9 +75,14 @@ class ServiceController extends Controller
             }
         }
 
+        $servicePromos = \App\Models\Promotion::active()
+            ->where(fn ($q) => $q->where('applies_to', 'service')->orWhere('applies_to', 'all'))
+            ->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']);
+
         return Inertia::render('User/UserTgPremium', [
-            'services' => Service::where('is_active', true)->where('service_type', 'premium')->orderByDesc('id')->get(),
+            'services'                  => Service::where('is_active', true)->where('service_type', 'premium')->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
+            'promotions'                => $servicePromos,
         ]);
     }
 

@@ -9,12 +9,14 @@ import {
     Loader2,
     Lock,
     Shield,
+    Tag,
     XIcon,
     Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { accent, GameVariants } from "../../Components/user/GameVariants";
+import PromotionBanner from "../../Components/user/PromotionBanner";
 import UserProductCard from "../../Components/ui/UserProductCard";
 
 function IdVerifyBlock({ pubgId, setPubgId, pubgName, verified, verifying, error, onVerify }) {
@@ -51,7 +53,7 @@ function IdVerifyBlock({ pubgId, setPubgId, pubgName, verified, verifying, error
 
 function UcShop() {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState("sekali");
+    const [activeTab, setActiveTab] = useState("uc");
 
     // Shared PUBG ID state for uc/bundle tabs
     const [sharedPubgId,   setSharedPubgId]   = useState("");
@@ -73,12 +75,19 @@ function UcShop() {
     const [verifyStatus, setVerifyStatus] = useState(null);
     const [verifyMessage, setVerifyMessage] = useState("");
 
+    // Promo code state
+    const [promoCode,       setPromoCode]       = useState("");
+    const [promoChecking,   setPromoChecking]   = useState(false);
+    const [promoResult,     setPromoResult]     = useState(null); // { valid, discount, final_amount, label } | null
+    const [promoError,      setPromoError]      = useState("");
+
     const {
         products,
         bundles = [],
         flash,
         user,
         lastPubgAccount,
+        promotions = [],
     } = usePage().props;
     const userBalance = Number(user?.balance ?? 0);
 
@@ -105,12 +114,13 @@ function UcShop() {
     const activeItem = selectedProduct || selectedBundle;
     const activeItemType = selectedProduct ? "uc" : "bundle";
     const activeItemPrice = activeItem ? Number(activeItem.sell_price ?? 0) : 0;
+    const finalPrice = promoResult?.final_amount ?? activeItemPrice;
 
     // Reset payment method when item or balance changes
     useEffect(() => {
         if (!activeItem) return;
-        setPaymentMethod(userBalance >= activeItemPrice ? "balance" : "click");
-    }, [activeItem, userBalance, activeItemPrice]);
+        setPaymentMethod(userBalance >= finalPrice ? "balance" : "click");
+    }, [activeItem, userBalance, finalPrice]);
 
     // Prefill PUBG ID when modal opens — prefer shared tab state, then last account
     useEffect(() => {
@@ -130,6 +140,31 @@ function UcShop() {
         setPubgName("");
         setVerifyStatus(null);
         setVerifyMessage("");
+        setPromoCode("");
+        setPromoResult(null);
+        setPromoError("");
+    };
+
+    const checkPromoCode = async () => {
+        if (!promoCode.trim()) return;
+        setPromoChecking(true);
+        setPromoResult(null);
+        setPromoError("");
+        try {
+            const res = await axios.post("/user/promo/check", {
+                code: promoCode.trim(),
+                amount: activeItemPrice,
+            });
+            if (res.data.valid) {
+                setPromoResult(res.data);
+            } else {
+                setPromoError(res.data.error ?? "Promo kod yaroqsiz");
+            }
+        } catch {
+            setPromoError("Tekshirishda xatolik");
+        } finally {
+            setPromoChecking(false);
+        }
     };
 
     const handlePlayerIdChange = (e) => {
@@ -184,6 +219,7 @@ function UcShop() {
                 payment_method: paymentMethod,
                 pubg_player_id: pubgPlayerId.trim(),
                 pubg_name: pubgName.trim(),
+                promo_code: promoResult?.valid ? promoCode.trim() : undefined,
             };
 
             if (activeItemType === "uc") {
@@ -269,6 +305,9 @@ function UcShop() {
                         </div>
                     </div>
                 </div>
+
+                {/* Promotion banners */}
+                <PromotionBanner promotions={promotions} />
 
                 {/* Tabs */}
                 <div className="flex gap-1 mb-6 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1">
@@ -577,6 +616,43 @@ function UcShop() {
                                 </div>
                             </div>
 
+                            {/* Promo code */}
+                            <div>
+                                <label className="mb-1.5 block text-xs text-slate-500 dark:text-slate-400">
+                                    Promo kod (ixtiyoriy)
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={promoCode}
+                                        onChange={(e) => {
+                                            setPromoCode(e.target.value.toUpperCase());
+                                            setPromoResult(null);
+                                            setPromoError("");
+                                        }}
+                                        placeholder="PROMO10"
+                                        className="h-10 flex-1 min-w-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={checkPromoCode}
+                                        disabled={promoChecking || !promoCode.trim()}
+                                        className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 flex items-center gap-1.5 shrink-0 transition"
+                                    >
+                                        {promoChecking ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
+                                        Tekshirish
+                                    </button>
+                                </div>
+                                {promoResult?.valid && (
+                                    <p className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                                        <CheckCircle size={12} /> {promoResult.label} qo'llanildi
+                                    </p>
+                                )}
+                                {promoError && (
+                                    <p className="mt-1.5 text-xs text-red-500">{promoError}</p>
+                                )}
+                            </div>
+
                             {/* Balance row */}
                             <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 flex flex-col gap-2.5 dark:border-slate-700 dark:bg-slate-800">
                                 <div className="flex items-center justify-between">
@@ -584,13 +660,10 @@ function UcShop() {
                                         {t("shop.balance_label")}
                                     </span>
                                     <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                        {Number(userBalance).toLocaleString(
-                                            "fr-FR",
-                                        )}{" "}
-                                        UZS
+                                        {Number(userBalance).toLocaleString("fr-FR")} UZS
                                     </span>
                                 </div>
-                                {userBalance < activeItemPrice && (
+                                {userBalance < finalPrice && (
                                     <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
                                         {t("shop.insufficient_balance_topup")}
                                     </p>
@@ -602,17 +675,20 @@ function UcShop() {
                                 <span className="text-sm text-slate-500 dark:text-slate-400">
                                     {t("shop.total")}
                                 </span>
-                                <div className="flex items-baseline gap-1.5">
-                                    <span className="text-2xl font-medium text-slate-900 dark:text-slate-100">
-                                        {Number(
-                                            Math.floor(activeItemPrice),
-                                        ).toLocaleString("fr-FR", {
-                                            maximumFractionDigits: 4,
-                                        })}
-                                    </span>
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">
-                                        {activeItem.sell_currency}
-                                    </span>
+                                <div className="flex flex-col items-end gap-0.5">
+                                    {promoResult?.valid && (
+                                        <span className="text-xs text-slate-400 line-through">
+                                            {Number(Math.floor(activeItemPrice)).toLocaleString("fr-FR")} {activeItem.sell_currency}
+                                        </span>
+                                    )}
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className={`text-2xl font-medium ${promoResult?.valid ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-slate-100"}`}>
+                                            {Number(Math.floor(finalPrice)).toLocaleString("fr-FR", { maximumFractionDigits: 4 })}
+                                        </span>
+                                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                                            {activeItem.sell_currency}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 

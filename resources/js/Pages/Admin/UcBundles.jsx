@@ -4,11 +4,11 @@ import {
     CheckCircle,
     ImageIcon,
     Pencil,
-    Plus,
     Trash2,
     X,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import TopBar from "../../Components/TopBar";
 
 export default function UcBundles() {
     const { bundles, flash, currencies = [] } = usePage().props;
@@ -102,24 +102,12 @@ export default function UcBundles() {
         <div className="space-y-6">
             <Head title="To'plamlar" />
 
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-                        To'plamlar
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                        Rasm bilan bundle mahsulotlarni boshqaring
-                    </p>
-                </div>
-                <button
-                    onClick={openCreate}
-                    className="flex items-center gap-2 h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm"
-                >
-                    <Plus className="size-4" />
-                    Yangi to'plam
-                </button>
-            </div>
+            <TopBar
+                pageFor="bundles"
+                setEditing={setEditing}
+                setFormOpen={setFormOpen}
+                reset={() => { setForm(emptyForm); setPreviewUrl(null); }}
+            />
 
             {/* Flash */}
             {flash?.success && (
