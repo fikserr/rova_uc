@@ -165,48 +165,65 @@ class TelegramBotController extends Controller
                 if ($referrerId === $tid) $referrerId = 0;
             }
 
-            $existsBefore = DB::selectOne("SELECT id FROM users WHERE id = {$tid}");
+            try {
+                $existsBefore = DB::selectOne("SELECT id FROM users WHERE id = {$tid}");
 
-            DB::statement("INSERT IGNORE INTO users (id, username, role, language, created_at) VALUES ({$tid}, ?, 'user', ?, NOW())", [$username, $lang]);
-            DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
+                DB::statement("INSERT IGNORE INTO users (id, username, role, language, created_at) VALUES ({$tid}, ?, 'user', ?, NOW())", [$username, $lang]);
+                DB::statement("INSERT IGNORE INTO user_balances (user_id, balance, updated_at) VALUES ({$tid}, 0, NOW())");
 
-            $user = DB::selectOne("SELECT * FROM users WHERE id = {$tid}");
+                $user = DB::selectOne("SELECT * FROM users WHERE id = {$tid}");
 
-            if ($user && $username && $user->username !== $username) {
-                DB::statement("UPDATE users SET username = ? WHERE id = {$tid}", [$username]);
-            }
+                if ($user && $username && $user->username !== $username) {
+                    DB::statement("UPDATE users SET username = ? WHERE id = {$tid}", [$username]);
+                }
 
-            // Save referral if this is a new user
-            if (!$existsBefore && $referrerId > 0) {
-                $referrerExists = DB::selectOne("SELECT id FROM users WHERE id = {$referrerId}");
-                if ($referrerExists) {
-                    DB::table('referrals')->updateOrInsert(
-                        ['referred_user_id' => $tid],
-                        [
-                            'referrer_id'   => $referrerId,
-                            'reward_amount' => 0,
-                            'reward_currency' => 'UZS',
-                            'rewarded_at'   => null,
-                            'created_at'    => now(),
-                        ]
+                // Save referral if this is a new user (isolated try-catch so referral error never blocks the response)
+                if (!$existsBefore && $referrerId > 0) {
+                    try {
+                        $referrerExists = DB::selectOne("SELECT id FROM users WHERE id = {$referrerId}");
+                        if ($referrerExists) {
+                            DB::table('referrals')->updateOrInsert(
+                                ['referred_user_id' => $tid],
+                                [
+                                    'referrer_id'     => $referrerId,
+                                    'reward_amount'   => 0,
+                                    'reward_currency' => 'UZS',
+                                    'rewarded_at'     => null,
+                                    'created_at'      => now(),
+                                ]
+                            );
+                        }
+                    } catch (\Throwable $re) {
+                        Log::warning('Bot: referral save failed', [
+                            'tid'        => $tid,
+                            'referrerId' => $referrerId,
+                            'error'      => $re->getMessage(),
+                        ]);
+                    }
+                }
+
+                $needPhone = empty($user?->phone_number ?? null);
+
+                if ($needPhone) {
+                    $this->send($chatId, $t->get('need_phone'), [
+                        'keyboard'          => [[['text' => $t->get('phone_button'), 'request_contact' => true]]],
+                        'resize_keyboard'   => true,
+                        'one_time_keyboard' => true,
+                    ]);
+                } else {
+                    $balance = (float) (DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0);
+                    $this->send($chatId,
+                        $t->get('welcome_back', number_format($balance, 0, '.', ' ')),
+                        ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
                     );
                 }
-            }
-
-            $needPhone = empty($user->phone_number ?? null);
-
-            if ($needPhone) {
+            } catch (\Throwable $e) {
+                Log::error('Bot: /start handler crashed', ['tid' => $tid, 'error' => $e->getMessage()]);
                 $this->send($chatId, $t->get('need_phone'), [
-                    'keyboard' => [[['text' => $t->get('phone_button'), 'request_contact' => true]]],
+                    'keyboard'          => [[['text' => $t->get('phone_button'), 'request_contact' => true]]],
                     'resize_keyboard'   => true,
                     'one_time_keyboard' => true,
                 ]);
-            } else {
-                $balance = (float) (DB::selectOne("SELECT balance FROM user_balances WHERE user_id = {$tid}")?->balance ?? 0);
-                $this->send($chatId,
-                    $t->get('welcome_back', number_format($balance, 0, '.', ' ')),
-                    ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
-                );
             }
             return;
         }
@@ -223,6 +240,8 @@ class TelegramBotController extends Controller
             );
             if (!$phoneExists) {
                 DB::statement("UPDATE users SET phone_number = ? WHERE id = {$tid} AND phone_number IS NULL", [$phoneNumber]);
+                // Trigger referral reward on first phone registration (same logic as web API)
+                $this->triggerReferralReward($tid);
             }
             $this->send($chatId, $t->get('registered'), ['remove_keyboard' => true]);
             $this->send($chatId,
@@ -543,6 +562,74 @@ class TelegramBotController extends Controller
     {
         if (!Schema::hasTable('bot_states')) return;
         DB::table('bot_states')->where('user_id', $userId)->delete();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // REFERRAL
+    // ══════════════════════════════════════════════════════════
+
+    private function triggerReferralReward(int $userId): void
+    {
+        try {
+            DB::transaction(function () use ($userId) {
+                $referral = DB::table('referrals')
+                    ->where('referred_user_id', $userId)
+                    ->whereNull('rewarded_at')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$referral) return;
+
+                $setting = DB::table('referral_settings')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if (!$setting || !$setting->is_active || (float) $setting->reward_amount <= 0) return;
+
+                $rewardAmount = (float) $setting->reward_amount;
+                $referrerId   = (int) $referral->referrer_id;
+
+                $balanceRow = DB::table('user_balances')
+                    ->where('user_id', $referrerId)
+                    ->lockForUpdate()
+                    ->first();
+
+                $newBalance = (float) ($balanceRow?->balance ?? 0) + $rewardAmount;
+
+                if ($balanceRow) {
+                    DB::table('user_balances')
+                        ->where('user_id', $referrerId)
+                        ->update(['balance' => $newBalance, 'updated_at' => now()]);
+                } else {
+                    DB::table('user_balances')->insert([
+                        'user_id'    => $referrerId,
+                        'balance'    => $newBalance,
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                DB::table('referrals')
+                    ->where('id', $referral->id)
+                    ->update([
+                        'reward_amount'   => $rewardAmount,
+                        'reward_currency' => 'UZS',
+                        'rewarded_at'     => now(),
+                    ]);
+
+                DB::table('payments')->insert([
+                    'user_id'        => $referrerId,
+                    'click_trans_id' => 'REFERRAL-' . $referral->id . '-' . now()->timestamp . '-' . random_int(1000, 9999),
+                    'amount'         => $rewardAmount,
+                    'currency'       => 'UZS',
+                    'provider'       => 'referral',
+                    'status'         => 'paid',
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            });
+        } catch (\Throwable $e) {
+            Log::warning('Bot: referral reward failed', ['userId' => $userId, 'error' => $e->getMessage()]);
+        }
     }
 
     // ══════════════════════════════════════════════════════════
