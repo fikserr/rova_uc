@@ -26,6 +26,8 @@ export default function UcBundles() {
         cost_currency: "",
         sort_order: "0",
         is_active: true,
+        visible_to_users: true,
+        visible_to_resellers: true,
         image: null,
     };
     const [form, setForm] = useState(emptyForm);
@@ -47,6 +49,8 @@ export default function UcBundles() {
             cost_currency: bundle.cost_currency,
             sort_order: String(bundle.sort_order ?? 0),
             is_active: bundle.is_active,
+            visible_to_users: bundle.visible_to_users ?? true,
+            visible_to_resellers: bundle.visible_to_resellers ?? true,
             image: null,
         });
         setPreviewUrl(bundle.image_url ?? null);
@@ -74,6 +78,8 @@ export default function UcBundles() {
         fd.append("cost_currency", form.cost_currency);
         fd.append("sort_order", form.sort_order);
         fd.append("is_active", form.is_active ? "1" : "0");
+        fd.append("visible_to_users", form.visible_to_users ? "1" : "0");
+        fd.append("visible_to_resellers", form.visible_to_resellers ? "1" : "0");
         if (form.image) fd.append("image", form.image);
 
         const url = editing
@@ -391,31 +397,26 @@ export default function UcBundles() {
                                 />
                             </div>
 
-                            {/* Active toggle */}
-                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
-                                <div>
-                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Aktiv
-                                    </p>
-                                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                                        Do'konda ko'rinadi
-                                    </p>
+                            {/* Toggles */}
+                            {[
+                                { key: "is_active",            label: "Aktiv",               desc: "Do'konda ko'rinadi",               color: "bg-blue-600" },
+                                { key: "visible_to_users",     label: "Userlarga ko'rinadi",  desc: "Oddiy foydalanuvchilar ko'radi",   color: "bg-emerald-500" },
+                                { key: "visible_to_resellers", label: "Resellerga ko'rinadi", desc: "Reseller foydalanuvchilar ko'radi", color: "bg-violet-500" },
+                            ].map(({ key, label, desc, color }) => (
+                                <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">{desc}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm((p) => ({ ...p, [key]: !p[key] }))}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${form[key] ? color : "bg-slate-300 dark:bg-slate-600"}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${form[key] ? "translate-x-6" : "translate-x-0"}`} />
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setForm((p) => ({
-                                            ...p,
-                                            is_active: !p.is_active,
-                                        }))
-                                    }
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${form.is_active ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}
-                                >
-                                    <div
-                                        className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${form.is_active ? "translate-x-6" : "translate-x-0"}`}
-                                    />
-                                </button>
-                            </div>
+                            ))}
 
                             <button
                                 type="submit"

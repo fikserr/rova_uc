@@ -52,8 +52,13 @@ class ServiceController extends Controller
             ->where(fn ($q) => $q->where('applies_to', 'service')->orWhere('applies_to', 'all'))
             ->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']);
 
+        $isReseller = auth()->user()?->role === 'reseller';
+
         return Inertia::render('User/UserTgStars', [
-            'services'                  => Service::where('is_active', true)->where('service_type', 'stars')->orderByDesc('id')->get(),
+            'services' => Service::where('is_active', true)
+                ->where('service_type', 'stars')
+                ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
+                ->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
             'promotions'                => $servicePromos,
         ]);
@@ -79,8 +84,13 @@ class ServiceController extends Controller
             ->where(fn ($q) => $q->where('applies_to', 'service')->orWhere('applies_to', 'all'))
             ->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']);
 
+        $isReseller = auth()->user()?->role === 'reseller';
+
         return Inertia::render('User/UserTgPremium', [
-            'services'                  => Service::where('is_active', true)->where('service_type', 'premium')->orderByDesc('id')->get(),
+            'services' => Service::where('is_active', true)
+                ->where('service_type', 'premium')
+                ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
+                ->orderByDesc('id')->get(),
             'lastTargetTelegramUsername' => $lastTargetTelegramUsername,
             'promotions'                => $servicePromos,
         ]);
@@ -110,12 +120,14 @@ class ServiceController extends Controller
     public function update(Request $request, Service $service)
     {
         $data = $request->validate([
-            'title' => 'required|string',
-            'value' => 'required|integer',
-            'sell_price' => 'required|numeric',
-            'cost_price' => 'required|numeric',
-            'cost_currency' => 'required|string',
-            'is_active' => 'boolean',
+            'title'                => 'required|string',
+            'value'                => 'required|integer',
+            'sell_price'           => 'required|numeric',
+            'cost_price'           => 'required|numeric',
+            'cost_currency'        => 'required|string',
+            'is_active'            => 'boolean',
+            'visible_to_users'     => 'boolean',
+            'visible_to_resellers' => 'boolean',
         ]);
 
         $service->update($data);

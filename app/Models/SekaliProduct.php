@@ -54,9 +54,10 @@ class SekaliProduct extends Model
      * Unique games in a given category, one row per game with its
      * representative image (first non-null image_url found).
      */
-    public static function gamesForCategory(string $category)
+    public static function gamesForCategory(string $category, string $visibilityField = 'visible_to_users')
     {
         return static::where('is_active', true)
+            ->where($visibilityField, true)
             ->where('category', $category)
             ->select('game_name', 'image_url')
             ->orderBy('game_name')
@@ -69,18 +70,19 @@ class SekaliProduct extends Model
             ->values();
     }
 
-    public static function allGames()
+    public static function allGames(string $visibilityField = 'visible_to_users')
     {
-    return static::where('is_active', true)
-        ->select('category', 'game_name', 'image_url')
-        ->orderBy('game_name')
-        ->get()
-        ->groupBy('game_name')
-        ->map(fn ($group) => [
-            'name'      => $group->first()->game_name,
-            'category'  => $group->first()->category,
-            'image_url' => $group->first(fn ($g) => $g->image_url)?->image_url,
-        ])
-        ->values();
-}
+        return static::where('is_active', true)
+            ->where($visibilityField, true)
+            ->select('category', 'game_name', 'image_url')
+            ->orderBy('game_name')
+            ->get()
+            ->groupBy('game_name')
+            ->map(fn ($group) => [
+                'name'      => $group->first()->game_name,
+                'category'  => $group->first()->category,
+                'image_url' => $group->first(fn ($g) => $g->image_url)?->image_url,
+            ])
+            ->values();
+    }
 }

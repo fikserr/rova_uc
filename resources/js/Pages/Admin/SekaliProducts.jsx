@@ -443,16 +443,45 @@ function ServerListPage({
     types,
     grouped,
     total,
+    typeVisibility: initTypeVis = {},
     onSelectType,
     onBack,
     onBreadcrumb,
 }) {
     const [filter, setFilter] = useState("");
+    const [typeVis, setTypeVis] = useState(initTypeVis);
+    const [toggling, setToggling] = useState({});
+
+    const toggleVis = async (type, field) => {
+        const key = `${type}-${field}`;
+        if (toggling[key]) return;
+        const current = typeVis[type]?.[field] ?? true;
+        const newVal = !current;
+        setTypeVis((prev) => ({
+            ...prev,
+            [type]: { ...(prev[type] ?? { users: true, resellers: true }), [field]: newVal },
+        }));
+        setToggling((p) => ({ ...p, [key]: true }));
+        try {
+            await axios.post('/admin/sekali-products/game-visibility', {
+                category,
+                game_name: game,
+                product_type: type,
+                field: field === 'users' ? 'visible_to_users' : 'visible_to_resellers',
+                value: newVal,
+            });
+        } catch {
+            setTypeVis((prev) => ({
+                ...prev,
+                [type]: { ...(prev[type] ?? {}), [field]: current },
+            }));
+        } finally {
+            setToggling((p) => ({ ...p, [key]: false }));
+        }
+    };
 
     const filteredTypes = filter.trim()
-        ? types.filter((t) =>
-              t.toLowerCase().includes(filter.trim().toLowerCase()),
-          )
+        ? types.filter((t) => t.toLowerCase().includes(filter.trim().toLowerCase()))
         : types;
 
     return (
@@ -486,22 +515,57 @@ function ServerListPage({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredTypes.map((type) => {
                     const count = (grouped[type] ?? []).length;
+                    const tVis = typeVis[type] ?? { users: true, resellers: true };
+                    const hidden = !tVis.users && !tVis.resellers;
                     return (
-                        <button
+                        <div
                             key={type}
-                            onClick={() => onSelectType(type)}
-                            className="flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-sm transition-all text-left"
+                            className={`flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl transition-all ${
+                                hidden
+                                    ? "border-slate-200 dark:border-slate-700 opacity-50"
+                                    : "border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-sm"
+                            }`}
                         >
-                            <div className="min-w-0">
+                            <button
+                                onClick={() => onSelectType(type)}
+                                className="flex-1 text-left min-w-0"
+                            >
                                 <p className="font-bold text-slate-800 dark:text-white text-sm uppercase tracking-wide truncate">
                                     {type}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                    {count} ta variant
-                                </p>
-                            </div>
-                            <ChevronRight className="size-4 text-slate-300 dark:text-slate-600 shrink-0" />
-                        </button>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-slate-400">{count} ta variant</span>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); toggleVis(type, 'users'); }}
+                                        title={tVis.users ? "Userlardan yashirish" : "Userlarga ko'rsatish"}
+                                        className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${
+                                            tVis.users
+                                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                                : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                        }`}
+                                    >
+                                        👤 U
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); toggleVis(type, 'resellers'); }}
+                                        title={tVis.resellers ? "Resellerlardan yashirish" : "Resellerga ko'rsatish"}
+                                        className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${
+                                            tVis.resellers
+                                                ? "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+                                                : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                        }`}
+                                    >
+                                        🏪 R
+                                    </button>
+                                </div>
+                            </button>
+                            <ChevronRight
+                                onClick={() => onSelectType(type)}
+                                className="size-4 text-slate-300 dark:text-slate-600 shrink-0 cursor-pointer ml-2"
+                            />
+                        </div>
                     );
                 })}
                 {filteredTypes.length === 0 && (
@@ -604,6 +668,7 @@ function GamePage({ category, game, idrRate, onBack, onBreadcrumb }) {
                 types={data.types}
                 grouped={data.grouped}
                 total={data.total}
+                typeVisibility={data.type_visibility ?? {}}
                 onSelectType={setSelectedType}
                 onBack={onBack}
                 onBreadcrumb={onBreadcrumb}
@@ -627,8 +692,39 @@ function GamePage({ category, game, idrRate, onBack, onBreadcrumb }) {
 
 /* ---------- Page listing games inside a category ---------- */
 
-function CategoryPage({ category, games, onSelectGame, onBack, topGames = new Set(), onTopToggle }) {
+function CategoryPage({ category, games, onSelectGame, onBack, topGames = new Set(), onTopToggle, gameVisibility: initVis = {}, onVisibilityToggle }) {
     const color = catColor(category);
+    const [vis, setVis] = useState(initVis);
+    const [toggling, setToggling] = useState({}); // {`${game}-users`: true}
+
+    const toggleVis = async (game, field) => {
+        const key = `${game}-${field}`;
+        if (toggling[key]) return;
+        const current = vis[game]?.[field] ?? true;
+        const newVal = !current;
+        setVis((prev) => ({
+            ...prev,
+            [game]: { ...(prev[game] ?? { users: true, resellers: true }), [field]: newVal },
+        }));
+        setToggling((p) => ({ ...p, [key]: true }));
+        try {
+            await axios.post('/admin/sekali-products/game-visibility', {
+                category,
+                game_name: game,
+                field: field === 'users' ? 'visible_to_users' : 'visible_to_resellers',
+                value: newVal,
+            });
+            onVisibilityToggle?.(category, game, field, newVal);
+        } catch {
+            // revert on error
+            setVis((prev) => ({
+                ...prev,
+                [game]: { ...(prev[game] ?? {}), [field]: current },
+            }));
+        } finally {
+            setToggling((p) => ({ ...p, [key]: false }));
+        }
+    };
 
     return (
         <div>
@@ -650,11 +746,15 @@ function CategoryPage({ category, games, onSelectGame, onBack, topGames = new Se
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {games.map((game) => {
                     const isTop = topGames.has(game);
+                    const gVis = vis[game] ?? { users: true, resellers: true };
+                    const hidden = !gVis.users && !gVis.resellers;
                     return (
                         <div
                             key={game}
-                            className={`flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-800 border rounded-xl transition-all ${
-                                isTop
+                            className={`flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl transition-all ${
+                                hidden
+                                    ? "border-slate-200 dark:border-slate-700 opacity-50"
+                                    : isTop
                                     ? "border-amber-400 dark:border-amber-500 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
                                     : "border-slate-200 dark:border-slate-700"
                             }`}
@@ -663,21 +763,46 @@ function CategoryPage({ category, games, onSelectGame, onBack, topGames = new Se
                                 onClick={() => onSelectGame(game)}
                                 className="flex items-center gap-3 min-w-0 flex-1 text-left hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                             >
-                                <div
-                                    className={`size-8 rounded-lg bg-linear-to-br ${color} flex items-center justify-center shrink-0`}
-                                >
-                                    <span className="text-white font-bold text-xs">
-                                        {game.charAt(0)}
-                                    </span>
+                                <div className={`size-8 rounded-lg bg-linear-to-br ${color} flex items-center justify-center shrink-0`}>
+                                    <span className="text-white font-bold text-xs">{game.charAt(0)}</span>
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-white text-sm truncate">
-                                    {game}
-                                    {isTop && (
-                                        <span className="ml-1.5 text-[10px] bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold">
-                                            TOP
-                                        </span>
-                                    )}
-                                </span>
+                                <div className="min-w-0">
+                                    <span className="font-semibold text-slate-800 dark:text-white text-sm truncate block">
+                                        {game}
+                                        {isTop && (
+                                            <span className="ml-1.5 text-[10px] bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold">
+                                                TOP
+                                            </span>
+                                        )}
+                                    </span>
+                                    {/* Visibility badges */}
+                                    <div className="flex gap-1 mt-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); toggleVis(game, 'users'); }}
+                                            title={gVis.users ? "Userlardan yashirish" : "Userlarga ko'rsatish"}
+                                            className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${
+                                                gVis.users
+                                                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                                    : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                            }`}
+                                        >
+                                            👤 U
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); toggleVis(game, 'resellers'); }}
+                                            title={gVis.resellers ? "Resellerlardan yashirish" : "Resellerga ko'rsatish"}
+                                            className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${
+                                                gVis.resellers
+                                                    ? "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+                                                    : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                            }`}
+                                        >
+                                            🏪 R
+                                        </button>
+                                    </div>
+                                </div>
                             </button>
                             <div className="flex items-center gap-1.5 shrink-0 ml-2">
                                 {category === "Game" && (
@@ -814,7 +939,7 @@ function CategoryList({ categories, tree, onSelectCategory }) {
 /* ---------- Root: drives which "screen" is shown ---------- */
 
 export default function SekaliProducts() {
-    const { tree, idr_rate, flash, top_games: initialTopGames = [] } = usePage().props;
+    const { tree, idr_rate, flash, top_games: initialTopGames = [], game_visibility: initialGameVis = {} } = usePage().props;
     const [topGames, setTopGames] = useState(() => new Set(initialTopGames));
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -932,6 +1057,7 @@ export default function SekaliProducts() {
                         onBack={goToLevel}
                         topGames={topGames}
                         onTopToggle={handleTopToggle}
+                        gameVisibility={initialGameVis[selectedCategory] ?? {}}
                     />
                 )}
 

@@ -25,6 +25,8 @@ export default function UcProducts() {
         cost_price: "",
         cost_currency: "",
         is_active: true,
+        visible_to_users: true,
+        visible_to_resellers: true,
     });
 
     const editProduct = (product) => {
@@ -36,6 +38,8 @@ export default function UcProducts() {
             cost_price: product.cost_price,
             cost_currency: product.cost_currency,
             is_active: product.is_active,
+            visible_to_users: product.visible_to_users ?? true,
+            visible_to_resellers: product.visible_to_resellers ?? true,
         });
         setFormOpen(true);
     };
@@ -183,20 +187,26 @@ export default function UcProducts() {
                                 </select>
                             </div>
 
-                            {/* Active toggle */}
-                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
-                                <div>
-                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Aktiv</p>
-                                    <p className="text-xs text-slate-400 dark:text-slate-500">Mahsulot do'konda ko'rinadi</p>
+                            {/* Toggles */}
+                            {[
+                                { key: "is_active",            label: "Aktiv",              desc: "Mahsulot do'konda ko'rinadi",      color: "bg-blue-600" },
+                                { key: "visible_to_users",     label: "Userlarga ko'rinadı", desc: "Oddiy foydalanuvchilar ko'radi",   color: "bg-emerald-500" },
+                                { key: "visible_to_resellers", label: "Resellerga ko'rinadi", desc: "Reseller foydalanuvchilar ko'radi", color: "bg-violet-500" },
+                            ].map(({ key, label, desc, color }) => (
+                                <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">{desc}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData(key, !data[key])}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${data[key] ? color : "bg-slate-300 dark:bg-slate-600"}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${data[key] ? "translate-x-6" : "translate-x-0"}`} />
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setData("is_active", !data.is_active)}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${data.is_active ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"}`}
-                                >
-                                    <div className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${data.is_active ? "translate-x-6" : "translate-x-0"}`} />
-                                </button>
-                            </div>
+                            ))}
 
                             {/* Submit */}
                             <button

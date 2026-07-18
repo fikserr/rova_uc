@@ -27,6 +27,8 @@ export default function Services() {
         cost_price: "",
         cost_currency: "USD",
         is_active: true,
+        visible_to_users: true,
+        visible_to_resellers: true,
     });
 
     const editService = (service) => {
@@ -39,6 +41,8 @@ export default function Services() {
             cost_price: service.cost_price,
             cost_currency: service.cost_currency,
             is_active: service.is_active,
+            visible_to_users: service.visible_to_users ?? true,
+            visible_to_resellers: service.visible_to_resellers ?? true,
         });
         setChoosedServiceType(service.service_type);
         setFormOpen(true);
@@ -253,20 +257,26 @@ export default function Services() {
                                 </select>
                             </div>
 
-                            {/* Active toggle */}
-                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
-                                <div>
-                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Aktiv</p>
-                                    <p className="text-xs text-slate-400 dark:text-slate-500">Xizmat do'konda ko'rinadi</p>
+                            {/* Toggles */}
+                            {[
+                                { key: "is_active",            label: "Aktiv",               desc: "Xizmat do'konda ko'rinadi",        color: "bg-amber-500" },
+                                { key: "visible_to_users",     label: "Userlarga ko'rinadi",  desc: "Oddiy foydalanuvchilar ko'radi",   color: "bg-emerald-500" },
+                                { key: "visible_to_resellers", label: "Resellerga ko'rinadi", desc: "Reseller foydalanuvchilar ko'radi", color: "bg-violet-500" },
+                            ].map(({ key, label, desc, color }) => (
+                                <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">{desc}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData(key, !data[key])}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${data[key] ? color : "bg-slate-300 dark:bg-slate-600"}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${data[key] ? "translate-x-6" : "translate-x-0"}`} />
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setData("is_active", !data.is_active)}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${data.is_active ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"}`}
-                                >
-                                    <div className={`absolute top-0.5 left-0.5 size-5 bg-white rounded-full shadow transition-transform ${data.is_active ? "translate-x-6" : "translate-x-0"}`} />
-                                </button>
-                            </div>
+                            ))}
 
                             {/* Submit */}
                             <button

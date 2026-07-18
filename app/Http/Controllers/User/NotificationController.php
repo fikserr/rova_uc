@@ -44,9 +44,16 @@ class NotificationController extends Controller
             return collect();
         }
 
+        $hasImageUrl = Schema::hasColumn('user_notifications', 'image_url');
+
+        $select = ['id', 'source', 'order_type', 'order_id', 'status', 'title', 'message', 'description', 'is_read', 'created_at'];
+        if ($hasImageUrl) {
+            $select[] = 'image_url';
+        }
+
         $rows = DB::table('user_notifications')
             ->where('user_id', $userId)
-            ->select(['id', 'source', 'order_type', 'order_id', 'status', 'title', 'message', 'description', 'is_read', 'created_at'])
+            ->select($select)
             ->orderByDesc('created_at')
             ->limit(50)
             ->get();
@@ -60,6 +67,7 @@ class NotificationController extends Controller
             'title'        => (string) ($row->title ?: ''),
             'message'      => (string) ($row->message ?: ''),
             'description'  => (string) ($row->description ?: ''),
+            'image_url'    => $hasImageUrl ? ($row->image_url ?? null) : null,
             'is_read'      => (bool) $row->is_read ? 'read' : 'unread',
             'created_at'   => $row->created_at,
         ]);

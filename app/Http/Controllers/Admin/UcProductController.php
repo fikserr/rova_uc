@@ -46,7 +46,10 @@ class UcProductController extends Controller
                 ->first(['pubg_player_id', 'pubg_name']);
         }
 
+        $isReseller = auth()->user()?->role === 'reseller';
+
         $bundles = UcBundle::where('is_active', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
             ->orderBy('sort_order')
             ->orderByDesc('id')
             ->get()
@@ -58,7 +61,9 @@ class UcProductController extends Controller
             });
 
         return Inertia::render('User/UcShop', [
-            'products'        => UcProduct::where('is_active', true)->orderByDesc('id')->get(),
+            'products'        => UcProduct::where('is_active', true)
+                                    ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
+                                    ->orderByDesc('id')->get(),
             'bundles'         => $bundles,
             'lastPubgAccount' => $lastPubgAccount,
             'promotions'      => \App\Models\Promotion::active()
@@ -91,13 +96,15 @@ class UcProductController extends Controller
     public function update(Request $request, UcProduct $product)
     {
         $data = $request->validate([
-            'title'          => 'required|string',
-            'uc_amount'      => 'required|integer',
-            'sell_price'     => 'required|numeric',
-            'reseller_price' => 'nullable|numeric',
-            'cost_price'     => 'required|numeric',
-            'cost_currency'  => 'required|string',
-            'is_active'      => 'boolean',
+            'title'                => 'required|string',
+            'uc_amount'            => 'required|integer',
+            'sell_price'           => 'required|numeric',
+            'reseller_price'       => 'nullable|numeric',
+            'cost_price'           => 'required|numeric',
+            'cost_currency'        => 'required|string',
+            'is_active'            => 'boolean',
+            'visible_to_users'     => 'boolean',
+            'visible_to_resellers' => 'boolean',
         ]);
 
         $product->update($data);

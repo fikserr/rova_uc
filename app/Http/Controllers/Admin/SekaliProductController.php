@@ -15,7 +15,7 @@ class SekaliProductController extends Controller
 {
     public function index()
     {
-        // Only category → game structure for initial load
+        // category → game structure
         $rows = SekaliProduct::select('category', 'game_name')
             ->distinct()
             ->orderBy('category')
@@ -26,6 +26,23 @@ class SekaliProductController extends Controller
             ->groupBy('category')
             ->map(fn($g) => $g->pluck('game_name')->unique()->values());
 
+        // Per-game visibility: if ALL products visible → true, else false
+        $visRows = DB::table('sekali_products')
+            ->select('category', 'game_name',
+                DB::raw('MIN(CAST(visible_to_users AS UNSIGNED)) as users'),
+                DB::raw('MIN(CAST(visible_to_resellers AS UNSIGNED)) as resellers')
+            )
+            ->groupBy('category', 'game_name')
+            ->get();
+
+        $gameVisibility = [];
+        foreach ($visRows as $r) {
+            $gameVisibility[$r->category][$r->game_name] = [
+                'users'     => (bool) $r->users,
+                'resellers' => (bool) $r->resellers,
+            ];
+        }
+
         $idrRate = (float) (CurrencyRate::where('currency_code', 'IDR')
             ->orderByDesc('created_at')
             ->value('rate_to_base') ?? 0);
@@ -33,10 +50,34 @@ class SekaliProductController extends Controller
         $topGames = TopGame::orderBy('sort_order')->pluck('game_name')->toArray();
 
         return Inertia::render('Admin/SekaliProducts', [
-            'tree'      => $tree,
-            'idr_rate'  => $idrRate,
-            'top_games' => $topGames,
+            'tree'            => $tree,
+            'idr_rate'        => $idrRate,
+            'top_games'       => $topGames,
+            'game_visibility' => $gameVisibility,
         ]);
+    }
+
+    public function gameVisibilityToggle(Request $request)
+    {
+        $data = $request->validate([
+            'category'     => 'required|string',
+            'game_name'    => 'required|string',
+            'product_type' => 'nullable|string',
+            'field'        => 'required|in:visible_to_users,visible_to_resellers',
+            'value'        => 'required|boolean',
+        ]);
+
+        $query = SekaliProduct::where('category', $data['category'])
+            ->where('game_name', $data['game_name']);
+
+        if (!empty($data['product_type'])) {
+            $typeVal = $data['product_type'] === 'Standard' ? null : $data['product_type'];
+            $query->where('product_type', $typeVal);
+        }
+
+        $query->update([$data['field'] => $data['value']]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function variants(Request $request)
@@ -61,10 +102,19 @@ class SekaliProductController extends Controller
             ->groupBy(fn($p) => $p->product_type ?? 'Standard')
             ->map(fn($items) => $items->values());
 
+        // Per-type visibility aggregate (MIN = all must be true for type to show as visible)
+        $typeVisibility = $products
+            ->groupBy(fn($p) => $p->product_type ?? 'Standard')
+            ->map(fn($items) => [
+                'users'     => $items->every(fn($p) => $p->visible_to_users),
+                'resellers' => $items->every(fn($p) => $p->visible_to_resellers),
+            ]);
+
         return response()->json([
-            'grouped' => $grouped,
-            'types'   => $grouped->keys()->values(),
-            'total'   => $products->count(),
+            'grouped'         => $grouped,
+            'types'           => $grouped->keys()->values(),
+            'total'           => $products->count(),
+            'type_visibility' => $typeVisibility,
         ]);
     }
 

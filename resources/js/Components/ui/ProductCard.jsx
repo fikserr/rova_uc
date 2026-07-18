@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react'
-import { Crown, Diamond, Edit2, Eye, Gamepad2, Star, Trash2, TrendingDown, TrendingUp } from "lucide-react"
+import { Crown, Diamond, Edit2, Eye, Gamepad2, Star, Trash2, TrendingDown, TrendingUp, Users, Store } from "lucide-react"
 
 function ProductCard({ product, onEdit, onDelete, cardFor }) {
     const { currency_rates: currencyRates = {} } = usePage().props;
@@ -89,13 +89,33 @@ function ProductCard({ product, onEdit, onDelete, cardFor }) {
                         </div>
                     </div>
 
-                    {/* Active status */}
-                    <div className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${
-                        product.is_active
-                            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
-                    }`}>
-                        {product.is_active ? "Aktiv" : "Noaktiv"}
+                    {/* Status badges */}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                            product.is_active
+                                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                                : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                        }`}>
+                            {product.is_active ? "Aktiv" : "Noaktiv"}
+                        </div>
+                        {product.visible_to_users !== undefined && (
+                            <div className="flex items-center gap-1">
+                                <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                                    product.visible_to_users
+                                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                        : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                }`}>
+                                    <Users className="size-2.5" /> U
+                                </span>
+                                <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                                    product.visible_to_resellers
+                                        ? "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+                                        : "bg-slate-100 dark:bg-slate-700 text-slate-400 line-through"
+                                }`}>
+                                    <Store className="size-2.5" /> R
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

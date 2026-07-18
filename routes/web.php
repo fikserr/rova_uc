@@ -79,9 +79,9 @@ Route::middleware(['auth'])->group(function () {
         }
         $uid = auth()->id();
         return Inertia::render('User/UserServices', [
-            'games'           => \App\Models\SekaliProduct::gamesForCategory('Game'),
-            'ucProducts'      => \App\Models\UcProduct::where('is_active', true)->orderBy('sell_price')->get(),
-            'bundles'         => \App\Models\UcBundle::where('is_active', true)->orderBy('sort_order')->orderByDesc('id')->get()->map(fn($b) => array_merge($b->toArray(), ['image_url' => $b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null])),
+            'games'           => \App\Models\SekaliProduct::gamesForCategory('Game', 'visible_to_users'),
+            'ucProducts'      => \App\Models\UcProduct::where('is_active', true)->where('visible_to_users', true)->orderBy('sell_price')->get(),
+            'bundles'         => \App\Models\UcBundle::where('is_active', true)->where('visible_to_users', true)->orderBy('sort_order')->orderByDesc('id')->get()->map(fn($b) => array_merge($b->toArray(), ['image_url' => $b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null])),
             'lastPubgAccount' => $uid ? \Illuminate\Support\Facades\DB::table('pubg_accounts')->where('user_id', $uid)->orderByDesc('id')->first(['pubg_player_id','pubg_name']) : null,
             'topGames'        => \App\Models\TopGame::orderBy('sort_order')->get(['game_name', 'category', 'image_url'])->map(fn($g) => ['name' => $g->game_name, 'category' => $g->category, 'image_url' => $g->image_url]),
         ]);
@@ -178,6 +178,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('sekali-products.sync');
         Route::post('/admin/top-games/toggle', [SekaliProductController::class, 'toggleTopGame'])
             ->name('admin.top-games.toggle');
+        Route::post('/admin/sekali-products/game-visibility', [SekaliProductController::class, 'gameVisibilityToggle'])
+            ->name('admin.sekali-products.game-visibility');
 
         Route::get('/users', [UserController::class, 'index'])
             ->name('users.index');
@@ -307,10 +309,12 @@ Route::middleware(['auth'])->group(function () {
             ->name('user-products-uc.index');
         Route::get('/user-services', function () {
             $uid = auth()->id();
+            $isReseller = auth()->user()?->role === 'reseller';
+            $visField = $isReseller ? 'visible_to_resellers' : 'visible_to_users';
             return Inertia::render('User/UserServices', [
-                'games'           => \App\Models\SekaliProduct::gamesForCategory('Game'),
-                'ucProducts'      => \App\Models\UcProduct::where('is_active', true)->orderBy('sell_price')->get(),
-                'bundles'         => \App\Models\UcBundle::where('is_active', true)->orderBy('sort_order')->orderByDesc('id')->get()->map(fn($b) => array_merge($b->toArray(), ['image_url' => $b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null])),
+                'games'           => \App\Models\SekaliProduct::gamesForCategory('Game', $visField),
+                'ucProducts'      => \App\Models\UcProduct::where('is_active', true)->where($visField, true)->orderBy('sell_price')->get(),
+                'bundles'         => \App\Models\UcBundle::where('is_active', true)->where($visField, true)->orderBy('sort_order')->orderByDesc('id')->get()->map(fn($b) => array_merge($b->toArray(), ['image_url' => $b->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($b->image_path) : null])),
                 'lastPubgAccount' => $uid ? \Illuminate\Support\Facades\DB::table('pubg_accounts')->where('user_id', $uid)->orderByDesc('id')->first(['pubg_player_id','pubg_name']) : null,
                 'topGames'        => \App\Models\TopGame::orderBy('sort_order')->get(['game_name', 'category', 'image_url'])->map(fn($g) => ['name' => $g->game_name, 'category' => $g->category, 'image_url' => $g->image_url]),
                 'promotions'      => \App\Models\Promotion::active()->get(['title', 'description', 'discount_percent', 'applies_to', 'ends_at', 'banner_color']),

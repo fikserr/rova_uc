@@ -20,9 +20,11 @@ class SekaliShopController extends Controller
 {
     public function index()
     {
+        $isReseller = auth()->user()?->role === 'reseller';
+
         // category → game structure with one representative image per game
         $rows = SekaliProduct::where('is_active', true)
-            ->where('visible_to_users', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
             ->select('category', 'game_name', 'image_url', 'view_count')
             ->orderBy('category')
             ->orderBy('game_name')
@@ -47,13 +49,15 @@ class SekaliShopController extends Controller
             : null;
 
         $bundles = UcBundle::where('is_active', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
             ->orderBy('sort_order')->orderByDesc('id')->get()
             ->map(fn($b) => array_merge($b->toArray(), [
                 'image_url' => $b->image_path ? Storage::disk('public')->url($b->image_path) : null,
             ]));
 
-        $isReseller = auth()->user()?->role === 'reseller';
-        $ucProducts = UcProduct::where('is_active', true)->orderBy('sell_price')->get()
+        $ucProducts = UcProduct::where('is_active', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
+            ->orderBy('sell_price')->get()
             ->map(fn($p) => array_merge($p->toArray(), [
                 'sell_price'       => ($isReseller && $p->reseller_price) ? $p->reseller_price : $p->sell_price,
                 'is_reseller_price'=> $isReseller && $p->reseller_price,
@@ -85,7 +89,7 @@ class SekaliShopController extends Controller
         $isReseller = auth()->user()?->role === 'reseller';
 
         $products = SekaliProduct::where('is_active', true)
-            ->where('visible_to_users', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
             ->where('category', $request->category)
             ->where('game_name', $request->game)
             ->orderBy('product_type')
@@ -116,18 +120,20 @@ class SekaliShopController extends Controller
 
     public function search(Request $request)
     {
-    $request->validate([
-        'q' => 'required|string|min:1|max:100',
-    ]);
+        $request->validate([
+            'q' => 'required|string|min:1|max:100',
+        ]);
 
-    $q = $request->q;
+        $q = $request->q;
+        $isReseller = auth()->user()?->role === 'reseller';
 
-    $rows = SekaliProduct::where('is_active', true)
-        ->where('game_name', 'like', "%{$q}%")
-        ->select('category', 'game_name', 'image_url')
-        ->orderBy('game_name')
-        ->limit(100)
-        ->get();
+        $rows = SekaliProduct::where('is_active', true)
+            ->where($isReseller ? 'visible_to_resellers' : 'visible_to_users', true)
+            ->where('game_name', 'like', "%{$q}%")
+            ->select('category', 'game_name', 'image_url')
+            ->orderBy('game_name')
+            ->limit(100)
+            ->get();
 
     // Same "unique game per category, first image found" grouping as index()
     $results = $rows

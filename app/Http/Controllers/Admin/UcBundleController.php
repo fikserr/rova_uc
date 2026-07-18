@@ -27,13 +27,15 @@ class UcBundleController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'         => 'required|string|max:100',
-            'sell_price'    => 'required|numeric|min:0',
-            'cost_price'    => 'required|numeric|min:0',
-            'cost_currency' => 'required|string',
-            'sort_order'    => 'nullable|integer',
-            'is_active'     => 'nullable|boolean',
-            'image'         => 'nullable|image|max:4096',
+            'title'                => 'required|string|max:100',
+            'sell_price'           => 'required|numeric|min:0',
+            'cost_price'           => 'required|numeric|min:0',
+            'cost_currency'        => 'required|string',
+            'sort_order'           => 'nullable|integer',
+            'is_active'            => 'nullable|boolean',
+            'visible_to_users'     => 'nullable|boolean',
+            'visible_to_resellers' => 'nullable|boolean',
+            'image'                => 'nullable|image|max:4096',
         ]);
 
         $imagePath = null;
@@ -42,15 +44,17 @@ class UcBundleController extends Controller
         }
 
         UcBundle::create([
-            'title'         => $data['title'],
-            'sell_price'    => $data['sell_price'],
-            'sell_currency' => 'UZS',
-            'cost_price'    => $data['cost_price'],
-            'cost_currency' => $data['cost_currency'],
-            'sort_order'    => (int) ($data['sort_order'] ?? 0),
-            'is_active'     => filter_var($data['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN),
-            'image_path'    => $imagePath,
-            'created_at'    => now(),
+            'title'                => $data['title'],
+            'sell_price'           => $data['sell_price'],
+            'sell_currency'        => 'UZS',
+            'cost_price'           => $data['cost_price'],
+            'cost_currency'        => $data['cost_currency'],
+            'sort_order'           => (int) ($data['sort_order'] ?? 0),
+            'is_active'            => filter_var($data['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'visible_to_users'     => filter_var($data['visible_to_users'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'visible_to_resellers' => filter_var($data['visible_to_resellers'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'image_path'           => $imagePath,
+            'created_at'           => now(),
         ]);
 
         return redirect()->back()->with('success', "To'plam qo'shildi");
@@ -59,13 +63,15 @@ class UcBundleController extends Controller
     public function update(Request $request, UcBundle $bundle)
     {
         $data = $request->validate([
-            'title'         => 'required|string|max:100',
-            'sell_price'    => 'required|numeric|min:0',
-            'cost_price'    => 'required|numeric|min:0',
-            'cost_currency' => 'required|string',
-            'sort_order'    => 'nullable|integer',
-            'is_active'     => 'nullable|boolean',
-            'image'         => 'nullable|image|max:4096',
+            'title'                => 'required|string|max:100',
+            'sell_price'           => 'required|numeric|min:0',
+            'cost_price'           => 'required|numeric|min:0',
+            'cost_currency'        => 'required|string',
+            'sort_order'           => 'nullable|integer',
+            'is_active'            => 'nullable|boolean',
+            'visible_to_users'     => 'nullable|boolean',
+            'visible_to_resellers' => 'nullable|boolean',
+            'image'                => 'nullable|image|max:4096',
         ]);
 
         $imagePath = $bundle->image_path;
@@ -77,13 +83,15 @@ class UcBundleController extends Controller
         }
 
         $bundle->update([
-            'title'         => $data['title'],
-            'sell_price'    => $data['sell_price'],
-            'cost_price'    => $data['cost_price'],
-            'cost_currency' => $data['cost_currency'],
-            'sort_order'    => (int) ($data['sort_order'] ?? $bundle->sort_order),
-            'is_active'     => filter_var($data['is_active'] ?? $bundle->is_active, FILTER_VALIDATE_BOOLEAN),
-            'image_path'    => $imagePath,
+            'title'                => $data['title'],
+            'sell_price'           => $data['sell_price'],
+            'cost_price'           => $data['cost_price'],
+            'cost_currency'        => $data['cost_currency'],
+            'sort_order'           => (int) ($data['sort_order'] ?? $bundle->sort_order),
+            'is_active'            => filter_var($data['is_active'] ?? $bundle->is_active, FILTER_VALIDATE_BOOLEAN),
+            'visible_to_users'     => filter_var($data['visible_to_users'] ?? $bundle->visible_to_users, FILTER_VALIDATE_BOOLEAN),
+            'visible_to_resellers' => filter_var($data['visible_to_resellers'] ?? $bundle->visible_to_resellers, FILTER_VALIDATE_BOOLEAN),
+            'image_path'           => $imagePath,
         ]);
 
         return redirect()->back()->with('success', "To'plam yangilandi");
