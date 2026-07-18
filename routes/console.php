@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -26,6 +27,8 @@ Schedule::call(function () {
         ->limit(20)
         ->get();
 
+    $hasImageCol = Schema::hasColumn('user_notifications', 'image_url');
+
     foreach ($rows as $row) {
         $title   = trim((string) ($row->title ?? 'Bildirishnoma'));
         $message = trim((string) ($row->message ?? ''));
@@ -35,13 +38,60 @@ Schedule::call(function () {
         if ($message !== '') $text .= "\n\n" . $message;
         if ($desc !== '')    $text .= "\n\nSabab: " . $desc;
 
+        // Resolve image: stored as path (e.g. broadcast-images/xxx.jpg) or full URL
+        $imageValue = $hasImageCol ? (trim((string) ($row->image_url ?? ''))) : '';
+        $imagePath  = null; // local storage path
+        $imageUrl   = null; // full URL for sendPhoto
+        if ($imageValue !== '') {
+            if (str_starts_with($imageValue, 'http://') || str_starts_with($imageValue, 'https://')) {
+                $imageUrl = $imageValue;
+            } else {
+                $imagePath = $imageValue; // relative path in public disk
+                $imageUrl  = Storage::disk('public')->url($imageValue);
+            }
+        }
+
         try {
-            $res = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => (int) $row->user_id,
-                'text'    => $text,
-            ]);
-            $ok = ($res->json('ok') === true);
-            $err = $ok ? null : (($res->json('description') ?: ('HTTP '.$res->status())) ?: 'unknown');
+            if ($imageUrl !== null) {
+                // Try sendPhoto with file bytes for reliability
+                $sent = false;
+                if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                    $bytes    = Storage::disk('public')->get($imagePath);
+                    $filename = basename($imagePath);
+                    $res = Http::timeout(15)
+                        ->attach('photo', $bytes, $filename, ['Content-Type' => 'image/jpeg'])
+                        ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                            'chat_id' => (int) $row->user_id,
+                            'caption' => $text,
+                        ]);
+                    $sent = ($res->json('ok') === true);
+                }
+                // Fallback: send photo by URL
+                if (!$sent) {
+                    $res = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                        'chat_id' => (int) $row->user_id,
+                        'photo'   => $imageUrl,
+                        'caption' => $text,
+                    ]);
+                    $sent = ($res->json('ok') === true);
+                }
+                // Fallback: send as plain text if photo failed
+                if (!$sent) {
+                    $res = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                        'chat_id' => (int) $row->user_id,
+                        'text'    => $text,
+                    ]);
+                }
+                $ok  = ($res->json('ok') === true);
+                $err = $ok ? null : (($res->json('description') ?: ('HTTP '.$res->status())) ?: 'unknown');
+            } else {
+                $res = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => (int) $row->user_id,
+                    'text'    => $text,
+                ]);
+                $ok  = ($res->json('ok') === true);
+                $err = $ok ? null : (($res->json('description') ?: ('HTTP '.$res->status())) ?: 'unknown');
+            }
         } catch (\Throwable $e) {
             $ok  = false;
             $err = substr($e->getMessage(), 0, 255);

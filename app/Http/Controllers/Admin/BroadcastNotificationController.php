@@ -48,8 +48,8 @@ class BroadcastNotificationController extends Controller
 
         $imageUrl = null;
         if ($request->hasFile('image')) {
-            $path     = $request->file('image')->store('broadcast-images', 'public');
-            $imageUrl = Storage::disk('public')->url($path);
+            // Store path only — URL is generated at read time to avoid APP_URL mismatches
+            $imageUrl = $request->file('image')->store('broadcast-images', 'public');
         }
 
         $now         = now();

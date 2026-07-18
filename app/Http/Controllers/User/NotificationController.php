@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,6 +39,19 @@ class NotificationController extends Controller
         return back();
     }
 
+    private function resolveImageUrl(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        // Already a full URL (legacy records stored with Storage::url())
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+        // Relative path — generate URL using current APP_URL
+        return Storage::disk('public')->url($value);
+    }
+
     private function userNotifications(int $userId): Collection
     {
         if (!Schema::hasTable('user_notifications')) {
@@ -67,7 +81,7 @@ class NotificationController extends Controller
             'title'        => (string) ($row->title ?: ''),
             'message'      => (string) ($row->message ?: ''),
             'description'  => (string) ($row->description ?: ''),
-            'image_url'    => $hasImageUrl ? ($row->image_url ?? null) : null,
+            'image_url'    => $hasImageUrl ? $this->resolveImageUrl($row->image_url ?? null) : null,
             'is_read'      => (bool) $row->is_read ? 'read' : 'unread',
             'created_at'   => $row->created_at,
         ]);
