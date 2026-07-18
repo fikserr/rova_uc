@@ -51,7 +51,9 @@ Route::get('/login', function () {
         return redirect()->intended('/');
     }
 
-    return Inertia::render('Auth/Login');
+    return Inertia::render('Auth/Login', [
+        'telegramBotUsername' => config('services.telegram.bot_username', ''),
+    ]);
 })->name('login');
 
 Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:10,1');
@@ -64,6 +66,10 @@ Route::post('/binance/webhook', [BinanceController::class, 'webhook'])->middlewa
 
 // Image proxy – must be outside auth so images load even before session is fully established
 Route::get('/img', [ImageProxyController::class, 'show'])->middleware('throttle:200,1')->name('img.proxy');
+
+// Public legal pages
+Route::get('/terms', fn () => Inertia::render('Legal/TermsOfService'))->name('terms');
+Route::get('/privacy', fn () => Inertia::render('Legal/PrivacyPolicy'))->name('privacy');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/password', [PasswordController::class, 'store']);

@@ -2,7 +2,7 @@ import Logo from "@images/vg.png";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { Eye, EyeOff, Loader, Lock, Mail } from "lucide-react";
 import { useState } from "react";
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, telegramBotUsername }) {
     const { data, setData, post, processing, errors } = useForm({
         username: "",
         password: "",
@@ -89,12 +89,14 @@ export default function Login({ status, canResetPassword }) {
                             </h1>
                             <p className="mt-1 text-sm text-gray-400">
                                 Don&apos;t have an account?{" "}
-                                <Link
-                                    href="/register"
+                                <a
+                                    href={telegramBotUsername ? `https://t.me/${telegramBotUsername}` : "https://t.me/"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
                                 >
-                                    Sign up for free
-                                </Link>
+                                    Register via Telegram
+                                </a>
                             </p>
                         </div>
 
@@ -273,19 +275,19 @@ export default function Login({ status, canResetPassword }) {
                         {/* Footer */}
                         <p className="mt-6 text-center text-xs text-gray-500">
                             By signing in, you agree to our{" "}
-                            <a
-                                href="#"
+                            <Link
+                                href="/terms"
                                 className="underline underline-offset-2 hover:text-gray-300 transition-colors"
                             >
                                 Terms of Service
-                            </a>{" "}
+                            </Link>{" "}
                             and{" "}
-                            <a
-                                href="#"
+                            <Link
+                                href="/privacy"
                                 className="underline underline-offset-2 hover:text-gray-300 transition-colors"
                             >
                                 Privacy Policy
-                            </a>
+                            </Link>
                         </p>
                     </div>
                 </div>

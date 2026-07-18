@@ -144,10 +144,8 @@ class TelegramBotController extends Controller
         $webAppUrl = rtrim(config('app.url'), '/');
         $tid       = (int) $telegramId;
 
-        // Detect language from Telegram or existing DB record
-        $tgLang  = $message['from']['language_code'] ?? 'uz';
         $dbUser  = DB::selectOne("SELECT language FROM users WHERE id = {$tid}");
-        $lang    = $dbUser?->language ?? (in_array($tgLang, ['uz', 'ru', 'en']) ? $tgLang : 'uz');
+        $lang    = $dbUser?->language ?? 'uz';
         $t       = new BotTranslator($lang);
 
         $msgText = $message['text'] ?? '';
@@ -243,9 +241,8 @@ class TelegramBotController extends Controller
                 // Trigger referral reward on first phone registration (same logic as web API)
                 $this->triggerReferralReward($tid);
             }
-            $this->send($chatId, $t->get('registered'), ['remove_keyboard' => true]);
             $this->send($chatId,
-                "👇",
+                $t->get('registered'),
                 ['inline_keyboard' => [[['text' => $t->get('open_app'), 'web_app' => ['url' => $webAppUrl]]]]]
             );
             return;
