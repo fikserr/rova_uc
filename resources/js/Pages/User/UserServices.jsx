@@ -7,13 +7,23 @@ import TelegramStars from "@images/telegram_stars.webp";
 
 import { Head, Link, usePage } from "@inertiajs/react";
 import axios from "axios";
-import { ArrowLeft, ArrowRight, CheckCircle, Flame, Gamepad2, Loader2, ShieldCheck, Tag, Zap } from "lucide-react";
+import {
+    ArrowLeft,
+    ArrowRight,
+    CheckCircle,
+    Flame,
+    Gamepad2,
+    Loader2,
+    ShieldCheck,
+    Tag,
+    Zap,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useDevice from "../../Hook/useDevice";
-import { imgFallback, imgProxy } from "../../utils/imgProxy";
+import { imgFallback, imgProxy } from "../../Utils/ImgProxy";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -93,7 +103,9 @@ function ServiceCard({
                             loading="lazy"
                             className="w-full h-full object-cover rounded-t-2xl transition-opacity duration-500"
                             style={{ opacity: 0 }}
-                            onLoad={(e) => (e.currentTarget.style.opacity = "1")}
+                            onLoad={(e) =>
+                                (e.currentTarget.style.opacity = "1")
+                            }
                             onError={imgFallback}
                         />
                     ) : (
@@ -137,7 +149,15 @@ function ServiceCard({
     );
 }
 
-function IdVerifyBlock({ pubgId, setPubgId, pubgName, verified, verifying, error, onVerify }) {
+function IdVerifyBlock({
+    pubgId,
+    setPubgId,
+    pubgName,
+    verified,
+    verifying,
+    error,
+    onVerify,
+}) {
     return (
         <div className="mb-5 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
@@ -153,9 +173,13 @@ function IdVerifyBlock({ pubgId, setPubgId, pubgName, verified, verifying, error
                 <button
                     onClick={onVerify}
                     disabled={verifying || !pubgId.trim()}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-blue-500 to-indigo-600 disabled:opacity-60 shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-linear-to-r from-blue-500 to-indigo-600 disabled:opacity-60 shrink-0"
                 >
-                    {verifying ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
+                    {verifying ? (
+                        <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                        <Zap className="size-3" />
+                    )}
                     Tekshirish
                 </button>
             </div>
@@ -175,7 +199,14 @@ function UserServices() {
     const [paymentNotice, setPaymentNotice] = useState("");
 
     // Games passed down from the controller, and the shared user balance
-    const { games, user, ucProducts = [], bundles = [], lastPubgAccount, topGames = [] } = usePage().props;
+    const {
+        games,
+        user,
+        ucProducts = [],
+        bundles = [],
+        lastPubgAccount,
+        topGames = [],
+    } = usePage().props;
     const userBalance = Number(user?.balance ?? 0);
 
     // When set, we show that game's variants inline instead of the homepage
@@ -184,26 +215,44 @@ function UserServices() {
     const catAcc = accent(selectedGame?.category ?? "");
 
     // Shared PUBG ID state — persists across tab switches
-    const [sharedPubgId,   setSharedPubgId]   = useState(lastPubgAccount?.pubg_player_id ?? "");
-    const [sharedPubgName, setSharedPubgName] = useState(lastPubgAccount?.pubg_name ?? "");
-    const [idVerified,     setIdVerified]     = useState(false);
-    const [idVerifying,    setIdVerifying]    = useState(false);
-    const [idError,        setIdError]        = useState("");
+    const [sharedPubgId, setSharedPubgId] = useState(
+        lastPubgAccount?.pubg_player_id ?? "",
+    );
+    const [sharedPubgName, setSharedPubgName] = useState(
+        lastPubgAccount?.pubg_name ?? "",
+    );
+    const [idVerified, setIdVerified] = useState(false);
+    const [idVerifying, setIdVerifying] = useState(false);
+    const [idError, setIdError] = useState("");
 
     const handleIdVerify = async () => {
         if (!sharedPubgId.trim()) return;
-        setIdVerifying(true); setIdError(""); setSharedPubgName(""); setIdVerified(false);
+        setIdVerifying(true);
+        setIdError("");
+        setSharedPubgName("");
+        setIdVerified(false);
         try {
-            const res = await axios.post("/game/verify/pubg", { id: sharedPubgId.trim() });
+            const res = await axios.post("/game/verify/pubg", {
+                id: sharedPubgId.trim(),
+            });
             const name = res?.data?.username ?? null;
-            if (name) { setSharedPubgName(name); setIdVerified(true); }
-            else { setIdError("Akkaunt topilmadi"); }
-        } catch { setIdError("Tekshirishda xatolik"); }
-        finally  { setIdVerifying(false); }
+            if (name) {
+                setSharedPubgName(name);
+                setIdVerified(true);
+            } else {
+                setIdError("Akkaunt topilmadi");
+            }
+        } catch {
+            setIdError("Tekshirishda xatolik");
+        } finally {
+            setIdVerifying(false);
+        }
     };
 
     // Reset tab when game changes
-    useEffect(() => { setGameTab("sekali"); }, [selectedGame?.name]);
+    useEffect(() => {
+        setGameTab("sekali");
+    }, [selectedGame?.name]);
 
     const services = [
         {
@@ -256,12 +305,23 @@ function UserServices() {
     const allServices = [...services, ...gameServices];
 
     const Desktopimages = [
-        { img: MlbbDesktop, href: "/user-products-ml" },
-        { img: PubgDesktop, href: "/user-products-uc" },
+        {
+            img: MlbbDesktop,
+            game: { name: "Mobile Legends", category: "Game", image: null },
+        },
+        { img: PubgDesktop, href: "/user-products-uc", game: { name: "Pubg Mobile", category: "Game", image: null }, },
         { img: TelegramStars, href: "/user-telegram-stars" },
         { img: TelegramPremium, href: "/user-telegram-premium" },
     ];
-    const Mobileimages = [MlbbMobile, PubgMobile];
+
+    const Mobileimages = [
+        {
+            img: MlbbMobile,
+            game: { name: "Mobile Legends", category: "Game", image: null },
+        },
+        { img: PubgMobile, href: "/user-products-uc" },
+    ];
+
     const images = mobile ? Mobileimages : Desktopimages;
 
     useEffect(() => {
@@ -329,9 +389,18 @@ function UserServices() {
                                 {/pubg/i.test(selectedGame.name) ? (
                                     <div className="flex flex-1 gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
                                         {[
-                                            { key: "sekali", label: "24/7 autopay" },
-                                            { key: "uc",     label: "Admin orqali" },
-                                            { key: "bundle", label: "To'plamlar" },
+                                            {
+                                                key: "sekali",
+                                                label: "24/7 autopay",
+                                            },
+                                            {
+                                                key: "uc",
+                                                label: "Admin orqali",
+                                            },
+                                            {
+                                                key: "bundle",
+                                                label: "To'plamlar",
+                                            },
                                         ].map(({ key, label }) => (
                                             <button
                                                 key={key}
@@ -366,86 +435,159 @@ function UserServices() {
                         )}
 
                         {/* Qo'lda tushirish (PUBG only) */}
-                        {gameTab === "uc" && /pubg/i.test(selectedGame.name) && (
-                            <div>
-                                <IdVerifyBlock
-                                    pubgId={sharedPubgId}
-                                    setPubgId={setSharedPubgId}
-                                    pubgName={sharedPubgName}
-                                    verified={idVerified}
-                                    verifying={idVerifying}
-                                    error={idError}
-                                    onVerify={handleIdVerify}
-                                />
-                                {selectedGame.image && (
-                                    <div className="relative rounded-2xl overflow-hidden mb-5 h-28">
-                                        <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                                        <div className="relative h-full flex items-center gap-4 px-5">
-                                            <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
-                                                <img src={imgProxy(selectedGame.image)} alt={selectedGame.name} className="w-full h-full object-cover" />
-                                            </div>
-                                            <div>
-                                                <h2 className="text-white font-bold text-lg">{selectedGame.name}</h2>
-                                                <p className="text-white/70 text-xs">Admin orqali tushirish</p>
+                        {gameTab === "uc" &&
+                            /pubg/i.test(selectedGame.name) && (
+                                <div>
+                                    <IdVerifyBlock
+                                        pubgId={sharedPubgId}
+                                        setPubgId={setSharedPubgId}
+                                        pubgName={sharedPubgName}
+                                        verified={idVerified}
+                                        verifying={idVerifying}
+                                        error={idError}
+                                        onVerify={handleIdVerify}
+                                    />
+                                    {selectedGame.image && (
+                                        <div className="relative rounded-2xl overflow-hidden mb-5 h-28">
+                                            <img
+                                                src={imgProxy(
+                                                    selectedGame.image,
+                                                )}
+                                                alt={selectedGame.name}
+                                                className="absolute inset-0 w-full h-full object-cover opacity-30"
+                                            />
+                                            <div className="relative h-full flex items-center gap-4 px-5">
+                                                <div className="size-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
+                                                    <img
+                                                        src={imgProxy(
+                                                            selectedGame.image,
+                                                        )}
+                                                        alt={selectedGame.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-white font-bold text-lg">
+                                                        {selectedGame.name}
+                                                    </h2>
+                                                    <p className="text-white/70 text-xs">
+                                                        Admin orqali tushirish
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3">Paket tanlang</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {ucProducts.map((p) => (
-                                        <Link key={p.id} href="/user-products-uc"
-                                            className="relative p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 text-left transition-all flex items-center gap-3">
-                                            <div className="size-11 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
-                                                <img src="/images/ucMain.webp" alt="UC" className="w-full h-full object-cover" onError={(e)=>e.currentTarget.style.display='none'} />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="font-semibold text-sm text-slate-800 dark:text-white leading-tight truncate">{p.uc_amount} UC{p.bonus ? ` +${p.bonus}` : ""}</p>
-                                                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">{Number(p.sell_price).toLocaleString("uz-UZ")} UZS</p>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* To'plamlar (PUBG only) */}
-                        {gameTab === "bundle" && /pubg/i.test(selectedGame.name) && (
-                            <div>
-                                <IdVerifyBlock
-                                    pubgId={sharedPubgId}
-                                    setPubgId={setSharedPubgId}
-                                    pubgName={sharedPubgName}
-                                    verified={idVerified}
-                                    verifying={idVerifying}
-                                    error={idError}
-                                    onVerify={handleIdVerify}
-                                />
-                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3">To'plam tanlang</p>
-                                {bundles.length === 0 ? (
-                                    <div className="text-center py-12 text-slate-400"><span className="text-4xl block mb-3">🎁</span><p>Hozircha to'plamlar mavjud emas</p></div>
-                                ) : (
+                                    )}
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3">
+                                        Paket tanlang
+                                    </p>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {bundles.map((b) => (
-                                            <Link key={b.id} href="/user-products-uc"
-                                                className="relative rounded-2xl border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-600 overflow-hidden transition-all group">
-                                                <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
-                                                <div className="h-28 bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                                    {b.image_url
-                                                        ? <img src={imgProxy(b.image_url)} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                        : <div className="w-full h-full flex items-center justify-center text-2xl">🎁</div>
-                                                    }
+                                        {ucProducts.map((p) => (
+                                            <Link
+                                                key={p.id}
+                                                href="/user-products-uc"
+                                                className="relative p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 text-left transition-all flex items-center gap-3"
+                                            >
+                                                <div className="size-11 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
+                                                    <img
+                                                        src="/images/ucMain.webp"
+                                                        alt="UC"
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) =>
+                                                            (e.currentTarget.style.display =
+                                                                "none")
+                                                        }
+                                                    />
                                                 </div>
-                                                <div className="p-3">
-                                                    <p className="font-semibold text-sm text-slate-800 dark:text-white truncate">{b.title}</p>
-                                                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1">{Number(b.sell_price).toLocaleString("uz-UZ")} UZS</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-semibold text-sm text-slate-800 dark:text-white leading-tight truncate">
+                                                        {p.uc_amount} UC
+                                                        {p.bonus
+                                                            ? ` +${p.bonus}`
+                                                            : ""}
+                                                    </p>
+                                                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                                                        {Number(
+                                                            p.sell_price,
+                                                        ).toLocaleString(
+                                                            "uz-UZ",
+                                                        )}{" "}
+                                                        UZS
+                                                    </p>
                                                 </div>
                                             </Link>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            )}
+
+                        {/* To'plamlar (PUBG only) */}
+                        {gameTab === "bundle" &&
+                            /pubg/i.test(selectedGame.name) && (
+                                <div>
+                                    <IdVerifyBlock
+                                        pubgId={sharedPubgId}
+                                        setPubgId={setSharedPubgId}
+                                        pubgName={sharedPubgName}
+                                        verified={idVerified}
+                                        verifying={idVerifying}
+                                        error={idError}
+                                        onVerify={handleIdVerify}
+                                    />
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3">
+                                        To'plam tanlang
+                                    </p>
+                                    {bundles.length === 0 ? (
+                                        <div className="text-center py-12 text-slate-400">
+                                            <span className="text-4xl block mb-3">
+                                                🎁
+                                            </span>
+                                            <p>
+                                                Hozircha to'plamlar mavjud emas
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {bundles.map((b) => (
+                                                <Link
+                                                    key={b.id}
+                                                    href="/user-products-uc"
+                                                    className="relative rounded-2xl border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-600 overflow-hidden transition-all group"
+                                                >
+                                                    <div className="h-1 w-full bg-linear-to-r from-blue-500 to-indigo-600" />
+                                                    <div className="h-28 bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                                        {b.image_url ? (
+                                                            <img
+                                                                src={imgProxy(
+                                                                    b.image_url,
+                                                                )}
+                                                                alt={b.title}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-2xl">
+                                                                🎁
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-3">
+                                                        <p className="font-semibold text-sm text-slate-800 dark:text-white truncate">
+                                                            {b.title}
+                                                        </p>
+                                                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+                                                            {Number(
+                                                                b.sell_price,
+                                                            ).toLocaleString(
+                                                                "uz-UZ",
+                                                            )}{" "}
+                                                            UZS
+                                                        </p>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                     </div>
                 ) : (
                     <>
@@ -468,19 +610,48 @@ function UserServices() {
                                 }}
                                 className="rounded-xl overflow-hidden shadow-lg bg-amber-200 h-40 md:h-100"
                             >
-                                {Desktopimages.map((img, index) => (
-                                    <SwiperSlide key={index}>
-                                        <Link href={img.href}>
-                                            <div className="h-40 md:h-100 w-full">
-                                                <img
-                                                    src={img.img}
-                                                    alt={`slide-${index}`}
-                                                    className="w-full h-full object-fill"
-                                                />
-                                            </div>
-                                        </Link>
-                                    </SwiperSlide>
-                                ))}
+                                <Swiper
+                                    modules={[Pagination]}
+                                    slidesPerView={1}
+                                    pagination={{
+                                        clickable: true,
+                                        renderBullet: (index, className) =>
+                                            `<button class="${className} custom-pagination-bullet" style="width: 10px; height: 10px; margin: 0 6px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; cursor: pointer; transition: all 0.3s ease;"></button>`,
+                                    }}
+                                    className="rounded-xl overflow-hidden shadow-lg bg-amber-200 h-40 md:h-100"
+                                >
+                                    {Desktopimages.map((img, index) => (
+                                        <SwiperSlide key={index}>
+                                            {img.game ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setSelectedGame(
+                                                            img.game,
+                                                        )
+                                                    }
+                                                    className="block w-full h-40 md:h-100 text-left"
+                                                >
+                                                    <img
+                                                        src={img.img}
+                                                        alt={`slide-${index}`}
+                                                        className="w-full h-full object-fill"
+                                                    />
+                                                </button>
+                                            ) : (
+                                                <Link href={img.href}>
+                                                    <div className="h-40 md:h-100 w-full">
+                                                        <img
+                                                            src={img.img}
+                                                            alt={`slide-${index}`}
+                                                            className="w-full h-full object-fill"
+                                                        />
+                                                    </div>
+                                                </Link>
+                                            )}
+                                        </SwiperSlide>
+                                    ))}
+                                </Swiper>
                             </Swiper>
                         </div>
 
@@ -503,23 +674,43 @@ function UserServices() {
                                             "from-pink-500 to-rose-600",
                                             "from-cyan-500 to-sky-600",
                                         ];
-                                        const gradColor = GAME_CARD_COLORS_TOP[idx % GAME_CARD_COLORS_TOP.length];
+                                        const gradColor =
+                                            GAME_CARD_COLORS_TOP[
+                                                idx %
+                                                    GAME_CARD_COLORS_TOP.length
+                                            ];
                                         return (
                                             <button
                                                 key={game.name}
-                                                onClick={() => setSelectedGame({ name: game.name, category: game.category || "Game", image: game.image_url })}
+                                                onClick={() =>
+                                                    setSelectedGame({
+                                                        name: game.name,
+                                                        category:
+                                                            game.category ||
+                                                            "Game",
+                                                        image: game.image_url,
+                                                    })
+                                                }
                                                 className="shrink-0 snap-start w-24 rounded-2xl overflow-hidden bg-white dark:bg-white/5 border border-slate-100 dark:border-white/8 shadow-sm hover:shadow-md hover:border-violet-300 dark:hover:border-violet-500/40 transition-all active:scale-95 text-left"
                                             >
-                                                <div className={`relative h-20 bg-linear-to-br ${gradColor} overflow-hidden`}>
+                                                <div
+                                                    className={`relative h-20 bg-linear-to-br ${gradColor} overflow-hidden`}
+                                                >
                                                     {game.image_url ? (
                                                         <img
-                                                            src={imgProxy(game.image_url)}
+                                                            src={imgProxy(
+                                                                game.image_url,
+                                                            )}
                                                             alt={game.name}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
                                                         <div className="flex items-center justify-center h-full">
-                                                            <span className="text-white font-black text-2xl">{game.name.charAt(0)}</span>
+                                                            <span className="text-white font-black text-2xl">
+                                                                {game.name.charAt(
+                                                                    0,
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     )}
                                                     <div className="absolute top-1.5 left-1.5 bg-orange-500 rounded-md px-1 py-0.5">
@@ -528,7 +719,12 @@ function UserServices() {
                                                 </div>
                                                 <div className="px-2 py-1.5">
                                                     <p className="text-[10px] font-bold text-slate-800 dark:text-white leading-tight line-clamp-2 uppercase">
-                                                        {game.name.length > 10 ? game.name.substring(0, 10) + "…" : game.name}
+                                                        {game.name.length > 10
+                                                            ? game.name.substring(
+                                                                  0,
+                                                                  10,
+                                                              ) + "…"
+                                                            : game.name}
                                                     </p>
                                                 </div>
                                             </button>
