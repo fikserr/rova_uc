@@ -165,7 +165,8 @@ Schedule::call(function () {
                 }
 
             } elseif (in_array($status, ['failed', 'canceled', 'refunded'])) {
-                DB::transaction(function () use ($order, $status) {
+                $wasCanceled = false;
+                DB::transaction(function () use ($order, $status, &$wasCanceled) {
                     $row = DB::table('sekali_orders')
                         ->where('ref_id', $order->ref_id)
                         ->lockForUpdate()
@@ -181,9 +182,26 @@ Schedule::call(function () {
                         'status' => 'canceled',
                         'notes'  => "Avtomatik bekor: SekalıPay status={$status}",
                     ]);
+                    $wasCanceled = true;
                 });
 
                 Log::info("SekaliPay poller: #{$order->ref_id} bekor qilindi ({$status}), balans qaytarildi.");
+
+                if ($wasCanceled) {
+                    try {
+                        $sekaliOrder = DB::table('sekali_orders')->where('ref_id', $order->ref_id)->first();
+                        $product = $sekaliOrder ? DB::table('sekali_products')->where('id', $sekaliOrder->sekali_product_id)->first() : null;
+                        $productName = $product ? ($product->game_name . ' — ' . $product->name) : 'SekalıPay';
+                        app(\App\Services\TelegramNotificationService::class)->notifyOrderStatus(
+                            (string) $order->user_id,
+                            'sekali',
+                            (int) $order->id,
+                            'canceled',
+                            $productName,
+                            'Balans qaytarildi'
+                        );
+                    } catch (\Throwable) {}
+                }
             }
         } catch (\Throwable $e) {
             Log::warning("SekaliPay poller xatolik #{$order->ref_id}: " . $e->getMessage());

@@ -17,7 +17,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'order_type' => 'required|in:uc,service',
+            'order_type' => 'required|in:uc,service,bundle',
             'order_id' => 'required|integer|min:1',
             'status' => 'required|in:pending,paid,delivered,canceled',
             'description' => 'nullable|string|max:500',
@@ -30,6 +30,7 @@ class OrderController extends Controller
         $table = match ($data['order_type']) {
             'uc'      => 'uc_orders',
             'service' => 'service_orders',
+            'bundle'  => 'bundle_orders',
         };
 
         $result = DB::transaction(function () use ($table, $data) {
@@ -222,6 +223,7 @@ class OrderController extends Controller
         return response()->json([
             'ucOrders'      => $this->fetchUcOrders(),
             'serviceOrders' => $this->fetchServiceOrders(),
+            'bundleOrders'  => $this->fetchBundleOrders(),
         ]);
     }
 
@@ -230,6 +232,7 @@ class OrderController extends Controller
         return Inertia::render('Admin/UcOrders', [
             'ucOrders'      => $this->fetchUcOrders(),
             'serviceOrders' => $this->fetchServiceOrders(),
+            'bundleOrders'  => $this->fetchBundleOrders(),
             'workers'       => DB::table('users')->where('role', 'worker')->select('id', 'username')->get(),
         ]);
     }
@@ -330,6 +333,25 @@ class OrderController extends Controller
             ->get();
     }
 
+    private function fetchBundleOrders(): \Illuminate\Support\Collection
+    {
+        if (!Schema::hasTable('bundle_orders')) {
+            return collect();
+        }
+
+        return DB::table('bundle_orders as o')
+            ->leftJoin('users as u', 'u.id', '=', 'o.user_id')
+            ->leftJoin('uc_bundles as b', 'b.id', '=', 'o.bundle_id')
+            ->select([
+                'o.id', 'o.status', 'o.sell_price', 'o.sell_currency',
+                'o.profit_base', 'o.created_at',
+                'u.id as user_id', 'u.username',
+                'b.title as bundle_title',
+            ])
+            ->orderByDesc('o.id')
+            ->get();
+    }
+
     private function fetchSekaliOrders(): \Illuminate\Support\Collection
     {
         return DB::table('sekali_orders as o')
@@ -352,6 +374,7 @@ class OrderController extends Controller
         return Inertia::render('Admin/AllOrders', [
             'ucOrders'      => $this->fetchUcOrders(),
             'serviceOrders' => $this->fetchServiceOrders(),
+            'bundleOrders'  => $this->fetchBundleOrders(),
             'sekaliOrders'  => $this->fetchSekaliOrders(),
         ]);
     }
@@ -361,6 +384,7 @@ class OrderController extends Controller
         return response()->json([
             'ucOrders'      => $this->fetchUcOrders(),
             'serviceOrders' => $this->fetchServiceOrders(),
+            'bundleOrders'  => $this->fetchBundleOrders(),
             'sekaliOrders'  => $this->fetchSekaliOrders(),
         ]);
     }

@@ -105,7 +105,9 @@ class SekaliWebhookController extends Controller
 
     private function handleCanceled(string $refId): void
     {
-        DB::transaction(function () use ($refId) {
+        $canceledOrder = null;
+
+        DB::transaction(function () use ($refId, &$canceledOrder) {
             $order = SekaliOrder::where('ref_id', $refId)
                 ->lockForUpdate()
                 ->first();
@@ -122,9 +124,26 @@ class SekaliWebhookController extends Controller
                 'status' => 'canceled',
                 'notes'  => 'SekalıPay tomonidan bekor qilindi',
             ]);
+
+            $canceledOrder = $order;
         });
 
+        if (!$canceledOrder) return;
+
         Log::info("SekaliPay: buyurtma #{$refId} bekor qilindi, balans qaytarildi.");
+
+        try {
+            $product = DB::table('sekali_products')->where('id', $canceledOrder->sekali_product_id)->first();
+            $productName = $product ? ($product->game_name . ' — ' . $product->name) : 'SekalıPay';
+            app(\App\Services\TelegramNotificationService::class)->notifyOrderStatus(
+                (string) $canceledOrder->user_id,
+                'sekali',
+                (int) $canceledOrder->id,
+                'canceled',
+                $productName,
+                'Balans qaytarildi'
+            );
+        } catch (\Throwable) {}
     }
 
     private function updateStatus(string $refId, string $status, ?string $invoice): void
