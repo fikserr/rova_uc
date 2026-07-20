@@ -118,7 +118,7 @@ class PaymentController extends Controller
         return $response;
     }
 
-    private function buildOrderContext(string $orderType, array $validated, int $userId): array
+    private function buildOrderContext(string $orderType, array $validated, string $userId): array
     {
         if ($orderType === 'uc') {
             $productId = $validated['product_id'] ?? null;
@@ -224,7 +224,7 @@ class PaymentController extends Controller
             // Agar raqamli ID kiritilgan bo'lsa, users jadvalidan username topamiz
             if (is_numeric($targetTelegramUsername)) {
                 $resolvedUsername = DB::table('users')
-                    ->where('id', (int) $targetTelegramUsername)
+                    ->where('id', (string) $targetTelegramUsername)
                     ->value('username');
                 if ($resolvedUsername) {
                     $targetTelegramUsername = (string) $resolvedUsername;
@@ -312,7 +312,7 @@ class PaymentController extends Controller
         ];
     }
 
-    private function resolvePubgAccountId(int $userId, string $pubgPlayerId, string $pubgName): int
+    private function resolvePubgAccountId(string $userId, string $pubgPlayerId, string $pubgName): int
     {
         $existing = DB::table('pubg_accounts')
             ->where('user_id', $userId)
@@ -336,7 +336,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    private function resolveMlAccountId(int $userId, string $mlAccountId, string $mlServerId): int
+    private function resolveMlAccountId(string $userId, string $mlAccountId, string $mlServerId): int
     {
         $existing = DB::table('ml_accounts')
             ->where('user_id', $userId)
@@ -355,7 +355,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    private function payWithClick(int $userId, string $orderType, array $context, float $amount): JsonResponse
+    private function payWithClick(string $userId, string $orderType, array $context, float $amount): JsonResponse
     {
         $orderId = 0;
 
@@ -439,7 +439,7 @@ class PaymentController extends Controller
         return url('/user-services');
     }
 
-    private function payWithBalance(int $userId, string $orderType, array $context, float $amount): JsonResponse
+    private function payWithBalance(string $userId, string $orderType, array $context, float $amount): JsonResponse
     {
         $result = DB::transaction(function () use ($userId, $orderType, $context, $amount) {
             $balanceRow = DB::table('user_balances')

@@ -43,13 +43,13 @@ class UserController extends Controller
             ->selectRaw('user_id, SUM(orders_count) as total_orders, SUM(total_spent) as total_spent')
             ->groupBy('user_id')
             ->get()
-            ->keyBy('user_id');
+            ->keyBy(fn ($row) => (string) $row->user_id);
 
         $users = User::with('balance')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($user) use ($orderStatsByUser, $activeUserIds) {
-                $stats = $orderStatsByUser->get($user->id);
+                $stats = $orderStatsByUser->get((string) $user->id);
 
                 return [
                     'id'           => $user->id,
@@ -70,9 +70,9 @@ class UserController extends Controller
         ]);
     }
 
-    public function toggleBlock(int $userId)
+    public function toggleBlock(string $userId)
     {
-        if ($userId === auth()->id()) {
+        if ($userId === (string) auth()->id()) {
             return response()->json(['message' => "O'zingizni bloklayolmaysiz."], 403);
         }
 
@@ -89,26 +89,26 @@ class UserController extends Controller
         ]);
     }
 
-    public function updateRole(Request $request, int $userId)
+    public function updateRole(Request $request, string $userId)
     {
         $data = $request->validate([
             'role' => ['required', 'in:user,worker,admin,reseller'],
         ]);
 
-        if ($userId === auth()->id()) {
+        if ($userId === (string) auth()->id()) {
             return response()->json(['message' => "O'z rolingizni o'zgartirib bo'lmaydi."], 403);
         }
 
-        $updated = User::where('id', $userId)->update(['role' => $data['role']]);
-
-        if (! $updated) {
+        if (! User::where('id', $userId)->exists()) {
             return response()->json(['message' => 'Foydalanuvchi topilmadi.'], 404);
         }
+
+        User::where('id', $userId)->update(['role' => $data['role']]);
 
         return response()->json(['message' => 'Rol yangilandi.', 'role' => $data['role']]);
     }
 
-    public function adjustBalance(Request $request, int $userId)
+    public function adjustBalance(Request $request, string $userId)
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'not_in:0'],
@@ -158,8 +158,8 @@ class UserController extends Controller
         );
 
         // Save pending referral relation for new users.
-        $referrerId = (int) ($request->referrer_id ?? 0);
-        if ($user->wasRecentlyCreated && $referrerId > 0 && $referrerId !== (int) $user->id) {
+        $referrerId = (string) ($request->referrer_id ?? '');
+        if ($user->wasRecentlyCreated && $referrerId !== '' && $referrerId !== '0' && $referrerId !== (string) $user->id) {
             $referrerExists = User::where('id', $referrerId)->exists();
 
             if ($referrerExists) {
@@ -231,7 +231,7 @@ class UserController extends Controller
             }
 
             $rewardAmount = (float) $setting->reward_amount;
-            $referrerId = (int) $referral->referrer_id;
+            $referrerId = (string) $referral->referrer_id;
 
             $balanceRow = DB::table('user_balances')
                 ->where('user_id', $referrerId)

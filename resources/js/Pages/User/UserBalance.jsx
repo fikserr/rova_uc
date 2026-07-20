@@ -57,11 +57,14 @@ function UserBalance() {
     const [preview, setPreview] = useState(null);
     const [checkLoading, setCheckLoading] = useState(false);
     const [checkSuccess, setCheckSuccess] = useState(false);
+    const [checkError, setCheckError] = useState(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const [myRequests, setMyRequests] = useState([]);
     const [paymentCards, setPaymentCards] = useState([]);
     const [copiedId, setCopiedId] = useState(null);
     const fileInputRef = useRef(null);
+    const submittingRef = useRef(false);
 
     const quickAmounts = [10000, 30000, 50000, 100000, 200000, 500000];
 
@@ -122,15 +125,24 @@ function UserBalance() {
     };
 
     const handleCheckSubmit = async () => {
+        if (submittingRef.current) return;
         if (!receiptFile || !checkAmount || parseFloat(checkAmount) < 1000)
             return;
+        submittingRef.current = true;
+        setCheckError(null);
         try {
             setCheckLoading(true);
+            setUploadProgress(0);
             const form = new FormData();
             form.append("amount", checkAmount);
             form.append("receipt", receiptFile);
             await axios.post("/manual-topup", form, {
                 headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (e) => {
+                    if (e.total) {
+                        setUploadProgress(Math.round((e.loaded * 100) / e.total));
+                    }
+                },
             });
             setCheckSuccess(true);
             setCheckAmount("");
@@ -141,9 +153,15 @@ function UserBalance() {
                 .then((r) => setMyRequests(r.data))
                 .catch(() => {});
         } catch (e) {
-            alert(e.response?.data?.message ?? t("others.error"));
+            const msg = e.response?.data?.errors
+                ? Object.values(e.response.data.errors).flat().join(" ")
+                : e.response?.data?.message ?? t("others.error");
+            setCheckError(msg);
+            setTimeout(() => setCheckError(null), 8000);
         } finally {
             setCheckLoading(false);
+            setUploadProgress(0);
+            submittingRef.current = false;
         }
     };
 
@@ -463,7 +481,7 @@ function UserBalance() {
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept="image/jpeg,image/png,image/webp"
+                                    accept="image/*"
                                     className="hidden"
                                     onChange={onFileChange}
                                 />
@@ -513,6 +531,13 @@ function UserBalance() {
                                     ))}
                                 </div>
 
+                                {checkError && (
+                                    <div className="flex items-start gap-2.5 bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 rounded-xl p-3 text-xs font-semibold">
+                                        <X className="size-4 shrink-0 mt-0.5" />
+                                        {checkError}
+                                    </div>
+                                )}
+
                                 {checkSuccess && (
                                     <div className="flex items-center gap-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 rounded-xl p-3 text-xs font-semibold">
                                         <CheckCircle className="size-4 shrink-0" />
@@ -520,25 +545,37 @@ function UserBalance() {
                                     </div>
                                 )}
 
-                                <button
-                                    onClick={handleCheckSubmit}
-                                    disabled={
-                                        !receiptFile ||
-                                        !checkAmount ||
-                                        parseFloat(checkAmount) < 1000 ||
-                                        checkLoading
-                                    }
-                                    className="w-full h-11 font-bold text-xs bg-[#4F46E5] hover:bg-[#4338CA] active:scale-[0.99] text-white rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg shadow-indigo-950/40"
-                                >
-                                    {checkLoading ? (
-                                        <>
-                                            <span className="size-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />{" "}
-                                            {t("balance.submitting")}
-                                        </>
-                                    ) : (
-                                        t("balance.submit_receipt")
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={handleCheckSubmit}
+                                        disabled={
+                                            !receiptFile ||
+                                            !checkAmount ||
+                                            parseFloat(checkAmount) < 1000 ||
+                                            checkLoading
+                                        }
+                                        className="w-full h-11 font-bold text-xs bg-[#4F46E5] hover:bg-[#4338CA] active:scale-[0.99] text-white rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg shadow-indigo-950/40"
+                                    >
+                                        {checkLoading ? (
+                                            <>
+                                                <span className="size-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />{" "}
+                                                {uploadProgress < 100
+                                                    ? `${t("balance.uploading")} ${uploadProgress}%`
+                                                    : t("balance.submitting")}
+                                            </>
+                                        ) : (
+                                            t("balance.submit_receipt")
+                                        )}
+                                    </button>
+                                    {checkLoading && (
+                                        <div className="w-full h-1.5 bg-indigo-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                                                style={{ width: `${uploadProgress}%` }}
+                                            />
+                                        </div>
                                     )}
-                                </button>
+                                </div>
                             </div>
                         )}
                     </div>

@@ -34,7 +34,7 @@ class TelegramNotificationService
         }
     }
 
-    public function notifyOrderStatus(int $userId, string $orderType, int $orderId, string $status, string $productName = '', ?string $description = null): void
+    public function notifyOrderStatus(string $userId, string $orderType, int $orderId, string $status, string $productName = '', ?string $description = null): void
     {
         // Get user's telegram_id from DB
         $user = \Illuminate\Support\Facades\DB::table('users')->where('id', $userId)->first();

@@ -32,7 +32,7 @@ class AdminOrderNotificationService
 
         $now = now();
         $rows = array_map(fn ($adminId) => [
-            'user_id'     => (int) $adminId,
+            'user_id'     => (string) $adminId,
             'source'      => 'admin',
             'order_type'  => $orderType,
             'order_id'    => $orderId,

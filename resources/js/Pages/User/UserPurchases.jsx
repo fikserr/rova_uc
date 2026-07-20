@@ -298,6 +298,16 @@ function UserPurchases() {
                                         {purchase.target ?? "-"}
                                     </span>
                                 </div>
+                                {purchase.invoice && (
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-slate-500 dark:text-slate-300">
+                                            Invoice:
+                                        </span>
+                                        <span className="font-mono font-semibold text-xs text-slate-900 dark:text-slate-100">
+                                            {purchase.invoice}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-slate-500 dark:text-slate-300">
                                         {t("purchases.order_date")}:

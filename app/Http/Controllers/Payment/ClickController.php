@@ -179,14 +179,14 @@ class ClickController extends Controller
     {
         if (is_numeric($merchantTransId)) {
             return [
-                'user_id' => (int) $merchantTransId,
+                'user_id' => (string) $merchantTransId,
                 'order_type' => 'topup',
                 'order_id' => 0,
             ];
         }
 
         $result = [
-            'user_id' => 0,
+            'user_id' => '',
             'order_type' => 'topup',
             'order_id' => 0,
         ];
@@ -197,7 +197,7 @@ class ClickController extends Controller
             [$key, $value] = array_pad(explode(':', $part, 2), 2, null);
 
             if ($key === 'u') {
-                $result['user_id'] = (int) $value;
+                $result['user_id'] = (string) $value;
             }
 
             if ($key === 't') {

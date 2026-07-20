@@ -56,10 +56,10 @@ class OrderController extends Controller
             // If admin cancels an already paid/delivered order, return funds to internal balance.
             if ($newStatus === 'canceled' && in_array($oldStatus, ['paid', 'delivered'], true)) {
                 $amount = (float) ($order->sell_price ?? 0);
-                $userId = (int) $order->user_id;
+                $userId = (string) $order->user_id;
                 $refundKeyPrefix = 'REFUND-' . $data['order_type'] . '-' . $data['order_id'] . '-';
 
-                if ($amount > 0 && $userId > 0) {
+                if ($amount > 0 && $userId !== '' && $userId !== '0') {
                     $alreadyRefunded = DB::table('payments')
                         ->where('user_id', $userId)
                         ->where('click_trans_id', 'like', $refundKeyPrefix . '%')
@@ -122,7 +122,7 @@ class OrderController extends Controller
                     $productName = DB::table('services')->where('id', $order->service_id ?? 0)->value('title') ?? '';
                 }
                 $telegramService->notifyOrderStatus(
-                    (int) $order->user_id,
+                    (string) $order->user_id,
                     $data['order_type'],
                     (int) $order->id,
                     $newStatus,
@@ -178,7 +178,7 @@ class OrderController extends Controller
         }
 
         DB::table('user_notifications')->insert([
-            'user_id' => (int) $order->user_id,
+            'user_id' => (string) $order->user_id,
             'source' => 'admin',
             'order_type' => $orderType,
             'order_id' => (int) $order->id,

@@ -151,7 +151,7 @@ class TwoFactorController extends Controller
 
         $request->validate(['code' => 'required|string|size:6']);
 
-        $userId = (int) session('2fa_pending_user_id');
+        $userId = (string) session('2fa_pending_user_id');
         $secret = DB::table('users')->where('id', $userId)->value('two_factor_secret');
 
         if (!$secret || !$this->verifyTotp($secret, $request->code)) {

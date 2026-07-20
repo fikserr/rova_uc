@@ -94,7 +94,7 @@ class ReceiptService
         $profitUzs = round($sellUzs - $costUzs, 2);
 
         return [
-            'user_id'        => (int) $order->user_id,
+            'user_id'        => (string) $order->user_id,
             'product_name'   => $productName,
             'sell_price_uzs' => $sellUzs,
             'cost_price_uzs' => $costUzs,
@@ -121,7 +121,7 @@ class ReceiptService
         $costUzs   = round($sellUzs - $profitUzs, 2);
 
         return [
-            'user_id'        => (int) $order->user_id,
+            'user_id'        => (string) $order->user_id,
             'product_name'   => $name,
             'sell_price_uzs' => $sellUzs,
             'cost_price_uzs' => $costUzs,
@@ -144,7 +144,7 @@ class ReceiptService
         $costUzs   = round($sellUzs - $profitUzs, 2);
 
         return [
-            'user_id'        => (int) $order->user_id,
+            'user_id'        => (string) $order->user_id,
             'product_name'   => $name,
             'sell_price_uzs' => $sellUzs,
             'cost_price_uzs' => $costUzs,
@@ -167,7 +167,7 @@ class ReceiptService
         $costUzs   = round($sellUzs - $profitUzs, 2);
 
         return [
-            'user_id'        => (int) $order->user_id,
+            'user_id'        => (string) $order->user_id,
             'product_name'   => $name,
             'sell_price_uzs' => $sellUzs,
             'cost_price_uzs' => $costUzs,
@@ -190,7 +190,7 @@ class ReceiptService
         $costUzs   = round($sellUzs - $profitUzs, 2);
 
         return [
-            'user_id'        => (int) $order->user_id,
+            'user_id'        => (string) $order->user_id,
             'product_name'   => $name,
             'sell_price_uzs' => $sellUzs,
             'cost_price_uzs' => $costUzs,
@@ -200,9 +200,9 @@ class ReceiptService
 
     // ─── Telegram ────────────────────────────────────────────────
 
-    private function sendTelegramReceipt(int $userId, string $type, string|int $ref, array $data): void
+    private function sendTelegramReceipt(string $userId, string $type, string|int $ref, array $data): void
     {
-        if (empty($this->token) || $userId <= 0) return;
+        if (empty($this->token) || $userId === '' || $userId === '0') return;
 
         $typeEmoji = match ($type) {
             'sekali' => '⚡️',
@@ -230,6 +230,9 @@ class ReceiptService
         $text .= "━━━━━━━━━━━━━━━━━━━━━\n";
         $text .= "{$typeEmoji} <b>Xizmat:</b> {$data['product_name']}\n";
         $text .= "🔖 <b>Buyurtma №:</b> {$orderNo}\n";
+        if (!empty($data['external_ref'])) {
+            $text .= "🧾 <b>Invoice:</b> {$data['external_ref']}\n";
+        }
         $text .= "💰 <b>To'langan:</b> {$sell} UZS\n";
         $text .= "📅 <b>Sana:</b> {$date}\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━━\n";

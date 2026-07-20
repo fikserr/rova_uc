@@ -67,9 +67,10 @@ class SekaliPayService
     public function createTransaction(string $refId, int $itemId, string $target, ?string $zoneId = null, int $qty = 1): array
     {
         $cart = [
-            'item_id'  => $itemId,
-            'quantity' => $qty,
-            'note'     => $target,
+            'item_id'     => $itemId,
+            'quantity'    => $qty,
+            'note'        => $target,
+            'customer_id' => $target,
         ];
         if ($zoneId) {
             $cart['zone_id'] = $zoneId;
@@ -92,6 +93,11 @@ class SekaliPayService
             ]);
             return ['success' => false, 'message' => $response->json('message', 'API error')];
         }
+
+        Log::info('SekaliPay createTransaction ok', [
+            'ref_id' => $refId,
+            'data'   => $response->json('data', []),
+        ]);
 
         return ['success' => true, 'data' => $response->json('data', [])];
     }

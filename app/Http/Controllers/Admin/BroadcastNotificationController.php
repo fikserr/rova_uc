@@ -62,7 +62,7 @@ class BroadcastNotificationController extends Controller
 
         foreach ($userIds as $userId) {
             $row = [
-                'user_id'     => (int) $userId,
+                'user_id'     => (string) $userId,
                 'source'      => 'system',
                 'order_type'  => null,
                 'order_id'    => null,

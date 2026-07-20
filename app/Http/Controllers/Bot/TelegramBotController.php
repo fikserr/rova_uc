@@ -45,17 +45,17 @@ class TelegramBotController extends Controller
         }
 
         $message = $update['message'];
-        $chatId  = (int) ($message['chat']['id'] ?? 0);
+        $chatId  = (string) ($message['chat']['id'] ?? '');
 
-        if ($chatId === 0) {
+        if ($chatId === '' || $chatId === '0') {
             return response('', 200);
         }
 
         $from       = $message['from'];
-        $telegramId = (int) ($from['id'] ?? 0);
+        $telegramId = (string) ($from['id'] ?? '');
         $username   = $from['username'] ?? null;
 
-        if ($telegramId === 0) {
+        if ($telegramId === '' || $telegramId === '0') {
             return response('', 200);
         }
 
@@ -81,7 +81,7 @@ class TelegramBotController extends Controller
     // WORKER
     // ══════════════════════════════════════════════════════════
 
-    private function handleWorkerMessage(int $chatId, int $workerId, array $message): void
+    private function handleWorkerMessage(string $chatId, string $workerId, array $message): void
     {
         $text  = trim($message['text'] ?? '');
         $state = $this->getBotState($workerId);
@@ -106,7 +106,7 @@ class TelegramBotController extends Controller
         );
     }
 
-    private function handleWorkerState(int $chatId, int $workerId, string $reason, object $state): void
+    private function handleWorkerState(string $chatId, string $workerId, string $reason, object $state): void
     {
         $reason  = mb_substr(trim($reason), 0, 500);
         $payload = is_string($state->payload)
@@ -139,10 +139,10 @@ class TelegramBotController extends Controller
     // USER
     // ══════════════════════════════════════════════════════════
 
-    private function handleUserMessage(int $chatId, int $telegramId, ?string $username, array $message): void
+    private function handleUserMessage(string $chatId, string $telegramId, ?string $username, array $message): void
     {
         $webAppUrl = rtrim(config('app.url'), '/');
-        $tid       = (int) $telegramId;
+        $tid       = $telegramId;
 
         $dbUser  = DB::selectOne("SELECT language FROM users WHERE id = {$tid}");
         $lang    = $dbUser?->language ?? 'uz';
@@ -156,11 +156,13 @@ class TelegramBotController extends Controller
             }
 
             // Extract referrer ID from "/start ref_12345"
-            $referrerId = 0;
+            $referrerId = '';
             if (str_starts_with($msgText, '/start ref_')) {
                 $refPart    = substr($msgText, strlen('/start ref_'));
-                $referrerId = (int) $refPart;
-                if ($referrerId === $tid) $referrerId = 0;
+                if (ctype_digit($refPart) && $refPart !== '0') {
+                    $referrerId = $refPart;
+                    if ($referrerId === $tid) $referrerId = '';
+                }
             }
 
             try {
@@ -176,7 +178,7 @@ class TelegramBotController extends Controller
                 }
 
                 // Save referral if this is a new user (isolated try-catch so referral error never blocks the response)
-                if (!$existsBefore && $referrerId > 0) {
+                if (!$existsBefore && $referrerId !== '') {
                     try {
                         $referrerExists = DB::selectOne("SELECT id FROM users WHERE id = {$referrerId}");
                         if ($referrerExists) {
@@ -279,11 +281,11 @@ class TelegramBotController extends Controller
     private function handleCallbackQuery(array $cb): void
     {
         $callbackId = $cb['id'] ?? '';
-        $chatId     = (int) ($cb['message']['chat']['id'] ?? 0);
-        $workerId   = (int) ($cb['from']['id'] ?? 0);
+        $chatId     = (string) ($cb['message']['chat']['id'] ?? '');
+        $workerId   = (string) ($cb['from']['id'] ?? '');
         $data       = $cb['data'] ?? '';
 
-        if ($workerId === 0) {
+        if ($workerId === '' || $workerId === '0') {
             return;
         }
 
@@ -331,7 +333,7 @@ class TelegramBotController extends Controller
             if ($topupId <= 0 || !in_array($action, ['a', 'r'], true)) return;
 
             if ($action === 'a') {
-                $this->doApproveTopup($chatId, $topupId, (int) $workerId);
+                $this->doApproveTopup($chatId, $topupId, $workerId);
             } else {
                 $this->setBotState($workerId, 'reject_reason', ['id' => $topupId]);
                 $this->send($chatId,
@@ -346,7 +348,7 @@ class TelegramBotController extends Controller
     // ORDER ACTIONS
     // ══════════════════════════════════════════════════════════
 
-    private function doApproveOrder(int $chatId, string $type, int $orderId): void
+    private function doApproveOrder(string $chatId, string $type, int $orderId): void
     {
         $table = $this->orderTable($type);
         if (!$table) { $this->send($chatId, "❌ Noto'g'ri tur."); return; }
@@ -360,7 +362,7 @@ class TelegramBotController extends Controller
         DB::table($table)->where('id', $orderId)->update(['status' => 'delivered']);
 
         $this->createOrderNotification(
-            userId:    (int) $order->user_id,
+            userId:    (string) $order->user_id,
             orderType: $this->orderTypeLabel($type),
             orderId:   $orderId,
             status:    'delivered',
@@ -381,7 +383,7 @@ class TelegramBotController extends Controller
         $this->send($chatId, "✅ Buyurtma #{$orderId} tasdiqlandi.");
     }
 
-    private function doCancelOrder(int $chatId, string $type, int $orderId, string $reason): void
+    private function doCancelOrder(string $chatId, string $type, int $orderId, string $reason): void
     {
         $table = $this->orderTable($type);
         if (!$table) { $this->send($chatId, "❌ Noto'g'ri tur."); return; }
@@ -403,7 +405,7 @@ class TelegramBotController extends Controller
         });
 
         $this->createOrderNotification(
-            userId:      (int) $order->user_id,
+            userId:      (string) $order->user_id,
             orderType:   $this->orderTypeLabel($type),
             orderId:     $orderId,
             status:      'canceled',
@@ -419,7 +421,7 @@ class TelegramBotController extends Controller
     // TOPUP ACTIONS
     // ══════════════════════════════════════════════════════════
 
-    private function doApproveTopup(int $chatId, int $topupId, int $workerId = 0): void
+    private function doApproveTopup(string $chatId, int $topupId, string $workerId = ''): void
     {
         $topup = DB::table('manual_topup_requests')->where('id', $topupId)->first();
         if (!$topup || $topup->status !== 'pending') {
@@ -437,15 +439,15 @@ class TelegramBotController extends Controller
         });
 
         $this->createTopupNotification(
-            userId:  (int) $topup->user_id,
+            userId:  (string) $topup->user_id,
             topupId: $topupId,
             status:  'approved',
             title:   "✅ Balans to'ldirildi",
             message: number_format($amount, 0, '.', ' ') . " so'm balansingizga qo'shildi."
         );
 
-        $worker = $workerId ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
-        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId ? "Worker #{$workerId}" : 'Worker');
+        $worker = ($workerId !== '') ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
+        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId !== '' ? "Worker #{$workerId}" : 'Worker');
 
         WorkerNotificationService::editTopupMessages(
             $topupId,
@@ -457,7 +459,7 @@ class TelegramBotController extends Controller
         );
     }
 
-    private function doRejectTopup(int $chatId, int $topupId, string $reason, int $workerId = 0): void
+    private function doRejectTopup(string $chatId, int $topupId, string $reason, string $workerId = ''): void
     {
         try {
             $topup = DB::transaction(function () use ($topupId, $reason) {
@@ -475,7 +477,7 @@ class TelegramBotController extends Controller
         }
 
         $this->createTopupNotification(
-            userId:      (int) $topup->user_id,
+            userId:      (string) $topup->user_id,
             topupId:     $topupId,
             status:      'rejected',
             title:       '❌ Chek rad etildi',
@@ -483,8 +485,8 @@ class TelegramBotController extends Controller
             description: $reason
         );
 
-        $worker = $workerId ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
-        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId ? "Worker #{$workerId}" : 'Worker');
+        $worker = ($workerId !== '') ? DB::selectOne("SELECT username FROM users WHERE id = {$workerId}") : null;
+        $workerName = $worker?->username ? "@{$worker->username}" : ($workerId !== '' ? "Worker #{$workerId}" : 'Worker');
 
         WorkerNotificationService::editTopupMessages(
             $topupId,
@@ -499,7 +501,7 @@ class TelegramBotController extends Controller
     // ══════════════════════════════════════════════════════════
 
     private function createOrderNotification(
-        int $userId, string $orderType, int $orderId,
+        string $userId, string $orderType, int $orderId,
         string $status, string $title, string $message, string $description = ''
     ): void {
         if (!Schema::hasTable('user_notifications')) return;
@@ -518,7 +520,7 @@ class TelegramBotController extends Controller
     }
 
     private function createTopupNotification(
-        int $userId, int $topupId,
+        string $userId, int $topupId,
         string $status, string $title, string $message, string $description = ''
     ): void {
         if (!Schema::hasTable('user_notifications')) return;
@@ -540,13 +542,13 @@ class TelegramBotController extends Controller
     // BOT STATE
     // ══════════════════════════════════════════════════════════
 
-    private function getBotState(int $userId): ?object
+    private function getBotState(string $userId): ?object
     {
         if (!Schema::hasTable('bot_states')) return null;
         return DB::table('bot_states')->where('user_id', $userId)->first();
     }
 
-    private function setBotState(int $userId, string $state, array $payload): void
+    private function setBotState(string $userId, string $state, array $payload): void
     {
         if (!Schema::hasTable('bot_states')) return;
         DB::table('bot_states')->updateOrInsert(
@@ -555,7 +557,7 @@ class TelegramBotController extends Controller
         );
     }
 
-    private function clearBotState(int $userId): void
+    private function clearBotState(string $userId): void
     {
         if (!Schema::hasTable('bot_states')) return;
         DB::table('bot_states')->where('user_id', $userId)->delete();
@@ -565,7 +567,7 @@ class TelegramBotController extends Controller
     // REFERRAL
     // ══════════════════════════════════════════════════════════
 
-    private function triggerReferralReward(int $userId): void
+    private function triggerReferralReward(string $userId): void
     {
         try {
             DB::transaction(function () use ($userId) {
@@ -584,7 +586,7 @@ class TelegramBotController extends Controller
                 if (!$setting || !$setting->is_active || (float) $setting->reward_amount <= 0) return;
 
                 $rewardAmount = (float) $setting->reward_amount;
-                $referrerId   = (int) $referral->referrer_id;
+                $referrerId   = (string) $referral->referrer_id;
 
                 $balanceRow = DB::table('user_balances')
                     ->where('user_id', $referrerId)
@@ -681,7 +683,7 @@ class TelegramBotController extends Controller
     // TELEGRAM API
     // ══════════════════════════════════════════════════════════
 
-    private function send(int $chatId, string $text, ?array $replyMarkup = null): void
+    private function send(string $chatId, string $text, ?array $replyMarkup = null): void
     {
         $data = [
             'chat_id'    => $chatId,
@@ -713,13 +715,13 @@ class TelegramBotController extends Controller
     // RESELLER
     // ══════════════════════════════════════════════════════════
 
-    private function resellerLang(int $userId): BotTranslator
+    private function resellerLang(string $userId): BotTranslator
     {
         $lang = DB::table('users')->where('id', $userId)->value('language') ?? 'uz';
         return new BotTranslator((string) $lang);
     }
 
-    private function handleResellerMessage(int $chatId, int $userId, array $message): void
+    private function handleResellerMessage(string $chatId, string $userId, array $message): void
     {
         $text  = trim($message['text'] ?? '');
         $state = $this->getBotState($userId);
@@ -751,7 +753,7 @@ class TelegramBotController extends Controller
         $this->sendResellerMenu($chatId, $userId);
     }
 
-    private function handleResellerState(int $chatId, int $userId, string $text, object $state): void
+    private function handleResellerState(string $chatId, string $userId, string $text, object $state): void
     {
         $payload = is_string($state->payload) ? json_decode($state->payload, true) : (array) $state->payload;
 
@@ -784,7 +786,7 @@ class TelegramBotController extends Controller
         $this->clearBotState($userId);
     }
 
-    private function handleResellerCallback(int $chatId, int $userId, string $data): void
+    private function handleResellerCallback(string $chatId, string $userId, string $data): void
     {
         $t = $this->resellerLang($userId);
 
@@ -855,7 +857,7 @@ class TelegramBotController extends Controller
         }
     }
 
-    private function placeResellerOrder(int $chatId, int $userId, int $productId, string $playerId, ?string $zoneId): void
+    private function placeResellerOrder(string $chatId, string $userId, int $productId, string $playerId, ?string $zoneId): void
     {
         $this->clearBotState($userId);
         $t = $this->resellerLang($userId);
@@ -950,7 +952,7 @@ class TelegramBotController extends Controller
         }
     }
 
-    private function sendResellerMenu(int $chatId, int $userId): void
+    private function sendResellerMenu(string $chatId, string $userId): void
     {
         $t       = $this->resellerLang($userId);
         $balance = (float) (DB::table('user_balances')->where('user_id', $userId)->value('balance') ?? 0);
@@ -966,7 +968,7 @@ class TelegramBotController extends Controller
         );
     }
 
-    private function sendResellerOrders(int $chatId, int $userId): void
+    private function sendResellerOrders(string $chatId, string $userId): void
     {
         $t      = $this->resellerLang($userId);
         $orders = DB::table('sekali_orders as o')

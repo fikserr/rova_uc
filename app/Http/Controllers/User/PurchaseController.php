@@ -39,7 +39,7 @@ class PurchaseController extends Controller
         ]);
     }
 
-    private function buildPurchases(int $userId): array
+    private function buildPurchases(string $userId): array
     {
         $ucOrders = DB::table('uc_orders as o')
             ->leftJoin('uc_products as p', 'p.id', '=', 'o.product_id')
@@ -97,7 +97,7 @@ class PurchaseController extends Controller
         $sekaliOrders = DB::table('sekali_orders as o')
             ->leftJoin('sekali_products as p', 'p.id', '=', 'o.sekali_product_id')
             ->where('o.user_id', $userId)
-            ->select(['o.id','o.ref_id','o.status','o.price_uzs','o.created_at','o.game_target','p.game_name','p.name as variant_name'])
+            ->select(['o.id','o.ref_id','o.status','o.price_uzs','o.created_at','o.game_target','o.sekali_invoice','p.game_name','p.name as variant_name'])
             ->get()
             ->map(fn($o) => [
                 'id'         => 'SK-' . $o->id,
@@ -108,6 +108,7 @@ class PurchaseController extends Controller
                 'currency'   => 'UZS',
                 'status'     => $o->status ?: 'pending',
                 'target'     => $o->game_target ?: '-',
+                'invoice'    => $o->sekali_invoice ?: null,
                 'created_at' => $o->created_at,
             ]);
 

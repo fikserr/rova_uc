@@ -52,7 +52,7 @@ class NotificationController extends Controller
         return Storage::disk('public')->url($value);
     }
 
-    private function userNotifications(int $userId): Collection
+    private function userNotifications(string $userId): Collection
     {
         if (!Schema::hasTable('user_notifications')) {
             return collect();

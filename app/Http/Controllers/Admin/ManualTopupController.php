@@ -54,7 +54,7 @@ class ManualTopupController extends Controller
                 }
 
                 $amount = (float) $topup->amount;
-                $userId = (int) $topup->user_id;
+                $userId = (string) $topup->user_id;
 
                 DB::table('manual_topup_requests')->where('id', $id)->update(['status' => 'approved']);
 
@@ -156,7 +156,7 @@ class ManualTopupController extends Controller
             throw $e;
         }
 
-        $userId = (int) $topupData->user_id;
+        $userId = (string) $topupData->user_id;
         $amount = (float) $topupData->amount;
 
         if (Schema::hasTable('user_notifications')) {

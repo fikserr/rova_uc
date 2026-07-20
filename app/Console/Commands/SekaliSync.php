@@ -4,8 +4,10 @@ namespace App\Console\Commands;
 
 use App\Models\CurrencyRate;
 use App\Models\SekaliProduct;
+use App\Models\TopGame;
 use App\Services\SekaliPayService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
 
 class SekaliSync extends Command
 {
@@ -50,7 +52,7 @@ class SekaliSync extends Command
 
                 foreach ($category['products'] ?? [] as $product) {
                     $gameName = $product['name'] ?? '';
-                    $imageUrl = $product['image'] ?? null;
+                    $imageUrl = $this->localizeImage($product['image'] ?? null);
 
                     foreach ($product['variants'] ?? [] as $variant) {
                         $itemId = (int) ($variant['id'] ?? 0);
@@ -99,8 +101,64 @@ class SekaliSync extends Command
             $page++;
         } while ($page <= $lastPage);
 
+        // top_games.image_url ni ham local URL ga yangilash
+        $this->syncTopGameImages();
+
         $this->info("Tugadi: {$synced} mahsulot yangilandi, {$created} yangi qo'shildi.");
         return 0;
+    }
+
+    private function localizeImage(?string $url): ?string
+    {
+        if (!$url) return null;
+        if (str_starts_with($url, '/storage/')) return $url; // already local
+
+        $hash = md5($url);
+        $dir  = storage_path('app/public/sekali-images');
+
+        // Already downloaded?
+        foreach (['png', 'jpg', 'webp', 'gif'] as $ext) {
+            if (file_exists("{$dir}/{$hash}.{$ext}")) {
+                return "/storage/sekali-images/{$hash}.{$ext}";
+            }
+        }
+
+        try {
+            $res = Http::timeout(15)->withHeaders([
+                'User-Agent' => 'Mozilla/5.0',
+            ])->get($url);
+
+            if (!$res->ok() || strlen($res->body()) < 64) return $url;
+
+            $type = trim(explode(';', $res->header('Content-Type') ?? 'image/jpeg')[0]);
+            $ext  = match(true) {
+                str_contains($type, 'png')  => 'png',
+                str_contains($type, 'webp') => 'webp',
+                str_contains($type, 'gif')  => 'gif',
+                default                     => 'jpg',
+            };
+
+            if (!is_dir($dir)) mkdir($dir, 0775, true);
+            file_put_contents("{$dir}/{$hash}.{$ext}", $res->body());
+
+            return "/storage/sekali-images/{$hash}.{$ext}";
+        } catch (\Throwable) {
+            return $url; // fallback: keep original
+        }
+    }
+
+    private function syncTopGameImages(): void
+    {
+        TopGame::all()->each(function (TopGame $tg) {
+            $localUrl = SekaliProduct::where('game_name', $tg->game_name)
+                ->where('category', $tg->category)
+                ->whereNotNull('image_url')
+                ->value('image_url');
+
+            if ($localUrl && $tg->image_url !== $localUrl) {
+                $tg->update(['image_url' => $localUrl]);
+            }
+        });
     }
 
     private function getIdrRate(): float

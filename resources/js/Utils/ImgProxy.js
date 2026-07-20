@@ -1,14 +1,6 @@
 export function imgProxy(url) {
     if (!url) return null;
-    if (
-        url.startsWith("/") ||
-        url.startsWith("data:") ||
-        url.startsWith("blob:") ||
-        url.startsWith("http://localhost") ||
-        url.startsWith("http://127.0.0.1")
-    )
-        return url;
-    return `/img?url=${encodeURIComponent(url)}`;
+    return url;
 }
 
 /**

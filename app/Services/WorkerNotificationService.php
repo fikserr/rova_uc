@@ -50,7 +50,7 @@ class WorkerNotificationService
         ]]];
 
         foreach ($workerIds as $workerId) {
-            self::send($token, (int) $workerId, $text, $keyboard);
+            self::send($token, (string) $workerId, $text, $keyboard);
         }
     }
 
@@ -85,7 +85,7 @@ class WorkerNotificationService
         ]]];
 
         foreach ($workerIds as $workerId) {
-            $wid = (int) $workerId;
+            $wid = (string) $workerId;
             if (!empty($topup->photo_file_id)) {
                 $msgId = self::sendPhotoFile($token, $wid, $topup->photo_file_id, $text, $keyboard);
                 if (!$msgId) {
@@ -224,7 +224,7 @@ class WorkerNotificationService
              . "💰 {$amount} so'm";
     }
 
-    private static function send(string $token, int $chatId, string $text, array $keyboard): int
+    private static function send(string $token, string $chatId, string $text, array $keyboard): int
     {
         try {
             $res = Http::asForm()->post("https://api.telegram.org/bot{$token}/sendMessage", [
@@ -242,7 +242,7 @@ class WorkerNotificationService
         }
     }
 
-    private static function sendPhotoFile(string $token, int $chatId, string $storagePath, string $caption, array $keyboard): int
+    private static function sendPhotoFile(string $token, string $chatId, string $storagePath, string $caption, array $keyboard): int
     {
         try {
             if (!Storage::disk('public')->exists($storagePath)) {

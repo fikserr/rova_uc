@@ -111,7 +111,7 @@ class BinanceController extends Controller
                 ->where('id', $payment->id)
                 ->update(['status' => 'paid', 'updated_at' => now()]);
 
-            $userId    = (int) $payment->user_id;
+            $userId    = (string) $payment->user_id;
             $amountUzs = (float) $payment->amount_uzs;
 
             $balanceRow = DB::table('user_balances')->where('user_id', $userId)->lockForUpdate()->first();

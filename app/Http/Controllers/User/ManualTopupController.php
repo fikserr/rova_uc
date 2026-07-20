@@ -16,7 +16,7 @@ class ManualTopupController extends Controller
     {
         $data = $request->validate([
             'amount'  => 'required|numeric|min:1000|max:50000000',
-            'receipt' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'receipt' => 'nullable|file|mimes:jpg,jpeg,png,webp,heic,heif|max:15360',
         ]);
 
         $path = null;
@@ -33,7 +33,7 @@ class ManualTopupController extends Controller
             'created_at'     => now(),
         ]);
 
-        $this->notifyAdmins((float) $data['amount'], (int) auth()->id());
+        $this->notifyAdmins((float) $data['amount'], (string) auth()->id());
         WorkerNotificationService::notifyNewTopup($topupId);
 
         return response()->json([
@@ -52,7 +52,7 @@ class ManualTopupController extends Controller
         return response()->json($rows);
     }
 
-    private function notifyAdmins(float $amount, int $userId): void
+    private function notifyAdmins(float $amount, string $userId): void
     {
         if (!Schema::hasTable('user_notifications')) {
             return;
@@ -68,7 +68,7 @@ class ManualTopupController extends Controller
 
         $now  = now();
         $rows = $adminIds->map(fn ($id) => [
-            'user_id'     => (int) $id,
+            'user_id'     => (string) $id,
             'source'      => 'system',
             'order_type'  => null,
             'order_id'    => null,

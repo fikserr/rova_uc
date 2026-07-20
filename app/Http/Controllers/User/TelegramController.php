@@ -30,7 +30,7 @@ class TelegramController extends Controller
             $referrerId = null;
 
             if ($startPayload && preg_match('/^ref_(\d+)$/', $startPayload, $m)) {
-                $referrerId = (int) $m[1];
+                $referrerId = $m[1];
             }
 
             $apiResponse = Http::post(url('/api/users/start'), [

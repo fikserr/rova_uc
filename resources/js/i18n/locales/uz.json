@@ -193,6 +193,7 @@
         "auto_detect_info": "To'lov avtomatik aniqlanadi. Pul o'tkazgandan so'ng bir necha soniya ichida balansingiz yangilanadi.",
         "transferred_amount": "O'tkazilgan summa (so'm)",
         "check_success": "So'rovingiz qabul qilindi! To'lov aniqlanishi bilanoq balansingiz yangilanadi.",
+        "uploading": "Yuklanmoqda",
         "submitting": "Yuborilmoqda...",
         "submit_receipt": "So'rov yuborish",
         "history_title": "So'rovlar tarixi",

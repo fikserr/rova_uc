@@ -1,18 +1,37 @@
 import { Link, usePage } from "@inertiajs/react";
-import { ShieldCheck, ShoppingBag, Store, UserCircle, Wallet } from "lucide-react";
+import { ShieldCheck, ShoppingBag, UserCircle, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 function Bar() {
     const { url } = usePage();
     const { t } = useTranslation();
-    // bardan olib quyilgan funksiyalar
-    // {
-    //         id: "vazifalar",
-    //         label: "Vazifalar",
-    //         icon: ListTodo,
-    //         href: "/user-tasks",
-    //     },
-    // { id: "ruletka", label: "Ruletka", icon: Dices, href: "/user-spin" },
+
+    // Hide the bottom tab bar whenever any text input/textarea is focused,
+    // so it doesn't sit on top of the mobile keyboard.
+    const [inputFocused, setInputFocused] = useState(false);
+
+    useEffect(() => {
+        const isTextField = (el) =>
+            el &&
+            (el.tagName === "INPUT" ||
+                el.tagName === "TEXTAREA" ||
+                el.isContentEditable);
+
+        const onFocusIn = (e) => {
+            if (isTextField(e.target)) setInputFocused(true);
+        };
+        const onFocusOut = (e) => {
+            if (isTextField(e.target)) setInputFocused(false);
+        };
+
+        document.addEventListener("focusin", onFocusIn);
+        document.addEventListener("focusout", onFocusOut);
+        return () => {
+            document.removeEventListener("focusin", onFocusIn);
+            document.removeEventListener("focusout", onFocusOut);
+        };
+    }, []);
 
     const navItems = [
         {
@@ -27,12 +46,6 @@ function Bar() {
             icon: ShoppingBag,
             href: "/user-purchases",
         },
-        // {
-        //     id: "shop",
-        //     label: `${t("bar.shop")}`,
-        //     icon: Store,
-        //     href: "/shop",
-        // },
         {
             id: "balnce_topup",
             label: `${t("bar.balanceTopup")}`,
@@ -49,7 +62,11 @@ function Bar() {
 
     return (
         <nav
-            className={`fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 dark:border-white/5 bg-white/70 dark:bg-gray-900/60 backdrop-blur-lg transition-colors duration-300 py-0 pb-[env(safe-area-inset-bottom)] rounded-t-3xl`}
+            className={`fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 dark:border-white/5 bg-white/70 dark:bg-gray-900/60 backdrop-blur-lg transition-all duration-200 py-0 pb-[env(safe-area-inset-bottom)] rounded-t-3xl ${
+                inputFocused
+                    ? "opacity-0 translate-y-full pointer-events-none"
+                    : "opacity-100 translate-y-0"
+            }`}
         >
             <div className="max-w-7xl mx-auto px-1">
                 <div className="grid grid-cols-4 gap-1">

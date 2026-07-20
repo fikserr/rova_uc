@@ -33,7 +33,7 @@ class PasswordController extends Controller
 
     public function update(Request $request, $userId)
     {
-        abort_unless((int) $userId === (int) auth()->id(), 403);
+        abort_unless((string) $userId === (string) auth()->id(), 403);
 
         $validator = Validator::make($request->all(), [
             'current_password' => ['required'],
