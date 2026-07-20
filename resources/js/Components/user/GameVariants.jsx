@@ -2,8 +2,12 @@ import axios from "axios";
 import { CheckCircle, Loader2, ShoppingCart, X, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { imgFallback, imgProxy } from "../../utils/imgProxy";
-
+import { imgFallback, imgProxy } from "../../Utils/ImgProxy";
+import {
+    productLabel,
+    resolveProductImage,
+    typeLabel,
+} from "../../Utils/productOverrides";
 /* ── Rang palitralari ─────────────────────────────────────────── */
 export const CAT_COLORS = {
     Game: {
@@ -54,23 +58,6 @@ export const GAME_COLORS = [
     "from-lime-500 to-green-600",
 ];
 
-const TYPE_LABEL_OVERRIDES = {
-    "Mobile Legends": {
-        Filipina: "🇺🇿 UZB/🇵🇭 PH",
-        Global: "🌐 Global",
-        Russia: "🇷🇺 Russia",
-        Singapore: "🇸🇬 Singapore",
-        Turkey: "🇹🇷 Turkey",
-        Indonesia: "🇮🇩 Indonesia",
-        Brazil: "🇧🇷 Brazil",
-        Malaysia: "🇲🇾 Malaysia",
-    },
-};
-
-function typeLabel(game, type) {
-    return TYPE_LABEL_OVERRIDES[game]?.[type] ?? type;
-}
-
 export function accent(cat) {
     return (
         CAT_COLORS[cat] ?? {
@@ -88,7 +75,14 @@ export function formatUzs(n) {
 /* ── Mahsulot kartasi — endi modal ochmaydi, tanlanadi ──────────
    Selected card gets a glowing ring in the category's accent color.
    Double-click/double-tap opens the info modal instead of selecting. */
-function VariantCard({ product, accentColors, selected, onSelect, onInfo }) {
+function VariantCard({
+    product,
+    game,
+    accentColors,
+    selected,
+    onSelect,
+    onInfo,
+}) {
     return (
         <button
             onClick={() => onSelect(product)}
@@ -96,17 +90,18 @@ function VariantCard({ product, accentColors, selected, onSelect, onInfo }) {
                 e.preventDefault();
                 onInfo(product);
             }}
-            className={`relative p-3 rounded-2xl border-2 text-left transition-all ${selected
-                ? `border-transparent bg-linear-to-br ${accentColors.gradient} shadow-lg scale-[1.02]`
-                : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-600"
-                }`}
+            className={`relative p-3 rounded-2xl border-2 text-left transition-all ${
+                selected
+                    ? `border-transparent bg-linear-to-br ${accentColors.gradient} shadow-lg scale-[1.02]`
+                    : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-600"
+            }`}
         >
             <div className="flex items-center gap-3">
                 <div className="size-11 rounded-xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-700">
-                    {product.image_url && (
+                    {resolveProductImage(game, product) && (
                         <img
-                            src={imgProxy(product.image_url)}
-                            alt={product.name}
+                            src={resolveProductImage(game, product)}
+                            alt={productLabel(game, product.name)}
                             className="w-full h-full object-cover"
                             onError={imgFallback}
                         />
@@ -114,16 +109,18 @@ function VariantCard({ product, accentColors, selected, onSelect, onInfo }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p
-                        className={`font-semibold text-sm leading-tight truncate ${selected
-                            ? "text-white"
-                            : "text-slate-800 dark:text-white"
-                            }`}
+                        className={`font-semibold text-sm leading-tight truncate ${
+                            selected
+                                ? "text-white"
+                                : "text-slate-800 dark:text-white"
+                        }`}
                     >
-                        {product.name}
+                        {productLabel(game, product.name)}
                     </p>
                     <p
-                        className={`text-xs font-bold mt-0.5 ${selected ? "text-white/90" : accentColors.text
-                            }`}
+                        className={`text-xs font-bold mt-0.5 ${
+                            selected ? "text-white/90" : accentColors.text
+                        }`}
                     >
                         {formatUzs(product.display_price ?? product.price_uzs)}
                         {product.is_reseller_price && (
@@ -236,7 +233,7 @@ export function GameVariants({
 
     const canAfford = selectedProduct
         ? userBalance >=
-        (selectedProduct.display_price ?? selectedProduct.price_uzs)
+          (selectedProduct.display_price ?? selectedProduct.price_uzs)
         : true;
 
     const handleVerify = async () => {
@@ -278,8 +275,8 @@ export function GameVariants({
         } catch (e) {
             setOrderError(
                 e?.response?.data?.errors?.balance?.[0] ||
-                e?.response?.data?.errors?.api?.[0] ||
-                t("shop.order_error"),
+                    e?.response?.data?.errors?.api?.[0] ||
+                    t("shop.order_error"),
             );
             setIsSubmitting(false);
         }
@@ -423,10 +420,11 @@ export function GameVariants({
                         <button
                             key={type}
                             onClick={() => setActiveType(type)}
-                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${activeType === type
-                                ? `bg-linear-to-r ${accentColors.gradient} text-white shadow-md`
-                                : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-300"
-                                }`}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                                activeType === type
+                                    ? `bg-linear-to-r ${accentColors.gradient} text-white shadow-md`
+                                    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-300"
+                            }`}
                         >
                             {typeLabel(game, type)}
                         </button>
@@ -440,6 +438,7 @@ export function GameVariants({
                     <VariantCard
                         key={p.id}
                         product={p}
+                        game={game}
                         accentColors={accentColors}
                         selected={selectedProduct?.id === p.id}
                         onSelect={setSelectedProduct}
@@ -465,10 +464,11 @@ export function GameVariants({
                 (mobile keyboard open), so it doesn't overlap the bottom
                 tab Bar or the keyboard itself. */}
             <div
-                className={`fixed bottom-16 sm:bottom-4 left-0 right-0 px-4 z-30 transition-all duration-200 ${inputFocused
-                    ? "opacity-0 translate-y-full pointer-events-none"
-                    : "opacity-100 translate-y-0"
-                    }`}
+                className={`fixed bottom-16 sm:bottom-4 left-0 right-0 px-4 z-30 transition-all duration-200 ${
+                    inputFocused
+                        ? "opacity-0 translate-y-full pointer-events-none"
+                        : "opacity-100 translate-y-0"
+                }`}
             >
                 <div className="max-w-lg mx-auto">
                     <button
@@ -506,10 +506,16 @@ export function GameVariants({
                                 <X className="size-4" />
                             </button>
                             <div className="size-14 rounded-xl overflow-hidden shrink-0 ring-2 ring-white/40 bg-white/10">
-                                {infoProduct.image_url && (
+                                {resolveProductImage(game, infoProduct) && (
                                     <img
-                                        src={imgProxy(infoProduct.image_url)}
-                                        alt={infoProduct.name}
+                                        src={resolveProductImage(
+                                            game,
+                                            infoProduct,
+                                        )}
+                                        alt={productLabel(
+                                            game,
+                                            infoProduct.name,
+                                        )}
                                         className="w-full h-full object-cover"
                                         onError={imgFallback}
                                     />
@@ -520,14 +526,14 @@ export function GameVariants({
                         <div className="p-4 space-y-3">
                             <div>
                                 <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
-                                    {infoProduct.name}
+                                    {productLabel(game, infoProduct.name)}
                                 </h3>
                                 <p
                                     className={`text-sm font-bold mt-1 ${accentColors.text}`}
                                 >
                                     {formatUzs(
                                         infoProduct.display_price ??
-                                        infoProduct.price_uzs,
+                                            infoProduct.price_uzs,
                                     )}
                                     {infoProduct.is_reseller_price && (
                                         <span className="ml-1.5 text-[10px] bg-emerald-500 text-white rounded px-1.5 py-0.5 align-middle">
@@ -547,7 +553,7 @@ export function GameVariants({
                                 infoProduct.price_uzs &&
                                 infoProduct.display_price &&
                                 infoProduct.price_uzs !==
-                                infoProduct.display_price && (
+                                    infoProduct.display_price && (
                                     <p className="text-xs text-slate-400 dark:text-slate-500 line-through">
                                         {formatUzs(infoProduct.price_uzs)}
                                     </p>
