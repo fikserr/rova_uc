@@ -50,7 +50,8 @@
             "paid": "Paid",
             "delivered": "Completed",
             "canceled": "Canceled",
-            "canceled_label": "Order has been canceled"
+            "canceled_label": "Order has been canceled",
+            "all": "All"
         }
     },
     "services": {

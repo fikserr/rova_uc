@@ -50,7 +50,8 @@
             "paid": "To'langan",
             "delivered": "Bajarildi",
             "canceled": "Bekor qilingan",
-            "canceled_label": "Buyurtma bekor qilingan"
+            "canceled_label": "Buyurtma bekor qilingan",
+            "all": "Hammasi"
         }
     },
     "services": {

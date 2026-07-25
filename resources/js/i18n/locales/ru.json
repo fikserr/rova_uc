@@ -50,7 +50,8 @@
             "paid": "Оплачено",
             "delivered": "Выполнено",
             "canceled": "Отменено",
-            "canceled_label": "Заказ отменён"
+            "canceled_label": "Заказ отменён",
+            "all": "Все"
         }
     },
     "services": {
