@@ -105,6 +105,14 @@ class ClickController extends Controller
                 $notifyAdmin = true;
             }
 
+            if ($orderType === 'bundle' && $orderId > 0) {
+                DB::table('bundle_orders')
+                    ->where('id', $orderId)
+                    ->where('user_id', $user->id)
+                    ->update(['status' => 'paid']);
+                $notifyAdmin = true;
+            }
+
             if ($orderType === 'topup') {
                 $balanceRow = DB::table('user_balances')
                     ->where('user_id', $user->id)

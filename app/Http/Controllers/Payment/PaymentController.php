@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -43,9 +44,22 @@ class PaymentController extends Controller
         $orderType = $validated['order_type'] ?? 'topup';
         $paymentMethod = $validated['payment_method'] ?? 'auto';
 
+        Log::info('PaymentController: order attempt', [
+            'user_id'    => $userId,
+            'order_type' => $orderType,
+            'method'     => $paymentMethod,
+            'product_id' => $validated['product_id'] ?? null,
+            'bundle_id'  => $validated['bundle_id'] ?? null,
+        ]);
+
         $context = $this->buildOrderContext($orderType, $validated, $userId);
 
         if ($context['error']) {
+            Log::warning('PaymentController: buildOrderContext error', [
+                'user_id'    => $userId,
+                'order_type' => $orderType,
+                'error'      => $context['error'],
+            ]);
             return response()->json(['message' => $context['error']], 422);
         }
 
@@ -533,6 +547,12 @@ class PaymentController extends Controller
         }
 
         if ($orderType !== 'topup' && $result['order_id'] > 0) {
+            Log::info('PaymentController: order created via balance', [
+                'user_id'    => $userId,
+                'order_type' => $orderType,
+                'order_id'   => $result['order_id'],
+                'amount'     => $amount,
+            ]);
             AdminOrderNotificationService::notifyNewOrder($orderType, $result['order_id']);
             WorkerNotificationService::notifyNewOrder($orderType, $result['order_id']);
 
@@ -594,18 +614,22 @@ class PaymentController extends Controller
     ): array {
         $sellBase = $this->convertToBaseUzs($sellPrice, $sellCurrency);
         if ($sellBase === null) {
+            Log::error('PaymentController: sell currency rate missing', ['sell_currency' => $sellCurrency]);
             return ['error' => __('payment.currency_rate_not_found', ['currency' => strtoupper($sellCurrency)])];
         }
 
-        $costBase = $this->convertToBaseUzs($costPrice, $costCurrency);
-        if ($costBase === null) {
-            return ['error' => __('payment.currency_rate_not_found', ['currency' => strtoupper($costCurrency)])];
+        // Cost conversion is non-fatal — missing rate just zeroes profit_base tracking
+        $costBase = $this->convertToBaseUzs($costPrice, $costCurrency) ?? 0.0;
+        if ($costBase === 0.0 && $costCurrency !== 'UZS' && $costCurrency !== '') {
+            Log::warning('PaymentController: cost currency rate missing, profit_base will be inaccurate', [
+                'cost_currency' => $costCurrency,
+            ]);
         }
 
         return [
             'error' => null,
-            'sell_base' => round($sellBase, 2),
-            'cost_base' => round($costBase, 2),
+            'sell_base'   => round($sellBase, 2),
+            'cost_base'   => round($costBase, 2),
             'profit_base' => round($sellBase - $costBase, 2),
         ];
     }

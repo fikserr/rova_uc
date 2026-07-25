@@ -176,8 +176,8 @@ class SekaliShopController extends Controller
             // Try to extract username from SekalıPay response
             $d    = $result['data'];
             $name = null;
-            foreach (['name', 'username', 'nickname', 'playerName', 'player_name',
-                      'char_name', 'user_name', 'charName', 'display_name', 'displayName'] as $field) {
+            foreach (['display_name', 'displayName', 'account_name', 'name', 'username',
+                      'nickname', 'playerName', 'player_name', 'char_name', 'user_name', 'charName'] as $field) {
                 if (!empty($d[$field]) && is_string($d[$field])) {
                     $name = $d[$field];
                     break;
@@ -306,7 +306,11 @@ class SekaliShopController extends Controller
             $order->update(['status' => 'failed', 'notes' => $result['message']]);
             Log::error("SekaliPay order failed: {$result['message']}", ['ref_id' => $refId]);
 
-            return back()->withErrors(['api' => 'Buyurtma yuborishda xatolik. Balans qaytarildi.']);
+            $userMsg = str_contains(strtoupper($result['message']), 'UNAVAILABLE')
+                ? 'Mahsulot vaqtincha mavjud emas. Keyinroq urinib ko\'ring. Balans qaytarildi.'
+                : 'Buyurtma yuborishda xatolik. Balans qaytarildi.';
+
+            return back()->withErrors(['api' => $userMsg]);
         }
 
         $order->update([

@@ -121,6 +121,8 @@ class OrderController extends Controller
                     $productName = DB::table('uc_products')->where('id', $order->product_id ?? 0)->value('title') ?? '';
                 } elseif ($data['order_type'] === 'service') {
                     $productName = DB::table('services')->where('id', $order->service_id ?? 0)->value('title') ?? '';
+                } elseif ($data['order_type'] === 'bundle') {
+                    $productName = DB::table('uc_bundles')->where('id', $order->bundle_id ?? 0)->value('title') ?? '';
                 }
                 $telegramService->notifyOrderStatus(
                     (string) $order->user_id,
@@ -155,6 +157,9 @@ class OrderController extends Controller
             if ($orderType === 'uc') {
                 $title = 'UC tushdi';
                 $message = 'Buyurtmangiz bajarildi. UC hisobingizga tushirildi.';
+            } elseif ($orderType === 'bundle') {
+                $title = "To'plam berildi";
+                $message = "Buyurtmangiz bajarildi. To'plam hisobingizga tushirildi.";
             } else {
                 $serviceType = DB::table('services')->where('id', $order->service_id)->value('service_type');
                 if ($serviceType === 'premium') {
@@ -342,11 +347,13 @@ class OrderController extends Controller
         return DB::table('bundle_orders as o')
             ->leftJoin('users as u', 'u.id', '=', 'o.user_id')
             ->leftJoin('uc_bundles as b', 'b.id', '=', 'o.bundle_id')
+            ->leftJoin('pubg_accounts as a', 'a.id', '=', 'o.pubg_account_id')
             ->select([
                 'o.id', 'o.status', 'o.sell_price', 'o.sell_currency',
                 'o.profit_base', 'o.created_at',
                 'u.id as user_id', 'u.username',
                 'b.title as bundle_title',
+                'a.pubg_player_id', 'a.pubg_name',
             ])
             ->orderByDesc('o.id')
             ->get();

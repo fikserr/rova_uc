@@ -67,10 +67,9 @@ class SekaliPayService
     public function createTransaction(string $refId, int $itemId, string $target, ?string $zoneId = null, int $qty = 1): array
     {
         $cart = [
-            'item_id'     => $itemId,
-            'quantity'    => $qty,
-            'note'        => $target,
-            'customer_id' => $target,
+            'item_id'  => $itemId,
+            'quantity' => $qty,
+            'note'     => $target,
         ];
         if ($zoneId) {
             $cart['zone_id'] = $zoneId;
@@ -81,23 +80,24 @@ class SekaliPayService
             'carts'  => [$cart],
         ];
 
+        Log::info('SekaliPay createTransaction REQUEST', [
+            'ref_id'  => $refId,
+            'payload' => $payload,
+        ]);
+
         $response = $this->http()
             ->withHeaders(['Content-Type' => 'application/json'])
             ->post("{$this->baseUrl}/v1/trx", $payload);
 
+        Log::info('SekaliPay createTransaction RESPONSE', [
+            'ref_id'  => $refId,
+            'http'    => $response->status(),
+            'body'    => $response->json() ?? $response->body(),
+        ]);
+
         if (!$response->successful()) {
-            Log::error('SekaliPay createTransaction failed', [
-                'ref_id' => $refId,
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
             return ['success' => false, 'message' => $response->json('message', 'API error')];
         }
-
-        Log::info('SekaliPay createTransaction ok', [
-            'ref_id' => $refId,
-            'data'   => $response->json('data', []),
-        ]);
 
         return ['success' => true, 'data' => $response->json('data', [])];
     }
