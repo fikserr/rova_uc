@@ -7,87 +7,23 @@ import {
     Package,
     Search,
     ShoppingBag,
-    XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-function StatusTracker({ status }) {
-    const { t } = useTranslation();
-
-    const STATUS_STEPS = [
-        { key: "pending", label: t("purchases.status.pending") },
-        { key: "paid", label: t("purchases.status.paid") },
-        { key: "delivered", label: t("purchases.status.delivered") },
-    ];
-
-    if (status === "canceled") {
-        return (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
-                <XCircle className="size-4 text-rose-500 shrink-0" />
-                <span className="text-xs font-semibold text-rose-500">
-                    {t("purchases.status.canceled_label")}
-                </span>
-            </div>
-        );
-    }
-
-    const currentIdx = STATUS_STEPS.findIndex((s) => s.key === status);
-
-    return (
-        <div className="flex items-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
-            {STATUS_STEPS.map((step, idx) => (
-                <div
-                    key={step.key}
-                    className="flex items-center flex-1 last:flex-none"
-                >
-                    <div className="flex flex-col items-center">
-                        <div
-                            className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                                idx < currentIdx
-                                    ? "bg-emerald-500 text-white"
-                                    : idx === currentIdx
-                                      ? "bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900"
-                                      : "bg-slate-200 text-slate-400 dark:bg-slate-600 dark:text-slate-400"
-                            }`}
-                        >
-                            {idx < currentIdx ? (
-                                <CheckCircle className="size-4" />
-                            ) : (
-                                idx + 1
-                            )}
-                        </div>
-                        <span
-                            className={`text-[10px] mt-1 whitespace-nowrap font-medium ${
-                                idx <= currentIdx
-                                    ? "text-blue-600 dark:text-blue-400"
-                                    : "text-slate-400"
-                            }`}
-                        >
-                            {step.label}
-                        </span>
-                    </div>
-                    {idx < STATUS_STEPS.length - 1 && (
-                        <div
-                            className={`flex-1 h-0.5 mb-4 mx-1 transition-colors ${
-                                idx < currentIdx
-                                    ? "bg-emerald-400"
-                                    : "bg-slate-200 dark:bg-slate-600"
-                            }`}
-                        />
-                    )}
-                </div>
-            ))}
-        </div>
-    );
-}
+import { imgFallback } from "../../Utils/ImgProxy";
+import {
+    productLabel,
+    resolveProductImage,
+} from "../../Utils/productOverrides";
 
 function UserPurchases() {
     const { t } = useTranslation();
-    const { purchases: initPurchases = [], stats: initStats = {} } = usePage().props;
+    const { purchases: initPurchases = [], stats: initStats = {} } =
+        usePage().props;
     const [purchases, setPurchases] = useState(initPurchases);
-    const [stats, setStats]         = useState(initStats);
+    const [stats, setStats] = useState(initStats);
     const [filterStatus, setFilterStatus] = useState("all");
+    const [searchQuery, setSearchQuery] = useState("");
     const intervalRef = useRef(null);
 
     useEffect(() => {
@@ -113,7 +49,7 @@ function UserPurchases() {
             case "paid":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "completed":
-                return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "processing":
                 return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
             case "pending":
@@ -142,19 +78,33 @@ function UserPurchases() {
     };
 
     const filteredPurchases = useMemo(() => {
-        if (filterStatus === "all") return purchases;
-        return purchases.filter((p) => p.status === filterStatus);
-    }, [purchases, filterStatus]);
+        let result = purchases;
 
-    const rotateFilter = () => {
-        setFilterStatus((prev) => {
-            if (prev === "all") return "pending";
-            if (prev === "pending") return "paid";
-            if (prev === "paid") return "delivered";
-            if (prev === "delivered") return "canceled";
-            return "all";
-        });
-};
+        if (filterStatus !== "all") {
+            result = result.filter((p) => p.status === filterStatus);
+        }
+
+        const q = searchQuery.trim().toLowerCase();
+        if (q) {
+            result = result.filter((p) => {
+                const label = productLabel(p.title, p.amount) ?? "";
+                const haystack = [
+                    p.title,
+                    p.amount,
+                    label,
+                    p.target,
+                    p.id,
+                    p.invoice,
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+                return haystack.includes(q);
+            });
+        }
+
+        return result;
+    }, [purchases, filterStatus, searchQuery]);
 
     const formatDateTime = (value) => {
         if (!value) return "-";
@@ -233,102 +183,140 @@ function UserPurchases() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
                             <input
                                 type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t("purchases.search_placeholder")}
-                                disabled
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-0 opacity-60 cursor-not-allowed dark:bg-slate-700 dark:text-white"
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-violet-500"
                             />
                         </div>
-                        <button
-                            className="bg-slate-50 dark:bg-slate-600 p-3 rounded-xl hover:bg-slate-100 transition-colors hover:dark:bg-slate-500"
-                            onClick={rotateFilter}
-                            title={`Filter: ${filterStatus}`}
-                        >
-                            <Filter className="size-5 text-slate-600 dark:text-white" />
-                        </button>
+                        <div className="relative shrink-0">
+                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 dark:text-slate-300 pointer-events-none" />
+                            <select
+                                value={filterStatus}
+                                onChange={(e) =>
+                                    setFilterStatus(e.target.value)
+                                }
+                                className="appearance-none bg-slate-50 dark:bg-slate-600 dark:text-white pl-9 pr-8 py-3 rounded-xl text-sm font-medium hover:bg-slate-100 hover:dark:bg-slate-500 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="all">
+                                    {t("purchases.status.all")}
+                                </option>
+                                <option value="pending">
+                                    {t("purchases.status.pending")}
+                                </option>
+                                <option value="completed">
+                                    {t("purchases.status.delivered")}
+                                </option>
+                                <option value="canceled">
+                                    {t("purchases.status.canceled")}
+                                </option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 {/* Purchase cards */}
                 <div className="space-y-4">
-                    {filteredPurchases.map((purchase) => (
-                        <div
-                            key={purchase.id}
-                            className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md dark:text-white hover:shadow-lg transition-shadow p-5 sm:p-6 border border-slate-100 dark:border-slate-700"
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-3 rounded-xl shrink-0">
-                                        <ShoppingBag className="size-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1 dark:text-white">
-                                            {purchase.title}
-                                        </h3>
-                                        <p className="text-slate-600 text-sm mb-2 dark:text-slate-300">
-                                            {purchase.amount}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-xl font-bold text-slate-900 mb-2 dark:text-white">
-                                        {Number(
-                                            purchase.price ?? 0,
-                                        ).toLocaleString("fr-FR")}{" "}
-                                        {purchase.currency ?? "UZS"}
-                                    </div>
-                                    <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(purchase.status)}`}
-                                    >
-                                        {getStatusText(purchase.status)}
-                                    </span>
-                                </div>
-                            </div>
+                    {filteredPurchases.map((purchase) => {
+                        // purchase.title = raw game name (e.g. "Mobile Legends")
+                        // purchase.amount = raw product name (e.g. "Mobilelegend - 5 Diamond")
+                        // Both map directly onto the keys/patterns in productOverrides.js
+                        const displayLabel = productLabel(
+                            purchase.title,
+                            purchase.amount,
+                        );
+                        const productImage = resolveProductImage(
+                            purchase.title,
+                            { name: purchase.amount },
+                        );
 
-                            <StatusTracker status={purchase.status} />
+                        return (
+                            <div
+                                key={purchase.id}
+                                className="bg-white/80 dark:bg-slate-800 backdrop-blur-sm rounded-2xl shadow-md dark:text-white hover:shadow-lg transition-shadow p-5 sm:p-6 border border-slate-100 dark:border-slate-700"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-start gap-4">
+                                        <div className="bg-linear-to-br from-blue-500 to-indigo-500 p-3 rounded-xl shrink-0 size-12 overflow-hidden flex items-center justify-center">
+                                            {productImage ? (
+                                                <img
+                                                    src={productImage}
+                                                    alt={displayLabel}
+                                                    className="w-full h-full object-cover"
+                                                    onError={imgFallback}
+                                                />
+                                            ) : (
+                                                <ShoppingBag className="size-6 text-white" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm lg:text-lg font-bold text-slate-900 mb-1 truncate dark:text-white">
+                                                {purchase.title}
+                                            </h3>
+                                            <p className="text-slate-600 text-sm mb-2 dark:text-slate-300 truncate">
+                                                {displayLabel}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm lg:text-xl font-bold text-slate-900 mb-2 dark:text-white">
+                                            {Number(
+                                                purchase.price ?? 0,
+                                            ).toLocaleString("fr-FR")}{" "}
+                                            {purchase.currency ?? "UZS"}
+                                        </div>
+                                        <span
+                                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(purchase.status)}`}
+                                        >
+                                            {getStatusText(purchase.status)}
+                                        </span>
+                                    </div>
+                                </div>
 
-                            <div className="pt-3 mt-1 space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">
-                                        {t("purchases.order_id")}:
-                                    </span>
-                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
-                                        {purchase.id}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">
-                                        {t("purchases.account")}:
-                                    </span>
-                                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
-                                        {purchase.target ?? "-"}
-                                    </span>
-                                </div>
-                                {purchase.invoice && (
+                                <div className="pt-3 mt-0 space-y-2">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-slate-500 dark:text-slate-300">
-                                            Invoice:
+                                            {t("purchases.order_id")}:
                                         </span>
-                                        <span className="font-mono font-semibold text-xs text-slate-900 dark:text-slate-100">
-                                            {purchase.invoice}
+                                        <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                                            {purchase.id}
                                         </span>
                                     </div>
-                                )}
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500 dark:text-slate-300">
-                                        {t("purchases.order_date")}:
-                                    </span>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-100">
-                                        <Clock className="size-3" />
-                                        <span>
-                                            {formatDateTime(
-                                                purchase.created_at,
-                                            )}
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-slate-500 dark:text-slate-300">
+                                            {t("purchases.account")}:
                                         </span>
+                                        <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                                            {purchase.target ?? "-"}
+                                        </span>
+                                    </div>
+                                    {purchase.invoice && (
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-slate-500 dark:text-slate-300">
+                                                Invoice:
+                                            </span>
+                                            <span className="font-mono font-semibold text-xs text-slate-900 dark:text-slate-100">
+                                                {purchase.invoice}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-slate-500 dark:text-slate-300">
+                                            {t("purchases.order_date")}:
+                                        </span>
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-100">
+                                            <Clock className="size-3" />
+                                            <span>
+                                                {formatDateTime(
+                                                    purchase.created_at,
+                                                )}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Empty state */}

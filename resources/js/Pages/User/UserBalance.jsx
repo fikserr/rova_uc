@@ -17,7 +17,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "swiper/css";
 import "swiper/css/pagination";
-import { Autoplay, Pagination } from "swiper/modules";
+import "swiper/css/navigation";
+import { Autoplay, Pagination , Navigation} from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 function UserBalance() {
@@ -41,8 +42,11 @@ function UserBalance() {
 
     const cardGradients = [
         "linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #38bdf8 100%)",
-        "from-[#A74971] to-[#6C2947]",
-        "from-[#D946EF] via-[#A21CAF] to-[#701A75]",
+        "linear-gradient(135deg, #A74971 0%, #6C2947 100%)",
+        "linear-gradient(135deg, #D946EF 0%, #A21CAF 50%, #701A75 100%)",
+        "linear-gradient(135deg, #F97316 0%, #EA580C 50%, #C2410C 100%)",
+        "linear-gradient(135deg, #059669 0%, #047857 50%, #065F46 100%)",
+        "linear-gradient(135deg, #FACC15 0%, #EAB308 50%, #CA8A04 100%)",
     ];
 
     const [selectedMethod, setSelectedMethod] = useState("manual");
@@ -62,6 +66,7 @@ function UserBalance() {
 
     const [myRequests, setMyRequests] = useState([]);
     const [paymentCards, setPaymentCards] = useState([]);
+    const [randomStart, setRandomStart] = useState(1);
     const [copiedId, setCopiedId] = useState(null);
     const fileInputRef = useRef(null);
     const submittingRef = useRef(false);
@@ -78,7 +83,13 @@ function UserBalance() {
     useEffect(() => {
         axios
             .get("/payment-cards/active")
-            .then((r) => setPaymentCards(r.data))
+            .then((r) => {
+                setPaymentCards(r.data);
+                
+                if (r.data.length > 0) {
+                    setRandomStart(Math.floor(Math.random() * r.data.length));
+                }
+            })
             .catch(() => {});
     }, []);
 
@@ -140,7 +151,9 @@ function UserBalance() {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (e) => {
                     if (e.total) {
-                        setUploadProgress(Math.round((e.loaded * 100) / e.total));
+                        setUploadProgress(
+                            Math.round((e.loaded * 100) / e.total),
+                        );
                     }
                 },
             });
@@ -155,7 +168,7 @@ function UserBalance() {
         } catch (e) {
             const msg = e.response?.data?.errors
                 ? Object.values(e.response.data.errors).flat().join(" ")
-                : e.response?.data?.message ?? t("others.error");
+                : (e.response?.data?.message ?? t("others.error"));
             setCheckError(msg);
             setTimeout(() => setCheckError(null), 8000);
         } finally {
@@ -211,7 +224,7 @@ function UserBalance() {
                                     className="relative rounded-xl border-2 border-amber-400/60 cursor-not-allowed p-4 text-left flex flex-col justify-between h-24 transition-all duration-200 bg-amber-50/50 dark:bg-amber-500/5 opacity-80"
                                 >
                                     <span className="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-amber-400 text-[9px] font-bold text-amber-950 tracking-wide shadow-sm">
-                                        {t('balance.coming_soon')}
+                                        {t("balance.coming_soon")}
                                     </span>
                                     <img
                                         src={ClickLogo}
@@ -253,14 +266,12 @@ function UserBalance() {
                                     </div>
                                     <div className="pt-1">
                                         <Swiper
-                                            modules={[Pagination, Autoplay]}
+                                            modules={[Pagination, Autoplay, Navigation]}
                                             slidesPerView={1}
                                             spaceBetween={14}
-                                            loop
-                                            autoplay={{
-                                                delay: 2200,
-                                                disableOnInteraction: false,
-                                            }}
+                                            autoplay={{ delay: 3000, disableOnInteraction: false }}
+                                            loop={true}
+                                            initialSlide={randomStart}
                                             pagination={{ clickable: true }}
                                             breakpoints={{
                                                 480: { slidesPerView: 1 },
@@ -272,7 +283,7 @@ function UserBalance() {
                                             {paymentCards.map((card, idx) => (
                                                 <SwiperSlide key={card.id}>
                                                     <div
-                                                        className="relative w-full h-full rounded-2xl p-4 sm:p-5 overflow-hidden shadow-xl"
+                                                        className="relative w-full h-full rounded-2xl p-4 sm:p-5 overflow-hidden  border-[#6366F1] bg-indigo-50 dark:bg-[#6366F1]/6 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                                                         style={{
                                                             background:
                                                                 cardGradients[
@@ -571,7 +582,9 @@ function UserBalance() {
                                         <div className="w-full h-1.5 bg-indigo-100 dark:bg-white/10 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-indigo-500 rounded-full transition-all duration-300"
-                                                style={{ width: `${uploadProgress}%` }}
+                                                style={{
+                                                    width: `${uploadProgress}%`,
+                                                }}
                                             />
                                         </div>
                                     )}

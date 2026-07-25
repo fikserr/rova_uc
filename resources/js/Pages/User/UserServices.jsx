@@ -26,9 +26,8 @@ import useDevice from "../../Hook/useDevice";
 import { imgFallback, imgProxy } from "../../Utils/ImgProxy";
 
 import "swiper/css";
-import "swiper/css/navigation";
 import "swiper/css/pagination";
-
+import { Autoplay } from "swiper/modules";
 import { accent, GameVariants } from "../../Components/user/GameVariants";
 // import PaymentCardsSwiper from "../../Components/user/PaymentCardsSwiper";
 
@@ -309,7 +308,11 @@ function UserServices() {
             img: MlbbDesktop,
             game: { name: "Mobile Legends", category: "Game", image: null },
         },
-        { img: PubgDesktop, href: "/user-products-uc", game: { name: "Pubg Mobile", category: "Game", image: null }, },
+        {
+            img: PubgDesktop,
+            href: "/user-products-uc",
+            game: { name: "Pubg Mobile", category: "Game", image: null },
+        },
         { img: TelegramStars, href: "/user-telegram-stars" },
         { img: TelegramPremium, href: "/user-telegram-premium" },
     ];
@@ -601,8 +604,14 @@ function UserServices() {
                         {/* Hero Swiper */}
                         <div className="w-full mb-8 md:mb-12">
                             <Swiper
-                                modules={[Pagination]}
+                                loop={true}
+                                modules={[Pagination, Autoplay]}
                                 slidesPerView={1}
+                                autoplay={{
+                                    delay: 2000,
+                                    disableOnInteraction: false,
+                                }}
+                                spaceBetween={0}
                                 pagination={{
                                     clickable: true,
                                     renderBullet: (index, className) =>
@@ -610,48 +619,35 @@ function UserServices() {
                                 }}
                                 className="rounded-xl overflow-hidden shadow-lg bg-amber-200 h-40 md:h-100"
                             >
-                                <Swiper
-                                    modules={[Pagination]}
-                                    slidesPerView={1}
-                                    pagination={{
-                                        clickable: true,
-                                        renderBullet: (index, className) =>
-                                            `<button class="${className} custom-pagination-bullet" style="width: 10px; height: 10px; margin: 0 6px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; cursor: pointer; transition: all 0.3s ease;"></button>`,
-                                    }}
-                                    className="rounded-xl overflow-hidden shadow-lg bg-amber-200 h-40 md:h-100"
-                                >
-                                    {Desktopimages.map((img, index) => (
-                                        <SwiperSlide key={index}>
-                                            {img.game ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setSelectedGame(
-                                                            img.game,
-                                                        )
-                                                    }
-                                                    className="block w-full h-40 md:h-100 text-left"
-                                                >
+                                {Desktopimages.map((img, index) => (
+                                    <SwiperSlide key={index}>
+                                        {img.game ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedGame(img.game)
+                                                }
+                                                className="block w-full h-40 md:h-100 text-left"
+                                            >
+                                                <img
+                                                    src={img.img}
+                                                    alt={`slide-${index}`}
+                                                    className="w-full h-full object-fill"
+                                                />
+                                            </button>
+                                        ) : (
+                                            <Link href={img.href}>
+                                                <div className="h-40 md:h-100 w-full">
                                                     <img
                                                         src={img.img}
                                                         alt={`slide-${index}`}
                                                         className="w-full h-full object-fill"
                                                     />
-                                                </button>
-                                            ) : (
-                                                <Link href={img.href}>
-                                                    <div className="h-40 md:h-100 w-full">
-                                                        <img
-                                                            src={img.img}
-                                                            alt={`slide-${index}`}
-                                                            className="w-full h-full object-fill"
-                                                        />
-                                                    </div>
-                                                </Link>
-                                            )}
-                                        </SwiperSlide>
-                                    ))}
-                                </Swiper>
+                                                </div>
+                                            </Link>
+                                        )}
+                                    </SwiperSlide>
+                                ))}
                             </Swiper>
                         </div>
 
@@ -664,7 +660,17 @@ function UserServices() {
                                         {t("services.top_games")}
                                     </h2>
                                 </div>
-                                <div className="scrollx flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+                                <Swiper
+                                    modules={[Pagination, Autoplay]}
+                                    loop={topGames.length > 5}
+                                    slidesPerView="auto"
+                                    autoplay={{
+                                        delay: 400,
+                                        disableOnInteraction: false,
+                                    }}
+                                    spaceBetween={12}
+                                    className="-mx-4 px-4 h-26"
+                                >
                                     {topGames.map((game, idx) => {
                                         const GAME_CARD_COLORS_TOP = [
                                             "from-violet-500 to-purple-600",
@@ -680,57 +686,62 @@ function UserServices() {
                                                     GAME_CARD_COLORS_TOP.length
                                             ];
                                         return (
-                                            <button
+                                            <SwiperSlide
                                                 key={game.name}
-                                                onClick={() =>
-                                                    setSelectedGame({
-                                                        name: game.name,
-                                                        category:
-                                                            game.category ||
-                                                            "Game",
-                                                        image: game.image_url,
-                                                    })
-                                                }
-                                                className="shrink-0 snap-start w-24 rounded-2xl overflow-hidden bg-white dark:bg-white/5 border border-slate-100 dark:border-white/8 shadow-sm hover:shadow-md hover:border-violet-300 dark:hover:border-violet-500/40 transition-all active:scale-95 text-left"
+                                                className="w-24!"
                                             >
-                                                <div
-                                                    className={`relative h-20 bg-linear-to-br ${gradColor} overflow-hidden`}
+                                                <button
+                                                    onClick={() =>
+                                                        setSelectedGame({
+                                                            name: game.name,
+                                                            category:
+                                                                game.category ||
+                                                                "Game",
+                                                            image: game.image_url,
+                                                        })
+                                                    }
+                                                    className="w-full rounded-2xl overflow-hidden bg-white dark:bg-white/5 border border-slate-100 dark:border-white/8 shadow-sm hover:shadow-md hover:border-violet-300 dark:hover:border-violet-500/40 transition-all active:scale-95 text-left"
                                                 >
-                                                    {game.image_url ? (
-                                                        <img
-                                                            src={imgProxy(
-                                                                game.image_url,
-                                                            )}
-                                                            alt={game.name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex items-center justify-center h-full">
-                                                            <span className="text-white font-black text-2xl">
-                                                                {game.name.charAt(
-                                                                    0,
+                                                    <div
+                                                        className={`relative h-20 bg-linear-to-br ${gradColor} overflow-hidden`}
+                                                    >
+                                                        {game.image_url ? (
+                                                            <img
+                                                                src={imgProxy(
+                                                                    game.image_url,
                                                                 )}
-                                                            </span>
+                                                                alt={game.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex items-center justify-center h-full">
+                                                                <span className="text-white font-black text-2xl">
+                                                                    {game.name.charAt(
+                                                                        0,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute top-1.5 left-1.5 bg-orange-500 rounded-md px-1 py-0.5">
+                                                            <Flame className="size-2.5 text-white" />
                                                         </div>
-                                                    )}
-                                                    <div className="absolute top-1.5 left-1.5 bg-orange-500 rounded-md px-1 py-0.5">
-                                                        <Flame className="size-2.5 text-white" />
                                                     </div>
-                                                </div>
-                                                <div className="px-2 py-1.5">
-                                                    <p className="text-[10px] font-bold text-slate-800 dark:text-white leading-tight line-clamp-2 uppercase">
-                                                        {game.name.length > 10
-                                                            ? game.name.substring(
-                                                                  0,
-                                                                  10,
-                                                              ) + "…"
-                                                            : game.name}
-                                                    </p>
-                                                </div>
-                                            </button>
+                                                    <div className="px-2 py-1.5">
+                                                        <p className="text-[10px] font-bold text-slate-800 dark:text-white leading-tight line-clamp-2 uppercase">
+                                                            {game.name.length >
+                                                            10
+                                                                ? game.name.substring(
+                                                                      0,
+                                                                      10,
+                                                                  ) + "…"
+                                                                : game.name}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            </SwiperSlide>
                                         );
                                     })}
-                                </div>
+                                </Swiper>
                             </div>
                         )}
 

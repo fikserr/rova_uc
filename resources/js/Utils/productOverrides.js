@@ -27,7 +27,7 @@ import { imgProxy } from "./ImgProxy";
 /* ── Region / server tab labels ──────────────────────────────────── */
 export const TYPE_LABEL_OVERRIDES = {
     "Mobile Legends": {
-        Filipina: "🇵🇭 PH/🇺🇿 UZ",
+        Filipina: "🇵🇭 PH",
         Global: "🌐 Global",
         Russia: "🇷🇺 RU",
         Singapore: "🇸🇬 SG",
@@ -71,9 +71,13 @@ const PRODUCT_LABEL_RULES = {
         // "Mobilelegend - 86 Diamond" → "86💎 Diamonds"
         {
             pattern: /^Mobilelegend\s*-\s*([\d.,]+)\s*Diamonds?$/i,
-            format: (m) => `${m[1]}💎 Diamonds`,
+            format: (m) => `${m[1]} 💎 Diamonds`,
         },
     ],
+    // "Mobilelegend - 86 Diamond" → "86💎 Diamonds"
+    "Pubg Mobile":[
+        {pattern:/^Global\s*([\d.,]+)\s*Uc?$/i, format: (m) => `${m[1]} Uc`},
+    ]
     // "Another Game": [
     //     { pattern: /^.../, format: (m) => `...${m[1]}...` },
     // ],
